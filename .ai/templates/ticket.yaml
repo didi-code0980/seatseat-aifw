@@ -1,0 +1,40 @@
+# Template: ticket.yaml. Copy to .ai/board/tickets/<ID>/ticket.yaml.
+# ticket.yaml is authoritative; backlog.md is a view (see .ai/01-operating-model.md).
+# state enum: IDEA TRIAGE BACKLOG READY SPEC DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+id: ROO-01
+title: ""
+feature_ids: []
+group: ROO
+state: BACKLOG
+owner: ""
+branch: ""
+size: ""
+depends_on: []
+invariants_touched: []
+allowed_paths: []
+schema_delta: none
+requires_adr: false
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
+
+# Notes on fields that are easy to get wrong:
+#
+# invariants_touched  [] means "considered, none engaged". Absent means nobody looked.
+#                     Definition of Ready requires it to be explicit.
+# allowed_paths       [] is a control, not a placeholder. guard-allowed-paths.mjs blocks every
+#                     write outside this ticket folder while it is empty. DESIGN fills it.
+# rework_count        Only Developer-caused failures increment it (RULE-08). Two failures
+#                     escalate (RULE-06).
+# chat_budget         Six messages per pair per ticket (RULE-15). chat-guard.mjs increments
+#                     `used` and blocks at `max`. Pairs absent from this map are not chattable.
+# sync_enabled        false by default (RULE-10). Turn on per ticket, after the loop is proven.

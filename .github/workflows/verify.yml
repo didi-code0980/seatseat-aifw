@@ -1,0 +1,84 @@
+name: verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Exactly two status check names: `verify` and `allowed-paths`. Branch protection points at those
+# two. Do not split into six — every extra job name is another thing that has to be configured, kept
+# green, and explained.
+#
+# docs-audit runs as a conditional step inside `verify` rather than as its own job, because a third
+# job would be a third status check name.
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect governance changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+          if git diff --name-only "$BASE"...HEAD | grep -qE '^(\.ai/|\.claude/)'; then
+            echo "governance=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "governance=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: docs-audit
+        if: steps.changes.outputs.governance == 'true'
+        run: node scripts/check-docs.mjs
+
+      - name: hook guards
+        run: node --test .claude/hooks/tests/
+
+      - name: Application scaffold present
+        run: |
+          if [ ! -f package.json ]; then
+            echo "::error::package.json is absent — the Phase B scaffold has not landed, so pnpm verify cannot run."
+            echo "This job is expected to fail until Phase B completes. Do not enable branch protection yet."
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm verify
+        run: pnpm verify
+
+  allowed-paths:
+    name: allowed-paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Duplicates review check R1 deliberately. R1 runs inside the review agent's own session, where
+      # the agent both performs and reports the check. This runs where it can be neither skipped nor
+      # misreported.
+      - name: check-allowed-paths
+        run: node scripts/check-allowed-paths.mjs

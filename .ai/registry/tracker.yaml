@@ -1,0 +1,22 @@
+# Tracker binding. Registry plane — human-only (RULE-01).
+# Empty allowed_list_ids means BLOCKED, not unrestricted (RULE-18).
+provider: clickup
+
+workspace_id: "90151930592"
+space_id: "901511737838"          # AIW
+folder_id: ""
+allowed_list_ids: ["901525013348"]
+intake_list_id: "901525013348"
+
+custom_fields:                     # blank until created in the ClickUp UI; do not guess
+  feature_id: ""
+  gate_state: ""
+  rework_count: ""
+  invariants_touched: ""
+  escalation_reason: ""
+  pr_url: ""
+
+rules:
+  id_only: true
+  read_scope: allowed_list_ids
+  write_scope: allowed_list_ids

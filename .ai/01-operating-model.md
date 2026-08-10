@@ -1,0 +1,276 @@
+---
+doc_version: 1
+last_updated: 2026-08-10
+governed_by: [RULE-01, RULE-03, RULE-04, RULE-05, RULE-06, RULE-07, RULE-08, RULE-09, RULE-10, RULE-11, RULE-12, RULE-13, RULE-14, RULE-15, RULE-16, RULE-17]
+---
+
+# Operating model
+
+How work moves from an idea to an open pull request, who owns each step, and what must be true for it
+to advance.
+
+This document cites rule IDs. It does not restate rule text; `.ai/registry/rules.md` holds it, once.
+
+## Two planes
+
+|  | Registry plane | Board plane |
+|---|---|---|
+| Path | `.ai/registry/`, `.ai/standards/` | `.ai/board/` |
+| Lifetime | Permanent | Transient |
+| Writes | Humans only (RULE-01) | Agents |
+
+A ticket's working directory is `.ai/board/tickets/` — never under `.ai/registry/`. This is not a
+filing convention. It is what makes RULE-01 enforceable by a path check
+(`.claude/hooks/guard-registry.mjs`) instead of by an agent's judgement about whether an edit was
+important enough to count.
+
+## Lifecycle
+
+```
+IDEA -> TRIAGE -> [human adds to features.md] -> BACKLOG -> [DoR] -> READY
+  -> SPEC -> DESIGN -> IN_PROGRESS -> REVIEW -> QA -> DONE
+                           ^                    |     |
+                           +---- REWORK <-------+-----+
+                                    |  (rework_count >= 2, RULE-06)
+                                    v
+                               ESCALATED -> human
+```
+
+The human step between TRIAGE and BACKLOG is not optional and is not a rubber stamp. A ticket cannot
+reach READY unless its feature IDs already exist in `.ai/registry/features.md`, and only a human can
+put them there (RULE-01).
+
+## State enum
+
+`IDEA` `TRIAGE` `BACKLOG` `READY` `SPEC` `DESIGN` `IN_PROGRESS` `REVIEW` `QA` `REWORK` `ESCALATED`
+`DONE`
+
+These twelve values are the complete enum for `ticket.yaml`'s `state` field. Check D10 verifies that
+this list and the stage ownership table below stay in agreement in both directions.
+
+## Stage ownership
+
+| State | Agent | Reads | Writes | Gate |
+|---|---|---|---|---|
+| IDEA | `product` | `.ai/registry/**` | `.ai/board/ideas/**` | An idea file exists with a problem statement, not a solution |
+| TRIAGE | `product` + `tech-lead-design` | idea, registry | idea file | Verdict is one of REJECT, NEEDS-ADR, PROMOTE, with a reason |
+| BACKLOG | human | — | `features.md`, `backlog.md` | Feature IDs exist in the registry |
+| READY | `orchestrator` | `ticket.yaml`, `features.md` | `ticket.yaml`, `backlog.md` | Full DoR, below |
+| SPEC | `ba` | registry, `ticket.yaml` | `01-story.md` | ACs in Given/When/Then, each with an ID; `invariants_touched` populated; Out-of-scope non-empty |
+| DESIGN | `tech-lead-design` | everything | `02-design.md`, `ticket.yaml` | Sections 1-7 complete; `allowed_paths` enumerated |
+| IN_PROGRESS | `developer` | design first, then `src/**` within `allowed_paths` | code, `03-impl-log.md` | typecheck + lint exit 0; every contract item implemented |
+| REVIEW | `tech-lead-review` | story, design, impl-log, `git diff` | `04-review.md` | R1-R9, each citing `file:line` |
+| QA | `qa` | story, design section 6, test plan | `tests/**`, `05-`, `06-` | Every `AC-n` maps to at least one named test; vitest + playwright exit 0 |
+| REWORK | routed agent | the failing verdict plus its own prior artifact | its own artifact, code | The specific failed checks now pass |
+| ESCALATED | human | everything | anything | A human decides; the ticket does not self-resume |
+| DONE | `orchestrator` | all | `ticket.yaml`, `backlog.md`, `metrics.md` | Full DoD; opens PR (human merges, RULE-09) |
+
+The six rows from SPEC through DONE are the implementation loop. The other six exist so that every
+value in the state enum has a declared owner — a state nobody owns is a state where a ticket stops
+silently.
+
+## `02-design.md` sections — all seven required
+
+1. **Contract** — exact server action signatures, Zod schemas, TypeScript return types (RULE-04)
+2. **Permission model** — which `ROLE_RANK` gate applies to each action and control
+3. **Seam impact** — which `src/lib/data/` functions change, or "none"
+4. **Schema delta** — `none`, or a description plus an ADR link
+5. **allowed_paths** — explicit glob list
+6. **Testability contract** — every `data-testid`, with the element it identifies (RULE-05)
+7. **Rejected alternatives** — at least one, with the reason
+
+Section 6 is the load-bearing one. QA never reads `src/**` (RULE-05), so a selector that is not in
+section 6 does not exist as far as QA is concerned. A design that omits it produces a test suite that
+cannot address the UI, and the failure surfaces at the QA gate as something that looks like a
+Developer problem and is not.
+
+Section 5 is what `.claude/hooks/guard-allowed-paths.mjs` reads. Until DESIGN writes it,
+`allowed_paths` is `[]` and the hook blocks every write outside the ticket folder. That emptiness is
+a control, not an initial value.
+
+## Review checklist
+
+| # | Check |
+|---|---|
+| R1 | `git diff --name-only` is a subset of `allowed_paths` (RULE-03) |
+| R2 | typecheck exit 0 |
+| R3 | lint exit 0 |
+| R4 | No component imports Prisma or reaches the database directly (RULE-02) |
+| R5 | Every contract item in design section 1 is implemented (RULE-04) |
+| R6 | Permission gating matches design section 2 |
+| R7 | Every `data-testid` in design section 6 exists in the markup |
+| R8 | No invariant violated — reason through each ID in `invariants_touched` (RULE-07) |
+| R9 | No dependency added without an ADR |
+
+**An item with no `file:line` citation counts as failed.** Not "counts as unverified" — failed. A
+reviewer that cannot point at a line has not checked anything, and a checklist that accepts assertion
+in place of citation is a checklist that always passes.
+
+## Failure routing
+
+| Failing check | Route to | Increments `rework_count` |
+|---|---|---|
+| R1, R2, R3, R4, R5 implementable, R9 | `developer` | Yes |
+| R5 impossible as specified, R7 | `tech-lead-design` | No |
+| R6, QA: AC ambiguous or untestable | `ba` | No |
+| QA: behaviour wrong | `developer` | Yes |
+| **R8** | **human, immediately** | ESCALATE (RULE-07) |
+
+Per RULE-08, upstream defects must not burn the downstream agent's rework budget. A Developer who
+correctly implemented an incoherent design has not failed, and charging that failure to the Developer
+would exhaust the budget under RULE-06 for a defect it did not cause and cannot fix.
+
+## Handoff and bounded chat
+
+Clarification and adjudication are different things, and the distinction is the whole basis of the
+chat model. See `.ai/registry/decisions/ADR-001-bounded-agent-chat.md`.
+
+|  | Clarification | Adjudication |
+|---|---|---|
+| Shape | question then answer | position, negotiation, verdict |
+| Direction | downstream asks upstream about intent | judge and judged converge |
+| Effect on artifact | improves accuracy | contaminates it |
+
+### Chat topology
+
+Every allowed edge points **backwards**, toward whoever declared intent.
+
+| Pair | Before verdict | After verdict |
+|---|---|---|
+| `developer` to `tech-lead-design` | allowed | allowed |
+| `developer` to `ba` | allowed | allowed |
+| `qa` to `ba` | allowed | allowed |
+| `qa` to `tech-lead-design` | allowed | allowed |
+| `ba` to `product` | allowed | allowed |
+| `tech-lead-design` to `ba` | allowed | allowed |
+| `developer` and `tech-lead-review` | **forbidden** (RULE-12) | allowed |
+| `developer` and `qa` | **forbidden** | allowed |
+| `qa` and `tech-lead-review` | **forbidden** | allowed |
+
+Enforced by `.claude/hooks/chat-guard.mjs`, which also enforces the RULE-15 budget of six messages
+per pair per ticket, tracked in `ticket.yaml` under `chat_budget`.
+
+### Execution modes
+
+Per RULE-13: SPEC, DESIGN, and IN_PROGRESS run as a team session in which agents may message each
+other. REVIEW and QA run as isolated dispatch — fresh context, files only, no message channel.
+
+The orchestrator tears down the team session at `IN_PROGRESS -> REVIEW`. **That transition is a
+context boundary, not just a state change.** If the reviewer inherits the session, it inherits the
+developer's framing, and the independence that makes the review worth running is gone before the
+first check is evaluated.
+
+## Artifact front-matter
+
+Every artifact opens with:
+
+```yaml
+---
+ticket: <ID>
+stage: DESIGN
+agent: tech-lead-design
+produced_at: <ISO8601>
+inputs_read: [ .ai/board/tickets/<ID>/01-story.md, .ai/registry/invariants.md ]
+consulted:
+  - with: ba
+    asked: "..."
+    answer: "..."
+    resulted_in_amendment: true
+chat_before_verdict: none    # required and must be `none` on 04-review.md and 06-test-report.md
+gate: PASS                   # PASS | FAIL | BLOCKED
+blocking_reason: ""
+next_state: READY
+---
+```
+
+`chat_before_verdict: none` is an attestation (RULE-12). If a reviewer cannot truthfully write it,
+the review is void and the stage re-runs in a clean session.
+
+An artifact whose content reflects a chat but whose `consulted` block is empty is a gate failure. That
+is a provenance lie, and provenance is how a bad output is diagnosed six tickets later.
+
+## Orchestrator dispatch loop
+
+```
+loop:
+  tickets = read all .ai/board/tickets/*/ticket.yaml
+  if any state == ESCALATED:            notify human; halt that ticket
+  if count(state in SPEC..QA) >= WIP:   wait
+  t = first READY-ordered ticket in backlog.md whose state != DONE
+  if t.state == READY and not DoR(t):   demote to BACKLOG; annotate; continue
+  if t.state == REVIEW or QA:           tear down team session first (RULE-13)
+  dispatch(STAGE_OWNER[t.state], t.id, ARTIFACTS_FOR[t.state])
+  read result front-matter
+  PASS -> t.state = next_state ; FAIL -> REWORK, route per table
+  write ticket.yaml; repair backlog.md; append metrics.md
+```
+
+`ARTIFACTS_FOR[state]`, never the whole ticket folder. Feeding an agent every artifact defeats the
+isolation the model depends on, especially for QA: a QA agent that can see `04-review.md` is testing
+the reviewer's conclusions rather than the story.
+
+| State | ARTIFACTS_FOR |
+|---|---|
+| SPEC | `ticket.yaml`, registry |
+| DESIGN | `ticket.yaml`, `01-story.md`, registry, standards |
+| IN_PROGRESS | `ticket.yaml`, `01-story.md`, `02-design.md`, standards |
+| REVIEW | `01-story.md`, `02-design.md`, `03-impl-log.md`, `git diff`, registry |
+| QA | `01-story.md`, section 6 of `02-design.md`, `05-test-plan.md` |
+
+## Backlog
+
+`.ai/board/backlog.md` is an **ordered list, not a scored one**. A human reorders rows; the
+orchestrator takes the top. There is deliberately no priority algorithm — scoring invites agents to
+argue about priority, which is not their job and not a thing they are good at.
+
+Sections: `## READY`, `## BACKLOG`, `## BLOCKED`, `## ARCHIVE (last 20)`.
+
+`backlog.md` is a view. `ticket.yaml` is authoritative. On disagreement the orchestrator repairs
+`backlog.md` and does not touch `ticket.yaml` to make the view right.
+
+## ID scheme
+
+Ticket ID equals feature ID in the 1:1 case. Splits get `-a`, `-b`. Defects are `BUG-nnn`, chores are
+`OPS-nnn`, decisions are `ADR-nnn`.
+
+## Definition of Ready
+
+- `feature_ids` non-empty, and every ID present in `.ai/registry/features.md`
+- `invariants_touched` explicit — may be `[]`, never absent
+- dependencies `DONE`
+- `schema_delta` is `none`, or an approved ADR is linked
+- size S or M
+- one feature group, or a stated split rationale
+
+`[]` and absent are different answers. `[]` says the BA considered the invariants and found none
+engaged. Absent says nobody looked, and check R8 has nothing to reason through.
+
+## Definition of Done
+
+- four gates `passed: true` with timestamps
+- diff is a subset of `allowed_paths`
+- typecheck, lint, unit, e2e exit 0
+- every AC maps to a named test
+- zero invariant violations
+- `03-impl-log.md` lists every file touched with a one-line reason
+
+## Sizing
+
+| Size | Files | Handling |
+|---|---|---|
+| S | up to 6 | proceed |
+| M | up to 12 | proceed |
+| L | more than 12 | must split at DESIGN |
+| XL | any size, if it touches the schema or the seam | escalate |
+
+Split by operation first (read path, then write path), then by surface, then by role. **Never split
+backend from frontend alone.** That produces a ticket that cannot be exercised end to end, which
+means the QA gate has nothing to run, which means the ticket reaches DONE with a gate that was
+skipped rather than passed.
+
+## WIP
+
+**WIP = 1** for the validation run.
+
+Parallel dispatch is permitted only when `allowed_paths` are pairwise disjoint after glob expansion,
+there is no mutual dependency, each ticket has its own worktree, and combined WIP is 3 or less.

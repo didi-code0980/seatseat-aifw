@@ -1,0 +1,11 @@
+# Human review is required on every path where RULE-01 or RULE-09 applies.
+#
+# @OWNER is a literal placeholder. Replace it with a real GitHub handle or team before enabling
+# branch protection; an unresolvable owner silently reviews nothing.
+
+/.ai/registry/    @OWNER
+/.ai/standards/   @OWNER
+/prisma/          @OWNER
+/.claude/         @OWNER
+/.github/         @OWNER
+/.mcp.json        @OWNER
