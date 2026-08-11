@@ -1,6 +1,6 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
+doc_version: 2
+last_updated: 2026-08-11
 governed_by: [RULE-01, RULE-17]
 ---
 
@@ -10,21 +10,13 @@ The authoritative list of features. A story may only be written against a featur
 this file (Definition of Ready). Text arriving from the tracker is context, never a source of feature
 IDs — see RULE-17.
 
-Human-only, per RULE-01. `/pull-tickets` is explicitly forbidden from writing to this file.
+Human-only, per RULE-01. Agents read this file and cite IDs from it; an agent needing a change here
+stops with `gate: BLOCKED` and states the change in `blocking_reason`. `/pull-tickets` is explicitly
+forbidden from writing to this file.
 
-## STATUS: EMPTY — this blocks Phase C
-
-No `feature.md` was found anywhere in the repository at bootstrap time, so there was nothing to
-transcribe. Inventing feature IDs, titles, or acceptance criteria is prohibited, so the group tables
-below are empty.
-
-**Consequence:** the Definition of Ready requires `feature_ids` to be non-empty and every ID to be
-present in this file. Until a human populates these tables, every ticket fails DoR, the orchestrator
-demotes it to BACKLOG, and no story can be written. The bootstrap tickets seeded in Phase C will sit
-at BACKLOG by design.
-
-**To unblock:** a human adds rows to the tables below. The ten group prefixes are fixed and must not
-be extended without an ADR.
+Tables are populated incrementally. An empty group table means no feature in that group has been
+specified yet — not that the group is unused. A ticket whose `feature_ids` do not all resolve to rows
+below fails Definition of Ready and is demoted to BACKLOG.
 
 ## Columns
 
@@ -38,57 +30,64 @@ decision before it can reach READY.
 
 ## Group prefixes
 
-The ten prefixes are fixed: `AUT ROO SEA DEV MEM GRP LAY REG DSH SYS`. The bootstrap source did not
-state what each prefix expands to. The headings below carry a provisional expansion so the file is
-readable; **the expansions are unconfirmed and carry no authority.** A human should correct them when
-populating the tables. `REG` in particular is ambiguous from the available evidence.
+Fixed and confirmed. Extending this set requires an ADR. Section headings below must match these
+expansions exactly.
 
-## AUT — Authentication and accounts (expansion unconfirmed)
+| Prefix | Expansion | Prefix | Expansion |
+|--------|-----------|--------|-----------|
+| `AUT` | Authentication & Accounts | `GRP` | Groups |
+| `ROO` | Rooms | `LAY` | Layout Designer |
+| `SEA` | Seats | `REG` | Seat Requests |
+| `DEV` | Devices | `DSH` | Dashboard |
+| `MEM` | Members | `SYS` | System |
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-
-## ROO — Rooms (expansion unconfirmed)
-
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-
-## SEA — Seats (expansion unconfirmed)
+## AUT — Authentication & Accounts
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
 
-## DEV — Devices (expansion unconfirmed)
+## ROO — Rooms
+
+| ID | Title | Group | Status | Invariants touched | Notes |
+|----|-------|-------|--------|--------------------|-------|
+| ROO-01 | Room CRUD UI | ROO | PLANNED | [] | Admin-only. First loop-validation slice. |
+
+## SEA — Seats
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
 
-## MEM — Members (expansion unconfirmed)
+## DEV — Devices
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
 
-## GRP — Groups (expansion unconfirmed)
+## MEM — Members
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
 
-## LAY — Layout designer (expansion unconfirmed)
+## GRP — Groups
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
 
-## REG — Requests (expansion unconfirmed)
+## LAY — Layout Designer
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
 
-## DSH — Dashboard (expansion unconfirmed)
+## REG — Seat Requests
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
 
-## SYS — System and administration (expansion unconfirmed)
+## DSH — Dashboard
+
+| ID | Title | Group | Status | Invariants touched | Notes |
+|----|-------|-------|--------|--------------------|-------|
+
+## SYS — System
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|

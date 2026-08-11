@@ -10,8 +10,9 @@ color: orange
 
 You implement the design. Read `02-design.md` first, in full, before opening a single source file.
 
-Output: code inside `allowed_paths`, and `03-impl-log.md` listing **every file touched with a
-one-line reason**. The Definition of Done requires that list to be complete.
+Template: `.ai/templates/impl-log.md`. Output: code inside `allowed_paths`, and `03-impl-log.md`
+listing **every file touched with a one-line reason**. The Definition of Done requires that list to
+be complete.
 
 ## You do NOT
 

@@ -47,13 +47,14 @@ discards includes the artifacts that would explain the confusion.
 
 ## Hooks
 
-All five are Node, invoked as `node "$CLAUDE_PROJECT_DIR/..."`. None is a `.sh` file, and that is not
+All six are Node, invoked as `node "$CLAUDE_PROJECT_DIR/..."`. None is a `.sh` file, and that is not
 a style preference. A `.sh` hook on Windows dies with `bad interpreter: /bin/sh^M` once Git rewrites
 line endings, and it fails **silently** — the guard simply stops guarding, which is worse than having
 no guard at all because the deny list still looks configured.
 
 | Hook | Matcher | Enforces | Failure direction |
 |---|---|---|---|
+| `guard-project-root.mjs` | `Edit\|Write` | the project boundary | closed |
 | `guard-registry.mjs` | `Edit\|Write` | RULE-01 | closed |
 | `guard-allowed-paths.mjs` | `Edit\|Write` | RULE-03 | closed |
 | `guard-tracker-scope.mjs` | `mcp__clickup__.*` | RULE-18 | closed |
@@ -61,13 +62,17 @@ no guard at all because the deny list still looks configured.
 | `guard-read-scope.mjs` | `Read\|Grep\|Glob\|NotebookEdit` | RULE-05 | open for agents other than `ba` and `qa` |
 
 Every one has a test file under `.claude/hooks/tests/`, runnable with `node --test
-.claude/hooks/tests/`. A control that has never been observed to fire is not a control, it is a
-belief about a control.
+.claude/hooks/tests/*.test.mjs` — the shell expands the list, because `node --test <dir>` works on
+Node 20 but fails on Node 23, and the quoted-glob form needs Node 21 or later. A control that has
+never been observed to fire is not a control, it is a belief about a control.
 
-### Two hooks are additions to the bootstrap specification
+`guard-project-root.mjs` runs **first** on `Edit|Write`. Containment is the cheapest check and its
+failure is the least recoverable, so it is settled before the other two spend any effort.
 
-The specification listed four hooks but wired only two matchers in `settings.json`. Both additions
-are recorded here rather than made silently:
+### Three hooks are additions to the bootstrap specification
+
+The specification listed four hooks but wired only two matchers in `settings.json`. All three
+additions are recorded here rather than made silently:
 
 **`chat-guard.mjs` had no matcher.** Without one it would never fire, and RULE-12 and RULE-15 would
 be prose. It is wired on `Agent|Task|SendMessage`.
@@ -78,6 +83,23 @@ carry a Read deny on `src/**`" is not expressible in subagent frontmatter: `tool
 agents unable to read the story they work from. A path-scoped hook is the only mechanism that
 expresses it. It is wired twice — session-wide here, and in the `ba` and `qa` frontmatter — so the
 restriction is visible in the agent definition, which is where someone will look for it.
+
+**`guard-project-root.mjs` did not exist.** During the Phase A run an agent created a file at
+`D:\Servers\placeholder-unused.md` from a mistaken path. It was disclosed and deleted, but nothing
+would have stopped it. `guard-registry.mjs` and `guard-allowed-paths.mjs` both compute a
+repo-relative path and then test a prefix, so a target on another drive, or above the root, fails
+every prefix test and is allowed through — the two guards that look like they cover the filesystem
+cover only the inside of it. A write outside the repository is also invisible to `git status`, so no
+gate, no review, and no CI check would ever have reported it.
+
+One rule now covers absolute paths elsewhere, a different Windows drive, `../` traversal above the
+root, and `~`-relative targets. Symlinked roots are resolved on both sides before comparison,
+because `os.tmpdir()` is itself symlinked on macOS and a naive real-path comparison rejects every
+legitimate write.
+
+**Known limitation:** a git worktree created outside the project directory is treated as outside the
+boundary. That is the intended reading of "outside the project root", and the fix is to point
+`CLAUDE_PROJECT_DIR` at the worktree rather than to widen the guard.
 
 ### Why chat-guard fails open
 
@@ -90,11 +112,44 @@ It also exits 0 when the payload has no `agent_type`, which means the call came 
 and agent chat use the same tool, and blocking the former to constrain the latter would break the
 loop at every transition.
 
+**Forward edges are not hook-enforced, and that is accepted as designed.** `chat-guard.mjs` blocks
+only the three forbidden pairs in the chat topology. An edge that is simply absent from the table —
+`ba` to `developer`, say — passes the hook, because it is indistinguishable at the tool layer from
+orchestrator dispatch, which uses the same tool. The topology table in `.ai/01-operating-model.md`
+governs those edges; the hook governs the three where a wrong answer corrupts a verdict. Constraining
+the rest mechanically would cost the dispatch loop, which is a worse trade.
+
 ### Why the others fail closed
 
 An unreadable payload, an unresolvable project root, a missing `ticket.yaml` on a `feat/` branch, a
 missing `tracker.yaml` — all block. A guard that cannot tell whether an action is in scope must not
 conclude that it is.
+
+## Settings integrity
+
+This file is the rationale for `settings.json`. `settings.json` itself is load-bearing, and it has
+been observed being overwritten: this environment appends session permission grants to
+`.claude/settings.json` rather than to `.claude/settings.local.json`, and it clobbered the governance
+config four times during the Phase A run. When that happens the deny list and every hook vanish, and
+nothing about the session looks different — the guards simply stop guarding.
+
+Two detectors:
+
+1. `git diff .claude/settings.json`. Available because Phase A is committed. Only useful if a human
+   looks.
+2. `.claude/hooks/tests/settings-integrity.test.mjs`. Asserts `disableClaudeAiConnectors`, every
+   allow rule, every deny rule, all six hook entries on the right matchers in the right order, that
+   every wired hook exists on disk, and that no hook on disk is left unwired. It runs in CI on every
+   push and pull request, where nobody has to remember to look.
+
+If that test fails, the fix is to restore `settings.json` — not to update the expected list. Update
+the list only alongside a deliberate change, in the same commit.
+
+**Session approvals must be directed to `.claude/settings.local.json`, never to
+`.claude/settings.json`.** `settings.local.json` is already gitignored and carries no governance
+content, so a grant landing there is harmless; a grant landing in `settings.json` rewrites the file
+and takes the deny list and every hook with it. This is a standing configuration requirement, not a
+one-time cleanup — the two detectors above catch the symptom, and this is the cause.
 
 ## Per-agent restrictions
 

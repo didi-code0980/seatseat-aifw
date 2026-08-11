@@ -1,0 +1,25 @@
+# pnpm 10 reads build-script approvals from this file, not from package.json's `pnpm` field.
+#
+# Post-install scripts are blocked by default in pnpm 10 — a supply-chain control worth keeping. The
+# four below are approved deliberately, not to silence the warning:
+#
+#   @prisma/engines  the query and schema engine binaries arrive via a postinstall script; without
+#                    them the client cannot be generated and `db:push` cannot run
+#   esbuild          vitest and tsx both need its native binary
+#   unrs-resolver    eslint-config-next's import resolver native binding
+#
+# Anything else asking for build-script permission is a change, and gets read before it is added.
+#
+# `prisma` is deliberately NOT on this list. Its only lifecycle script is a preinstall guard that
+# hard-fails on an unsupported Node — Prisma 7 accepts 20.19+, 22.12+, or 24.0+, and this machine runs
+# 23.6.0, an odd-numbered release that is long past end of life. Approving it fails the install for a
+# check that builds nothing. The guard is right, though: the Prisma CLI genuinely cannot run here.
+# Phase B never invokes it (B.5 forbids migrations), so nothing in this phase is affected, but an LTS
+# Node is a prerequisite for any migration, `db:push`, or `db:seed` work. It is on the operator list.
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - esbuild
+  - unrs-resolver
+
+ignoredBuiltDependencies:
+  - prisma

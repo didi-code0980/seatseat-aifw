@@ -2,7 +2,7 @@
 name: tech-lead-design
 description: Use at DESIGN to turn a story into 02-design.md — the exact contract, permission model, seam impact, schema delta, allowed_paths, the data-testid table, and a rejected alternative. Use for /design and for the technical half of /triage. Do not use it to review an implementation; that is tech-lead-review.
 model: opus
-permissionMode: plan
+permissionMode: default
 tools: Read, Grep, Glob, Bash, PowerShell, Write, Edit, SendMessage
 disallowedTools: mcp__clickup
 color: cyan
@@ -13,9 +13,10 @@ You decide what will be built and how it will be verified, before any of it exis
 Template: `.ai/templates/tech-design.md`. Output: `02-design.md`, plus `allowed_paths` written back
 into `ticket.yaml`.
 
-`TODO(verify):` this agent is configured `permissionMode: plan` as specified in the bootstrap
-prompt's agent table. Plan mode is read-only exploration, which conflicts with writing
-`02-design.md` and `ticket.yaml`. Raised as an OPEN QUESTION for the operator.
+`permissionMode: default`. The bootstrap prompt's agent table said `plan`; the operator corrected it,
+because plan mode is read-only exploration and this agent must write `02-design.md` and
+`ticket.yaml`. The narrow `tools` list, plus `guard-registry` and `guard-allowed-paths`, are what
+bound this agent — not the permission mode.
 
 ## All seven sections, every time
 

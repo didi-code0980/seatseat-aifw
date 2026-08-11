@@ -9,8 +9,6 @@ governed_by: [RULE-01]
 Terms whose meaning is fixed by this system. Where a term is a process term its definition lives in
 `.ai/01-operating-model.md`; this file records what the word denotes, not how the stage works.
 
-Domain terms marked **OPEN** have not been defined by any source document. They are listed so the gap
-is visible rather than filled by assumption. Defining them is a human action.
 
 ## Process terms
 
@@ -79,17 +77,32 @@ its occupant leaves the seat (INV-06).
 
 **Role.** One of `USER`, `MANAGER`, `ADMIN`, ordered by `ROLE_RANK`.
 
-**Group.** OPEN — the source documents name a Groups feature area and a `groups` route but do not
-define what a group contains or what membership in one grants.
+### Group
+A grouping of **people**, not of seats — a department, a sales team, or similar.
+Groups nest: a parent group contains child groups (e.g. a class contains several teams).
+A Member belongs to a Group. Group membership is independent of seat occupancy;
+two members of the same group need not sit near each other.
 
-**Network port mapping.** OPEN — named in the project description. The relationship between a port,
-a seat, and a device is not defined by any source document.
+### Network port
+A physical network port belongs to a **seat**, not to a device or a room.
+A seat has **one or two** ports. A seat with zero ports is not valid.
+Ports are identified by a port code and are part of the seat's fixed physical
+description — they do not move when an occupant changes.
 
-**Layout.** OPEN — the source documents name a layout designer and a drag-and-drop dependency but do
-not define what a layout is composed of or how it relates to seat coordinates.
+### Layout
+A room's spatial arrangement, rendered on a **grid**. The grid is deliberately finer
+than one cell per seat so that seats can be placed close to their real-world position:
+a seat occupies a block of several cells (for example 2x2), not a single cell.
+A seat's placement is a grid coordinate plus its footprint. Freeform (arbitrary pixel)
+placement is explicitly out of scope.
 
-**Request.** OPEN — the source documents name a requests route and a Manager approval step but do not
-define the request lifecycle states.
+### Request (seat request)
+A Member asking to occupy a seat. Two forms:
+- **Targeted** — the requester names a specific seat.
+- **Open** — the requester names only a room and asks for any free seat in it.
+Both forms go to a Manager or Admin for approval.
 
-**Self-release.** OPEN — named as a bootstrap ticket title. Presumed to mean a user relinquishing a
-seat they occupy, but no source document states this.
+### Self-release
+An occupant vacating a seat they currently occupy, **without approval**. It takes effect
+immediately. Releasing a seat is an occupant exit, so INV-06 applies: the seat's primary
+device auto-downgrades to secondary.

@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* Tailwind v4 is configured here, not in a JS file. The tokens below are the visual direction from
+   CLAUDE.md and .ai/standards/ui-design-system.md: light SaaS, accent #FB5729, near-black #1C1C1C,
+   black pill buttons, white cards on a light-gray canvas.
+
+   TODO(verify): the canvas, surface, border and gray-ramp values below are chosen to sit around the
+   two specified colours. Only the accent and the near-black are specified by a source document; the
+   rest are marked open in .ai/standards/ui-design-system.md and are placeholders until a human fixes
+   them.
+
+   TODO(verify): Gilroy is not loaded — it is a licensed font and no licence is recorded. The stack
+   falls back to Manrope, which is the specified alternative, and then to system sans. */
+
+@theme {
+  --color-accent: #fb5729;
+  --color-accent-hover: #e04a1f;
+  --color-ink: #1c1c1c;
+  --color-canvas: #f5f5f4;
+  --color-surface: #ffffff;
+  --color-border: #e5e5e3;
+  --color-muted: #6f6f6c;
+
+  --font-sans: "Gilroy", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+
+  --radius-pill: 9999px;
+}
+
+html,
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Codes and IDs are monospace everywhere — a seat code and an asset tag are read character by
+   character, and a proportional font makes transcription errors easy. */
+.code {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}

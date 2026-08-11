@@ -8,6 +8,7 @@ Dispatch `developer` for ticket `$ARGUMENTS` on branch `feat/$ARGUMENTS`.
 **Artifacts in:** `ticket.yaml`, `01-story.md`, `02-design.md`, `.ai/standards/**`
 **Artifacts out:** code inside `allowed_paths`, and
 `.ai/board/tickets/$ARGUMENTS/03-impl-log.md`
+**Template:** `.ai/templates/impl-log.md`
 
 **Gate:** `pnpm typecheck` and `pnpm lint` exit 0; every contract item in design section 1 is
 implemented; `03-impl-log.md` lists every file touched with a one-line reason.

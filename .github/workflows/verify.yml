@@ -38,14 +38,22 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: docs-audit
         if: steps.changes.outputs.governance == 'true'
         run: node scripts/check-docs.mjs
 
+      # The file list is expanded by the shell, not by node. `node --test <dir>` works on Node 20 but
+      # fails with MODULE_NOT_FOUND on Node 23, and `node --test '<glob>'` needs Node 21+. The shell
+      # form works on every version, which matters because this is also the command an operator runs
+      # by hand.
+      #
+      # settings-integrity.test.mjs runs here: it is the second detector for settings.json being
+      # clobbered by session permission grants. The first is `git diff .claude/settings.json`, which
+      # only helps if a human looks.
       - name: hook guards
-        run: node --test .claude/hooks/tests/
+        run: node --test .claude/hooks/tests/*.test.mjs
 
       - name: Application scaffold present
         run: |
@@ -75,7 +83,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       # Duplicates review check R1 deliberately. R1 runs inside the review agent's own session, where
       # the agent both performs and reports the check. This runs where it can be neither skipped nor

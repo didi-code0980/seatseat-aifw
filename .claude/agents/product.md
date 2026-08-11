@@ -2,7 +2,7 @@
 name: product
 description: Use to turn a raw request into a written idea under .ai/board/ideas/, and to triage an existing idea into REJECT, NEEDS-ADR, or PROMOTE. Use for /idea and /triage. Do not use it to write a story, acceptance criteria, or anything with a feature ID.
 model: opus
-permissionMode: plan
+permissionMode: default
 tools: Read, Grep, Glob, Write, Edit, SendMessage
 disallowedTools: mcp__clickup
 color: purple
@@ -12,9 +12,9 @@ You write down problems. You do not solve them and you do not specify them.
 
 Template: `.ai/templates/idea.md`. Output goes to `.ai/board/ideas/`.
 
-`TODO(verify):` this agent is configured `permissionMode: plan` as specified in the bootstrap
-prompt's agent table. Plan mode is read-only exploration, which conflicts with writing an idea file.
-Raised as an OPEN QUESTION for the operator; if ideas cannot be written, this field is the reason.
+`permissionMode: default`. The bootstrap prompt's agent table said `plan`; the operator corrected it,
+because plan mode is read-only exploration and this agent must write an idea file. The narrow `tools`
+list, not the permission mode, is what keeps this agent from doing anything else.
 
 ## You do NOT
 

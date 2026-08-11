@@ -1,16 +1,59 @@
 {
-  "disableClaudeAiConnectors": true,
   "permissions": {
     "allow": [
-      "Bash(git status)", "Bash(git diff:*)", "Bash(git log:*)",
-      "Bash(git add:*)", "Bash(git commit:*)",
-      "Bash(git switch:*)", "Bash(git checkout -b feat/*)",
-      "Bash(gh pr create:*)", "Bash(gh pr view:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout -b feat/*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
       "mcp__clickup__clickup_get_task",
       "mcp__clickup__clickup_update_task",
       "mcp__clickup__clickup_get_custom_fields",
       "mcp__clickup__clickup_create_comment",
-      "mcp__clickup__clickup_filter_tasks"
+      "mcp__clickup__clickup_filter_tasks",
+      "Bash(command -v nvm fnm volta n asdf mise)",
+      "Read(//Users/mpa/.nvm/**)",
+      "Bash(brew list *)",
+      "Bash(command -v brew)",
+      "Bash(brew info *)",
+      "Bash(node -e 'let s=\"\";process.stdin.on\\(\"data\",d=>s+=d\\).on\\(\"end\",\\(\\)=>{try{const j=JSON.parse\\(s\\);const f=j.formulae[0];console.log\\(\"node@24:\",f.versions.stable,\"keg_only:\",f.keg_only\\)}catch\\(e\\){console.log\\(\"node@24 not found\"\\)}}\\)')",
+      "Bash(node -e 'let s=\"\";process.stdin.on\\(\"data\",d=>s+=d\\).on\\(\"end\",\\(\\)=>{try{const j=JSON.parse\\(s\\);const f=j.formulae[0];console.log\\(\"node@22:\",f.versions.stable,\"keg_only:\",f.keg_only\\)}catch\\(e\\){console.log\\(\"node@22 not found\"\\)}}\\)')",
+      "Bash(brew search *)",
+      "Bash(node -e ' *)",
+      "Bash(node -e 'const p=require\\(\"./node_modules/@prisma/client/package.json\"\\);console.log\\(JSON.stringify\\({main:p.main,types:p.types,exports:Object.keys\\(p.exports||{}\\)},null,1\\)\\)')",
+      "Bash(node node_modules/prisma/build/index.js --version)",
+      "Bash(node -e 'const p=require\\(\"./node_modules/eslint-config-next/package.json\"\\);console.log\\(JSON.stringify\\({main:p.main,exports:p.exports},null,1\\)\\)')",
+      "Bash(node -e 'const p=require\\(\"./node_modules/better-auth/package.json\"\\);console.log\\(Object.keys\\(p.exports||{}\\).join\\(\"\\\\n\"\\)\\)')",
+      "Bash(grep -o \"declare const betterAuth[^;]\\\\{0,200\\\\}\\\\|declare function betterAuth[^;]\\\\{0,200\\\\}\" node_modules/better-auth/dist/auth.d.mts)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm test *)",
+      "Bash(node -e 'const p=require\\(\"./node_modules/typescript-eslint/package.json\"\\);console.log\\(\"typescript-eslint\",p.version\\);console.log\\(\"peer:\",JSON.stringify\\(p.peerDependencies\\)\\)')",
+      "Bash(node -e 'let s=\"\";process.stdin.on\\(\"data\",d=>s+=d\\).on\\(\"end\",\\(\\)=>{const v=JSON.parse\\(s\\);const f=v.filter\\(x=>/^\\(5\\\\.[89]|6\\\\.\\)/.test\\(x\\)&&!x.includes\\(\"-\"\\)\\);console.log\\(f.join\\(\", \"\\)\\)}\\)')",
+      "Bash(git mv *)",
+      "Bash(node -e 'console.log\\(require\\(\"./node_modules/typescript/package.json\"\\).version\\)')",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(node -e 'for\\(const p of [\"next\",\"typescript\",\"vitest\",\"eslint\",\"@prisma/client\",\"better-auth\"]\\){console.log\\(p, require\\(`./node_modules/${p}/package.json`\\).version\\)}')",
+      "Bash(node -e 'require\\(\"esbuild\"\\);console.log\\(\"esbuild loads\"\\)')",
+      "Bash(echo \"TYPECHECK=$?\")",
+      "Bash(node -e 'let s=\"\";process.stdin.on\\(\"data\",d=>s+=d\\).on\\(\"end\",\\(\\)=>{const v=JSON.parse\\(s\\).filter\\(x=>/^9\\\\./.test\\(x\\)&&!x.includes\\(\"-\"\\)\\);console.log\\(v.slice\\(-3\\).join\\(\", \"\\)\\)}\\)')",
+      "Bash(pnpm build *)",
+      "Bash(node node_modules/prisma/build/index.js validate --schema prisma/schema.prisma)",
+      "Bash(node -e 'const p=require\\(\"./node_modules/prisma/package.json\"\\);console.log\\(Object.keys\\(p.exports||{}\\).join\\(\" \"\\)\\)')",
+      "Bash(node --test .claude/hooks/tests/)",
+      "Bash(pnpm test:e2e)",
+      "Bash(pnpm verify *)",
+      "Bash(echo \"VERIFY_EXIT=$?\")",
+      "Bash(cp /tmp/rooms-page.bak src/app/\\\\\\(app\\\\\\)/rooms/page.tsx)",
+      "Bash(rm /tmp/rooms-page.bak)",
+      "Bash(echo \"LINT_EXIT=$?\")",
+      "Bash(command -v docker)",
+      "Bash(docker compose *)",
+      "Bash(grep -rhoE 'data-testid=\\\\{`[^`]*`\\\\}' src/)"
     ],
     "deny": [
       "Bash(git push --force:*)",
@@ -25,25 +68,53 @@
       "mcp__clickup__clickup_get_workspace_hierarchy"
     ]
   },
+  "disableClaudeAiConnectors": true,
   "hooks": {
     "PreToolUse": [
-      { "matcher": "Edit|Write",
+      {
+        "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-registry.mjs\"" },
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-allowed-paths.mjs\"" }
-        ] },
-      { "matcher": "mcp__clickup__.*",
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-project-root.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-registry.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-allowed-paths.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__clickup__.*",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-tracker-scope.mjs\"" }
-        ] },
-      { "matcher": "Agent|Task|SendMessage",
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-tracker-scope.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task|SendMessage",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/chat-guard.mjs\"" }
-        ] },
-      { "matcher": "Read|Grep|Glob|NotebookEdit",
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/chat-guard.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-read-scope.mjs\"" }
-        ] }
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-read-scope.mjs\""
+          }
+        ]
+      }
     ]
   }
 }

@@ -1,0 +1,204 @@
+// DRAFT — NOT APPROVED, NOT APPLIED.
+//
+// RULE-09: schema changes are permanently human. This file is a starting point for that human
+// decision, not a decision. No migration has been generated and none may be: `prisma migrate` is
+// explicitly out of scope for this phase.
+//
+// Read the invariants below against .ai/registry/invariants.md before approving anything here.
+//
+// TODO(verify): every model, field, and relation in this file was drafted from the bootstrap
+// specification and the glossary. None of it is transcribed from an approved data model, because no
+// approved data model exists. Field names here will propagate into the DTOs in
+// src/lib/data/types.ts, the Zod schemas, and eventually the selectors — so this is the cheapest
+// moment to change them and the most expensive moment to get them wrong.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7 removed `url` from the datasource block. The connection string for Migrate now lives in
+// prisma.config.ts, and the runtime client takes a driver adapter instead. Verified against the CLI:
+// `prisma validate` rejects `url` here with P1012.
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+enum DeviceRank {
+  PRIMARY
+  SECONDARY
+}
+
+enum RequestKind {
+  TARGETED
+  OPEN
+}
+
+enum RequestState {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model Room {
+  id   String @id @default(cuid())
+  name String
+  code String @unique
+
+  // The layout grid. Deliberately finer than one cell per seat, so a seat occupies a block.
+  gridWidth  Int
+  gridHeight Int
+
+  seats Seat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Seat {
+  id     String @id @default(cuid())
+  code   String @unique
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  // Grid coordinate plus footprint. Freeform pixel placement is out of scope.
+  gridX Int
+  gridY Int
+  gridW Int
+  gridH Int
+
+  // INV-01: a seat has at most one occupant, expressed as a nullable single reference rather than a
+  // collection. INV-02 — one person may occupy several seats — is the reverse direction, and is why
+  // Member.occupiedSeats is a list.
+  occupantId String?
+  occupant   Member? @relation("SeatOccupant", fields: [occupantId], references: [id], onDelete: SetNull)
+
+  // INV-03: status is NOT a column here, and must never become one. It is derived on read by
+  // src/lib/data/derive.ts. A `status` field added to this model is an invariant violation.
+
+  ports   NetworkPort[]
+  devices Device[]
+  requests SeatRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roomId])
+  @@index([occupantId])
+}
+
+// A port belongs to a seat, not to a device or a room, and does not move when the occupant changes.
+//
+// TODO(verify): "a seat has one or two ports; zero is invalid" is an invariant CANDIDATE the
+// operator has not approved, so it is NOT encoded as a constraint here. If approved it needs a check
+// constraint in raw SQL — Prisma cannot express a cardinality bound on a relation.
+model NetworkPort {
+  id       String @id @default(cuid())
+  portCode String @unique
+  seatId   String
+  seat     Seat   @relation(fields: [seatId], references: [id], onDelete: Cascade)
+
+  @@index([seatId])
+}
+
+model Group {
+  id   String @id @default(cuid())
+  name String
+
+  // Groups nest. TODO(verify): maximum depth is an open question in the glossary, so no depth bound
+  // is encoded. Whether a Member may belong to more than one Group is also open — modelled here as
+  // one, which is the narrower reading and the easier one to widen later.
+  parentId String?
+  parent   Group?  @relation("GroupTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Group[] @relation("GroupTree")
+
+  members Member[]
+
+  @@index([parentId])
+}
+
+model Member {
+  id       String  @id @default(cuid())
+  fullName String
+  email    String  @unique
+  role     Role    @default(USER)
+  groupId  String?
+  group    Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  // INV-02: one person may occupy multiple seats.
+  occupiedSeats Seat[]  @relation("SeatOccupant")
+  ownedDevices  Device[] @relation("DeviceOwner")
+  requests      SeatRequest[]
+
+  account   Account?
+  createdBy Account[] @relation("AccountCreatedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId])
+}
+
+model Device {
+  id       String @id @default(cuid())
+  assetTag String @unique
+  model    String
+
+  // INV-07: devices may exist unassigned in inventory, so both references are nullable.
+  ownerId String?
+  owner   Member? @relation("DeviceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  seatId  String?
+  seat    Seat?   @relation(fields: [seatId], references: [id], onDelete: SetNull)
+
+  rank DeviceRank @default(SECONDARY)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([seatId])
+}
+
+model SeatRequest {
+  id          String       @id @default(cuid())
+  requesterId String
+  requester   Member       @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  kind        RequestKind
+  // Null for an OPEN request, which names only a room.
+  seatId      String?
+  seat        Seat?        @relation(fields: [seatId], references: [id], onDelete: SetNull)
+  roomId      String
+  state       RequestState @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requesterId])
+  @@index([state])
+}
+
+// INV-08: there is no self-signup. `createdById` is nullable only for the bootstrap administrator,
+// who by definition has no creator. Every other account must record one.
+//
+// TODO(verify): Better Auth 1.6.26 owns its own tables (user, session, account, verification). This
+// model is the application's account record and is NOT the Better Auth table set. Reconciling the
+// two — whether Member maps onto Better Auth's `user`, or sits beside it — is an unmade decision and
+// needs an ADR before the Prisma adapter is wired. It is the largest open question in this file.
+model Account {
+  id       String @id @default(cuid())
+  memberId String @unique
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  email    String @unique
+
+  createdById String?
+  createdBy   Member? @relation("AccountCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
