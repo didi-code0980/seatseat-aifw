@@ -16,9 +16,16 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Prisma 7 removed `url` from the datasource block. The connection string for Migrate now lives in
-// prisma.config.ts, and the runtime client takes a driver adapter instead. Verified against the CLI:
-// `prisma validate` rejects `url` here with P1012.
+// Postgres is hosted on Supabase — hosted Postgres only, see ADR-002. Prisma is the sole database
+// client; no Supabase SDK exists in this project and adding one to src/ would bypass the seam
+// (RULE-02).
+//
+// Prisma 7 removed BOTH `url` and `directUrl` from this block. Verified against the CLI, which
+// rejects each with its own P1012. Connection strings live in prisma.config.ts, and the pooled/direct
+// split is expressed by which reader gets which URL, not by two fields here:
+//
+//   migrations -> DIRECT_URL   (5432), read from prisma.config.ts
+//   runtime    -> DATABASE_URL (6543, ?pgbouncer=true), passed to a driver adapter
 datasource db {
   provider = "postgresql"
 }
@@ -67,7 +74,17 @@ model Seat {
   roomId String
   room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
-  // Grid coordinate plus footprint. Freeform pixel placement is out of scope.
+  // Grid coordinate plus rectangular footprint. Freeform pixel placement is out of scope.
+  //
+  // INV-10: within a room, no two seats may occupy overlapping grid cells.
+  //
+  // TODO(verify): this is NOT expressible as a unique index — overlap is an inequality over four
+  // columns compared against every other seat in the room, not an equality over a column set.
+  // PostgreSQL could hold it with an EXCLUDE constraint over a generated box column plus
+  // btree_gist, which is a schema decision nobody has approved. Until then it is held by a check in
+  // src/lib/data/ on every placement write, and every LAY ticket carries INV-10 in
+  // invariants_touched so gate R8 covers it — overlap is the failure dnd-kit produces most easily
+  // and the eye catches least reliably.
   gridX Int
   gridY Int
   gridW Int

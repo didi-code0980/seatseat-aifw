@@ -2,10 +2,11 @@
 description: Report the top READY ticket without starting it
 ---
 
-Dispatch `orchestrator` in report-only mode.
+Run in the **orchestrator session — the lead session**, in report-only mode. The orchestrator is not
+a subagent and does not invoke a stage owner; see `.ai/standards/session-model.md`.
 
 **Input:** every `.ai/board/tickets/*/ticket.yaml`, plus `.ai/board/backlog.md`
-**Output:** a report to the operator. **No file is written and no stage is dispatched.**
+**Output:** a report to the operator. **No file is written and nothing is invoked.**
 
 Report:
 
@@ -16,6 +17,17 @@ Report:
 5. Any disagreement between `backlog.md` and a `ticket.yaml`, naming which is authoritative
 
 If the top ticket fails DoR, say which item failed. Do not demote it here; that happens in the
-dispatch loop, and this command does not change state.
+orchestrator loop, and this command does not change state.
 
-Definition of Ready is in `.ai/01-operating-model.md`.
+Finish by **printing the next command and the session it belongs in**, exactly one line:
+
+```
+ROO-01 is READY. Run /spec ROO-01 in the BA session.
+```
+
+If nothing is runnable, say what is blocking instead. Never invoke the stage owner — a printed
+instruction the operator runs is a real session boundary, and that boundary is what RULE-13 relies
+on.
+
+Definition of Ready is in `.ai/01-operating-model.md`. Session lifetimes are in
+`.ai/standards/session-model.md`.

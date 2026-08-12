@@ -33,7 +33,9 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
 - `ticket.yaml` state transitions, from the returned artifact's front-matter
 - `.ai/board/backlog.md` — repaired to match `ticket.yaml` when the two disagree, never the reverse
 - `.ai/board/metrics.md` — one appended row per transition, never edited in place
-- Team session lifecycle: **tear it down at `IN_PROGRESS -> REVIEW`** (RULE-13). That transition is a
+- Session lifecycle: **REVIEW and QA each require a fresh session, discarded after the verdict**
+  (RULE-13, `.ai/standards/session-model.md`). You are the lead session and you **print** the next
+  command and the session it belongs in; you never invoke a stage owner. That transition is a
   context boundary. A reviewer that inherits the developer's session has inherited its framing.
 - Dispatching `ARTIFACTS_FOR[state]`, never the whole ticket folder. QA in particular must not see
   `04-review.md`.

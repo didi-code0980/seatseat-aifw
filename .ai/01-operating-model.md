@@ -150,15 +150,51 @@ Every allowed edge points **backwards**, toward whoever declared intent.
 Enforced by `.claude/hooks/chat-guard.mjs`, which also enforces the RULE-15 budget of six messages
 per pair per ticket, tracked in `ticket.yaml` under `chat_budget`.
 
-### Execution modes
+### Transport: chat is a file, not a message
 
-Per RULE-13: SPEC, DESIGN, and IN_PROGRESS run as a team session in which agents may message each
-other. REVIEW and QA run as isolated dispatch — fresh context, files only, no message channel.
+There is no live message channel between agents. A question is a **file write**, and the answer is an
+**amendment to the answering agent's own artifact**. See `.ai/standards/session-model.md`.
 
-The orchestrator tears down the team session at `IN_PROGRESS -> REVIEW`. **That transition is a
-context boundary, not just a state change.** If the reviewer inherits the session, it inherits the
-developer's framing, and the independence that makes the review worth running is gone before the
-first check is evaluated.
+1. The asking session writes `.ai/board/tickets/<ID>/99-questions.md`, whose front-matter carries
+   `to: <agent>` and `asked_at: <ISO8601>`.
+2. The answering session amends its own artifact — the story, the design — appends a `## Changelog`
+   line per RULE-14, and answers in `99-questions.md` beneath the question.
+3. `chat-guard.mjs` inspects writes to `99-questions.md` and blocks when `to:` names a pair the
+   topology forbids before a verdict exists (RULE-12). The same hook counts entries against
+   `chat_budget` (RULE-15).
+
+This is what makes RULE-14 mechanical rather than aspirational. A clarification that reveals an
+incomplete upstream artifact **must** amend that artifact, and here there is nowhere else for the
+answer to live — it cannot be spoken and forgotten, because speaking it means writing it down.
+
+### Session lifecycle
+
+RULE-13's requirement is that REVIEW and QA see files only, with no message channel and no inherited
+context. That is delivered by session lifetime, not by tearing down a shared team session.
+
+| Agent | Session | Closes when |
+|---|---|---|
+| `orchestrator` | persistent | end of run |
+| `ba` | persistent | end of run |
+| `tech-lead-design` | persistent | end of run |
+| `developer` | ephemeral | ticket DONE or ESCALATED — **survives REWORK** |
+| `tech-lead-review` | ephemeral | after **each** verdict, including a re-review |
+| `qa` | ephemeral | after **each** verdict |
+| `product`, `devops` | ephemeral | task done |
+
+**Roles that get asked stay alive; roles that pass judgement die after speaking.**
+
+The BA and the Tech Lead are asked to explain what they meant, sometimes several tickets later, and a
+session that remembers the intent behind a decision answers better than one re-reading its own output
+cold.
+
+A reviewer is the opposite. A `tech-lead-review` session that remembers checking R4 last time will
+not really check it again — but the code changed between passes, which is the entire reason there is
+a second pass. Its memory is a liability, so it dies after each verdict. Same for QA.
+
+The Developer sits between: ephemeral, but it **survives REWORK**. Rework is a continuation of the
+same work with new information, and making the Developer re-derive the design from scratch on every
+cycle would burn the RULE-06 budget on rediscovery rather than on fixing what the reviewer found.
 
 ## Artifact front-matter
 
@@ -189,7 +225,23 @@ the review is void and the stage re-runs in a clean session.
 An artifact whose content reflects a chat but whose `consulted` block is empty is a gate failure. That
 is a provenance lie, and provenance is how a bad output is diagnosed six tickets later.
 
-## Orchestrator dispatch loop
+## Orchestrator loop
+
+**The orchestrator is the lead session, not a dispatched subagent.** It reads the board, decides what
+is next, and **prints the command to run and the session to run it in**. It does not invoke the stage
+owner.
+
+That is what makes the session lifecycle above enforceable. A subagent cannot open a fresh top-level
+session for the reviewer, nor keep the BA's session alive across tickets — so an orchestrator that
+dispatched would have to fake both, and RULE-13 would come back to depending on an agent's good
+behaviour instead of on how the sessions are actually started. A printed instruction that a human
+runs is a real context boundary; a nested call is not.
+
+`/next-ticket` therefore emits something like:
+
+```
+ROO-01 is READY. Run /spec ROO-01 in the BA session.
+```
 
 ```
 loop:
@@ -198,8 +250,8 @@ loop:
   if count(state in SPEC..QA) >= WIP:   wait
   t = first READY-ordered ticket in backlog.md whose state != DONE
   if t.state == READY and not DoR(t):   demote to BACKLOG; annotate; continue
-  if t.state == REVIEW or QA:           tear down team session first (RULE-13)
-  dispatch(STAGE_OWNER[t.state], t.id, ARTIFACTS_FOR[t.state])
+  if t.state == REVIEW or QA:           require a FRESH session (RULE-13); never reuse a prior one
+  PRINT the next command and the session it belongs in     <-- does not dispatch; see below
   read result front-matter
   PASS -> t.state = next_state ; FAIL -> REWORK, route per table
   write ticket.yaml; repair backlog.md; append metrics.md

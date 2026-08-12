@@ -3,7 +3,8 @@ description: Build, mark the ticket DONE, and open a pull request
 argument-hint: <TICKET-ID>
 ---
 
-Dispatch `orchestrator` for ticket `$ARGUMENTS`.
+Run in the **orchestrator session — the lead session**
+(`.ai/standards/session-model.md`). Nothing is dispatched.
 
 **Preconditions — all four gates `passed: true` with timestamps.** Verify against `ticket.yaml`, not
 against a summary.
@@ -17,6 +18,12 @@ Steps:
    gate timestamps.
 5. If `tracker.sync_enabled` is true, push `gate_state` and `pr_url`. If it is false, skip silently —
    that is the expected state for early tickets.
+
+6. **Print the next action and its session** — do not invoke it:
+
+```
+ROO-01 is DONE, PR opened. Run /next-ticket in the orchestrator session.
+```
 
 **The output is an open pull request. Never a merge.** RULE-09 makes merging permanently human, and
 `gh pr merge` is denied in settings.

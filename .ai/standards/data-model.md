@@ -1,10 +1,26 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
-governed_by: [RULE-01, RULE-07, RULE-09]
+doc_version: 2
+last_updated: 2026-08-11
+governed_by: [RULE-01, RULE-02, RULE-07, RULE-09]
 ---
 
 # Data model
+
+## Provider: Supabase, as hosted Postgres only
+
+Postgres is hosted on Supabase (ADR-002). Nothing else about Supabase is used — not its auth, not
+RLS, not realtime, not storage — and **Prisma is the only client**. Details and the two connection
+strings are in `.ai/standards/integrations.md`.
+
+Two consequences for anything written against this file:
+
+**Authorization lives in `src/lib/data/`, in exactly one place.** RLS is deliberately switched off.
+Two layers enforcing permissions is a drift source: the seam and the database would each be
+authoritative, both would be edited, and the disagreement would surface as a row a user can see in
+one code path and not another. That is a bug nobody can reproduce from the application code alone.
+
+**The database is remote, so migrations go over a specific connection.** Supabase's transaction
+pooler cannot hold advisory locks, and Migrate needs them. The direct URL is not an optimisation.
 
 ## Status: no schema exists
 
@@ -30,6 +46,43 @@ Every invariant in `.ai/registry/invariants.md`, held by the strongest available
 | INV-06 | A write path that downgrades the primary device when occupancy ends. A constraint alone does not do this; it only refuses. |
 | INV-07 | Nullable seat association on a device. |
 | INV-08 | No route, no schema default, and no seed that creates an account outside Manager or Admin action. |
+| INV-10 | A room-scoped overlap check inside `src/lib/data/` on every placement write. No index expresses it. |
+
+INV-09 was never issued. The gap is deliberate and nothing was withdrawn — `.ai/registry/invariants.md`
+lists it under `## Unissued IDs` and records why. IDs are never reused or renumbered.
+
+## Seat placement — INV-10
+
+A seat's placement is a grid coordinate **and a rectangular footprint**: `gridX`, `gridY`, `gridW`,
+`gridH`. Four numbers, not two. The grid is deliberately finer than one cell per seat so a seat can
+sit near its real-world position, which is exactly why a seat spans a block of cells rather than
+occupying one.
+
+INV-10 says no two seats in the same room may overlap. That is a predicate over *pairs* of
+rectangles, scoped to a room — two seats overlap when their intervals intersect on both axes:
+
+```
+overlap(a, b)  ⟺  a.roomId = b.roomId
+                  ∧ a.gridX < b.gridX + b.gridW  ∧  b.gridX < a.gridX + a.gridW
+                  ∧ a.gridY < b.gridY + b.gridH  ∧  b.gridY < a.gridY + a.gridH
+```
+
+**No unique index expresses this.** A unique index enforces equality over a column set; overlap is an
+inequality over four columns compared against every other row in the room. PostgreSQL can do it with
+an exclusion constraint over a `box` or `int4range` pair, but that requires a generated geometric
+column and `btree_gist`, which is a schema decision nobody has approved.
+
+`TODO(verify):` until that decision is made, INV-10 is held by **a check in the data-access layer** —
+a function in `src/lib/data/` that every placement write goes through, which loads the room's other
+seats and refuses an overlapping rectangle. This is weaker than a constraint and the weakness is
+real: a write that bypasses the seam bypasses the invariant. It is acceptable only because RULE-02
+makes bypassing the seam a lint failure rather than a matter of discipline. If a direct-SQL write
+path is ever introduced, INV-10 must move into the database first.
+
+**Every LAY ticket lists INV-10 in `invariants_touched`**, so gate R8 forces a reviewer to reason
+about it explicitly on any drag-and-drop work. That is the point: overlap is the failure dnd-kit
+produces most easily and the one the eye catches least reliably. Two seats one cell into each other
+look right in a screenshot and are wrong in the data.
 
 ## The raw-SQL boundary
 

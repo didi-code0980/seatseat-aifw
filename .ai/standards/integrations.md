@@ -1,15 +1,62 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
-governed_by: [RULE-10, RULE-17, RULE-18]
+doc_version: 2
+last_updated: 2026-08-11
+governed_by: [RULE-02, RULE-09, RULE-10, RULE-17, RULE-18]
 ---
 
 # Integrations
 
+## Supabase — hosted Postgres, and nothing else
+
+The database is Supabase. **Only as a hosted Postgres instance**, per ADR-002.
+
+| Supabase feature | Status |
+|---|---|
+| Postgres | In use. The only reason Supabase is here. |
+| Supabase Auth | **Out of scope.** Authentication is Better Auth and does not change. |
+| Row Level Security | **Off by decision, not by omission.** See ADR-002. |
+| Realtime | Out of scope. |
+| Storage | Out of scope. |
+
+**Prisma is the only database client.** There is no `@supabase/supabase-js` in this project and
+adding one to `src/` would bypass the seam, which is a RULE-02 violation and a lint failure. If a
+future ticket genuinely needs the Supabase SDK, it goes on the `no-restricted-imports` allow-list
+beside `@prisma/client`, reachable only from `src/lib/data/prisma/**` — the same exception path, for
+the same reason. That is a design decision recorded in `02-design.md` section 3, not an import
+somebody adds.
+
+### Two connection strings
+
+Supabase fronts Postgres with a pooler, so there are two URLs and they are not interchangeable:
+
+| Variable | Port | Read by |
+|---|---|---|
+| `DATABASE_URL` | 6543, `?pgbouncer=true` | the running application, via a driver adapter |
+| `DIRECT_URL` | 5432 | Migrate and Introspect, via `prisma.config.ts` |
+
+The pooler runs in transaction mode and cannot hold the session state that advisory locks and
+prepared statements need. A migration sent through port 6543 fails intermittently rather than
+cleanly, which is the worst available failure mode, and is why the direct URL is a requirement rather
+than a convenience.
+
+Both live in `.env.local`, which is gitignored. `.env.example` names the dashboard field each comes
+from. **Nothing loads them automatically:** Prisma 7 removed dotenv, so the `db:*` scripts pass
+`--env-file-if-exists=.env.local` to Node. Next.js loads `.env.local` on its own.
+
+### Docker is optional
+
+Removing the Postgres container removed the only reason ordinary local work needed Docker. `pnpm dev`
+and `pnpm verify` need Node and — for anything past `DATA_SOURCE=mock` — a Supabase connection
+string. Neither needs a container.
+
+`docker/docker-compose.yml` still builds and runs the application image, which is useful for checking
+that the production build behaves. It is not on the path of ordinary development, and `docker` being
+absent from a machine no longer blocks anything.
+
 ## ClickUp
 
-The only external integration. It is a mirror (RULE-10) and is never on the critical path: if ClickUp
-is unreachable, the loop runs to completion and the mirror is stale.
+The only external *service* integration. It is a mirror (RULE-10) and is never on the critical path:
+if ClickUp is unreachable, the loop runs to completion and the mirror is stale.
 
 ### Binding
 

@@ -1,6 +1,6 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
+doc_version: 2
+last_updated: 2026-08-12
 governed_by: [RULE-01, RULE-07, RULE-09]
 ---
 
@@ -32,6 +32,27 @@ different people to decide what happens next.
 | INV-06 | When an occupant exits a seat, that seat's primary device auto-downgrades to secondary. |
 | INV-07 | Devices may exist unassigned in inventory. |
 | INV-08 | There is no self-signup. Accounts are created by Manager or Admin only. |
+| INV-10 | Within a room, no two seats may occupy overlapping grid cells. A seat's placement is a grid coordinate plus a rectangular footprint. |
+
+## Unissued IDs
+
+| ID | Status |
+|----|--------|
+| INV-09 | Never issued. Never will be. |
+
+Two candidates were considered and rejected as domain invariants:
+
+- *A seat has one or two network ports; zero is invalid.* Enforceable in the Zod schema. A constraint
+  that validation already catches does not need to occupy the invariant layer.
+- *Self-release requires no approval.* A process rule, recorded in the glossary. It describes a
+  workflow, not a constraint on data.
+
+IDs are stable references cited from `02-design.md`, `04-review.md`, and `ticket.yaml`. They are
+never renumbered and never reused. The next invariant issued will be `INV-11`.
+
+This section exists so a later reader does not conclude a row went missing. Check D2 in
+`scripts/check-docs.mjs` reads this section as its source of legitimately-unissued IDs, so prose
+explaining the gap does not fail the audit.
 
 ## How to use this file
 
@@ -62,3 +83,10 @@ write path that does not exist is not caught by a constraint that is never evalu
 **INV-08** removes an entire route. There is no sign-up page, no invitation-acceptance flow that
 creates an account, and no first-run bootstrap that self-registers. The login page authenticates and
 does nothing else.
+
+**INV-10** is held at the data-access layer, not by a database constraint — no unique index expresses
+"these two rectangles do not intersect". A `btree_gist` EXCLUDE constraint could, and is sketched in
+`constraints.draft.sql`. Until it is applied, the invariant holds only because RULE-02 makes a write
+that bypasses `src/lib/data/` a lint failure. That is a real weakness and it is stated here rather
+than hidden. It matters most for the Layout Designer: overlap is the failure dnd-kit produces most
+easily and the eye catches least reliably.

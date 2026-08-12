@@ -82,3 +82,36 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER seat_occupant_exit_downgrade
   AFTER UPDATE OF "occupantId" ON "Seat"
   FOR EACH ROW EXECUTE FUNCTION downgrade_primary_on_occupant_exit();
+
+
+-- INV-10 — within a room, no two seats may occupy overlapping grid cells.
+--
+-- TODO(verify): NOT APPLIED, and unlike the three above this one may never belong here at all.
+--
+-- Overlap is a predicate over pairs of rectangles scoped to a room. A unique index cannot express
+-- it: a unique index enforces equality over a column set, and this is an inequality over four
+-- columns compared against every other row in the same room.
+--
+-- PostgreSQL can enforce it natively with an exclusion constraint, sketched below. It needs the
+-- btree_gist extension and a generated box column, both of which are schema decisions nobody has
+-- approved — which is why this is a sketch and not a draft on the same footing as the three above.
+--
+--   CREATE EXTENSION IF NOT EXISTS btree_gist;
+--
+--   ALTER TABLE "Seat" ADD COLUMN "footprint" box
+--     GENERATED ALWAYS AS (
+--       box(point("gridX", "gridY"), point("gridX" + "gridW", "gridY" + "gridH"))
+--     ) STORED;
+--
+--   ALTER TABLE "Seat" ADD CONSTRAINT seats_do_not_overlap_within_room
+--     EXCLUDE USING gist ("roomId" WITH =, "footprint" WITH &&);
+--
+-- Until that decision is made, INV-10 is held by a check in src/lib/data/ on every placement write.
+-- That is weaker than a constraint and the weakness is real: a write that bypasses the seam bypasses
+-- the invariant. It holds only because RULE-02 makes bypassing the seam a lint failure. If a
+-- direct-SQL write path is ever introduced, INV-10 must move into the database first.
+--
+-- Every LAY ticket lists INV-10 in invariants_touched so gate R8 forces a reviewer to reason about
+-- it on any drag-and-drop work. Overlap is the failure dnd-kit produces most easily and the one the
+-- eye catches least reliably: two seats a single cell into each other look correct in a screenshot
+-- and are wrong in the data.

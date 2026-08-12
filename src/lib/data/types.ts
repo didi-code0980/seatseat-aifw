@@ -42,7 +42,15 @@ export interface Seat {
   id: string;
   roomId: string;
   code: string;
-  /** Grid coordinate plus footprint. Freeform pixel placement is out of scope. */
+  /**
+   * Grid coordinate plus rectangular footprint. Freeform pixel placement is out of scope.
+   *
+   * INV-10: within a room, no two seats may occupy overlapping grid cells. No database index holds
+   * this — overlap is a predicate over pairs of rectangles, not an equality over a column — so it is
+   * checked in `src/lib/data/` on every placement write. Every LAY ticket carries INV-10 in
+   * `invariants_touched` so gate R8 covers it: overlap is the failure dnd-kit produces most easily
+   * and the eye catches least reliably.
+   */
   gridX: number;
   gridY: number;
   gridW: number;

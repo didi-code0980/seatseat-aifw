@@ -3,9 +3,11 @@
 // Reports. Never fixes. A tool that repairs the thing it measures stops being a measurement, and
 // the repair it makes is the one nobody reviewed.
 //
-// Checks D1-D10 are defined in the bootstrap specification and restated in
-// .claude/commands/docs-audit.md. D8 is advisory and never fails the run; everything else is an
-// error.
+// Checks D1-D10 come from the bootstrap specification. D11 and D12 were added afterwards, for gaps
+// the original set could not see: an ADR cited by ID rather than by path, and the machine-checkable
+// half of ADR-002's revert condition. All of them are restated in .claude/commands/docs-audit.md.
+//
+// D8 is advisory and never fails the run; everything else is an error.
 //
 // Run: node scripts/check-docs.mjs
 
@@ -64,9 +66,56 @@ if (rulesText) {
   }
 }
 
-const invariants = new Set(
-  (invText ?? "").match(/^\|\s*(INV-\d{2})\s*\|/gm)?.map((s) => /INV-\d{2}/.exec(s)[0]) ?? []
-);
+// --- Invariant ledger, and the IDs that were deliberately never issued -----------------------
+
+/** A registry file split into its `## ` sections, keyed by heading text. */
+function sections(text) {
+  const out = new Map();
+  let key = "";
+  let buf = [];
+  for (const line of (text ?? "").split(/\r?\n/)) {
+    const m = /^##\s+(.*?)\s*$/.exec(line);
+    if (m) {
+      out.set(key, buf.join("\n"));
+      key = m[1];
+      buf = [];
+    } else {
+      buf.push(line);
+    }
+  }
+  out.set(key, buf.join("\n"));
+  return out;
+}
+
+/** IDs in the leading cell of a table row: `| INV-04 | ... |`. Prose mentions are not rows. */
+const tableIds = (text) =>
+  (text ?? "")
+    .split(/\r?\n/)
+    .map((l) => /^\|\s*(INV-\d{2})\s*\|/.exec(l)?.[1])
+    .filter(Boolean);
+
+const invSections = sections(invText);
+
+// An ID listed under `## Unissued IDs` was considered and deliberately never issued. It is valid to
+// CITE — a document explaining why a number is missing has to be able to name it, and forcing the
+// author to write it in pieces to dodge this check makes the check the author of the prose.
+//
+// It is not valid to USE. An unissued ID must never appear in a ledger row, a design, or
+// `invariants_touched`; it names an absence, and there is nothing behind it to hold.
+const unissued = new Set(tableIds(invSections.get("Unissued IDs")));
+
+// Issued invariants are every table ID in the file except those. Scoping by subtraction rather than
+// by reading the Ledger section alone keeps this working on a file with no `## Ledger` heading,
+// which is how it behaved before unissued IDs existed.
+const invariants = new Set(tableIds(invText).filter((id) => !unissued.has(id)));
+
+// Both at once is a contradiction, and a silent one: subtraction above would quietly drop the ID
+// from the issued set, so an invariant that genuinely exists would stop being citable anywhere.
+for (const id of tableIds(invSections.get("Ledger"))) {
+  if (unissued.has(id)) {
+    err("D2", ".ai/registry/invariants.md", `${id} is in both the ledger and the Unissued IDs table`);
+  }
+}
 
 const features = new Set(
   (featText ?? "")
@@ -92,9 +141,9 @@ for (const file of allDocs) {
     }
   }
   for (const id of new Set(text.match(/\bINV-\d{2}\b/g) ?? [])) {
-    if (!invariants.has(id) && r !== ".ai/registry/invariants.md") {
-      err("D2", r, `references ${id}, absent from invariants.md`);
-    }
+    if (invariants.has(id) || unissued.has(id)) continue;
+    if (r === ".ai/registry/invariants.md") continue;
+    err("D2", r, `references ${id}, absent from invariants.md`);
   }
   for (const id of new Set(text.match(/\bRULE-\d{2}\b/g) ?? [])) {
     if (!rules.has(id) && r !== ".ai/registry/rules.md") {
@@ -285,6 +334,151 @@ if (ticketTpl && opModel) {
     for (const s of inTable) {
       if (!declared.has(s)) err("D10", ".ai/templates/ticket.yaml", `stage ownership table has ${s}, which is not in the state enum`);
     }
+  }
+}
+
+// --- D11: every ADR referenced by ID resolves to a file ----------------------------------------
+//
+// D6 checks relative paths that are written as paths. An ADR is almost always cited by ID —
+// "see ADR-002" — which D6 cannot see, so a decision could be cited by three documents while the
+// file recording it did not exist. That is worse than an ordinary dangling link: the citation reads
+// as evidence that somebody decided, and RULE-09 makes the ADR the only thing that carries that.
+//
+// Agents cannot write ADRs (RULE-01, RULE-09), so the failure mode is real and specific: an agent
+// stops with BLOCKED and names the decision it needs, a human is meant to write the ADR, and the
+// prose citing it lands first.
+
+const adrDir = path.join(ROOT, ".ai/registry/decisions");
+const adrFiles = fs.existsSync(adrDir) ? fs.readdirSync(adrDir) : [];
+const adrs = new Set(
+  adrFiles.map((f) => /^(ADR-\d{3})/.exec(f)?.[1]).filter(Boolean)
+);
+
+// `.yaml` under `.ai/` is included because a ticket links an approved ADR when `schema_delta` is not
+// `none` — a dangling ADR link there is exactly as misleading as one in prose, and it sits on the
+// Definition of Ready.
+const adrScanned = [
+  ...allDocs,
+  ...walk(path.join(ROOT, ".ai")).filter((p) => p.endsWith(".yaml")),
+];
+
+for (const file of adrScanned) {
+  const r = rel(file);
+  // Templates carry example IDs by definition — `ADR-nnn` is the placeholder, but a template that
+  // shows a filled-in example would otherwise fail on it.
+  if (r.startsWith(".ai/templates/")) continue;
+  const text = fs.readFileSync(file, "utf8");
+  for (const id of new Set(text.match(/\bADR-\d{3}\b/g) ?? [])) {
+    if (!adrs.has(id)) {
+      err("D11", r, `references ${id}, which has no file in .ai/registry/decisions/`);
+    }
+  }
+}
+
+// --- D12: the seam has not grown a second door -------------------------------------------------
+//
+// ADR-002 chose Supabase as hosted Postgres only, with Row Level Security deliberately off, on the
+// grounds that `src/lib/data/` is the single authorization point. Its revert condition names an
+// observable signal: **the SDK entering the dependency tree by any route.**
+//
+// Two places to look, and package.json is the important one.
+//
+//   package.json      an `@supabase/*` entry in dependencies, devDependencies or peerDependencies.
+//                     This is the dangerous ordering: dependency added, lint patterns untouched, so
+//                     the import is unrestricted and nothing else in the toolchain objects.
+//   eslint.config.mjs a Supabase string in the no-restricted-imports config, in either direction.
+//                     Added to the patterns means an SDK is in the tree. Added to the exception
+//                     list means it is in the tree AND has a route through the seam.
+//
+// The lint list is a symptom; the dependency is the fact. ADR-002 asks for a new ADR before either.
+//
+// Only string literals count. A comment explaining why Supabase is absent is not a second door, and
+// a check that fired on its own rationale would teach people to delete the rationale.
+//
+// This is a scanner rather than a regex, and it has to be. Stripping comments with
+// `/\/\*[\s\S]*?\*\//` is wrong on this specific file: the pattern list contains "@prisma/client/*",
+// whose `/*` opens a comment that then runs to the `*/` inside "**/generated/prisma" — silently
+// deleting every entry between them, which is exactly where a Supabase entry would sit. Glob
+// patterns and block comments share punctuation, so the two have to be told apart properly.
+
+/** Every string literal in a JS source, with comments skipped. */
+function stringLiterals(src) {
+  const out = [];
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    const next = src[i + 1];
+
+    if (c === "/" && next === "/") {
+      while (i < src.length && src[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && next === "*") {
+      i += 2;
+      while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      i += 2;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      const quote = c;
+      let buf = "";
+      i++;
+      while (i < src.length && src[i] !== quote) {
+        if (src[i] === "\\") {
+          buf += src[i + 1] ?? "";
+          i += 2;
+          continue;
+        }
+        buf += src[i];
+        i++;
+      }
+      i++;
+      out.push(buf);
+      continue;
+    }
+    i++;
+  }
+  return out;
+}
+
+const SECOND_DOOR =
+  "the seam has grown a second door. ADR-002 requires a new ADR before this: its revert " +
+  "condition is that direct client-to-database access invalidates the decision to leave RLS off.";
+
+// package.json — the SDK itself.
+const pkgText = readIf(path.join(ROOT, "package.json"));
+if (pkgText) {
+  let pkg = null;
+  try {
+    pkg = JSON.parse(pkgText);
+  } catch {
+    err("D12", "package.json", "is not valid JSON, so its dependencies could not be checked");
+  }
+  if (pkg) {
+    // `@supabase/*` only. The bare `supabase` package is the CLI, not a client library, and ADR-002
+    // is about what can talk to the database from application code.
+    for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
+      for (const name of Object.keys(pkg[field] ?? {})) {
+        if (/^@supabase\//.test(name)) {
+          err("D12", "package.json", `${field} includes ${name} — ${SECOND_DOOR}`);
+        }
+      }
+    }
+  }
+}
+
+// eslint.config.mjs — the restriction, or the exception to it.
+const eslintPath = path.join(ROOT, "eslint.config.mjs");
+const eslintText = readIf(eslintPath);
+
+if (eslintText) {
+  const hits = new Set(
+    stringLiterals(eslintText)
+      .filter((s) => /supabase/i.test(s))
+      .map((s) => JSON.stringify(s))
+  );
+  for (const hit of hits) {
+    err("D12", "eslint.config.mjs", `no-restricted-imports names ${hit.trim()} — ${SECOND_DOOR}`);
   }
 }
 

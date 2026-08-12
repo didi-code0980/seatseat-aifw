@@ -1,47 +1,30 @@
 name: seat-device-tracking
 
-services:
-  db:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: seat
-      POSTGRES_PASSWORD: seat
-      POSTGRES_DB: seat
-    ports:
-      - "5432:5432"
-    volumes:
-      # A named volume, not a bind mount. A bind mount of a Postgres data directory onto a macOS or
-      # Windows host is both slow and a source of permission failures that look like corruption.
-      - db-data:/var/lib/postgresql/data
-    healthcheck:
-      # The app service waits on this rather than on the container merely being up: Postgres accepts
-      # a TCP connection several seconds before it will accept a query, and a migration that starts
-      # in that window fails in a way that looks intermittent.
-      test: ["CMD-SHELL", "pg_isready -U seat -d seat"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+# Postgres is hosted on Supabase. There is no database service here and no named volume — see
+# ADR-002. Supabase is used as hosted Postgres and nothing else: not its auth, not RLS, not realtime,
+# not storage.
+#
+# **Docker is optional for local development.** `pnpm dev` needs Node and a Supabase connection
+# string; it does not need a container. This file exists to run the application image, which is
+# useful for checking the production build behaves, and is not on the path of ordinary work.
 
+services:
   app:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       NODE_ENV: production
-      # Defaults to mock so the stack comes up without a migrated database. Switch to `prisma` only
-      # after the schema is approved and a migration has been applied.
+      # Defaults to mock so the image comes up without a database at all. Switch to `prisma` only
+      # after prisma/schema.prisma is approved and a migration has been applied.
       DATA_SOURCE: ${DATA_SOURCE:-mock}
-      DATABASE_URL: postgresql://seat:seat@db:5432/seat?schema=public
+      # Both come from the host environment; neither has a default. A compose file that invented a
+      # fallback connection string would be a credential in version control, and a wrong one.
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL — Supabase pooled connection, port 6543}
+      DIRECT_URL: ${DIRECT_URL:?set DIRECT_URL — Supabase direct connection, port 5432}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       NEXT_PUBLIC_BETTER_AUTH_URL: ${NEXT_PUBLIC_BETTER_AUTH_URL:-http://localhost:3000}
     ports:
       - "3000:3000"
-
-volumes:
-  db-data:

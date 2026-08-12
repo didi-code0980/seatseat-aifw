@@ -1,0 +1,28 @@
+# state enum: IDEA TRIAGE BACKLOG READY SPEC DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded by Phase C. No story, design, or acceptance criteria here — those are agent output.
+# feature_ids resolves against .ai/registry/features.md.
+id: ROO-01
+title: "Room CRUD UI"
+feature_ids: [ROO-01]
+group: ROO
+state: BACKLOG
+owner: ""
+branch: ""
+size: ""
+depends_on: []
+invariants_touched: []
+allowed_paths: []
+schema_delta: none
+requires_adr: false
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }

@@ -1,7 +1,8 @@
 # Human review is required on every path where RULE-01 or RULE-09 applies.
 #
-# @didi-code0980 is a literal placeholder. Replace it with a real GitHub handle or team before enabling
-# branch protection; an unresolvable owner silently reviews nothing.
+# Owner resolved 2026-08-11. Confirm @didi-code0980 has push access to this repository before
+# enabling branch protection — CODEOWNERS silently reviews nothing if the handle cannot be resolved
+# or lacks write permission, and the failure mode is a rule that appears active and is not.
 
 /.ai/registry/    @didi-code0980
 /.ai/standards/   @didi-code0980

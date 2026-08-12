@@ -1,6 +1,6 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
+doc_version: 2
+last_updated: 2026-08-12
 governed_by: [RULE-05, RULE-07, RULE-08]
 ---
 
@@ -74,6 +74,43 @@ detects one is reporting a modelling problem, not a bug to be fixed in place.
 Unit and E2E share fixture data with the seed, via `src/lib/data/fixtures.ts`. Tests must not invent
 entities inline — a test fixture that exists only in one test file drifts from the seed and produces
 failures that reproduce in CI and not locally.
+
+## Fixtures that share the implementation's assumptions
+
+A fixture is written by the person who wrote the code, from the same understanding of the input. When
+that understanding is wrong, the fixture is wrong in the same direction, and the tests pass.
+
+**This has already happened here.** Check D12 in `scripts/check-docs.mjs` looks for a Supabase entry
+in the `no-restricted-imports` list of `eslint.config.mjs`. Its first implementation stripped comments
+with a regular expression before searching. That is wrong on exactly one file — the one it exists to
+read: the pattern list contains `"@prisma/client/*"`, whose `/*` opened a block comment that then
+closed at the `*/` inside `"**/generated/prisma"`, deleting every entry between them. A Supabase entry
+placed there vanished before the search ran.
+
+Fourteen tests covered D12. All fourteen passed. The check was inert against the only file it will
+ever run on, and the tests could not see it, because every fixture used simple patterns like
+`"@supabase/supabase-js"` and none contained a glob with `/*` or `*/` in it. The fixtures were built
+from the same mental model as the implementation — "patterns are plain package names" — so they
+confirmed the model rather than testing the code. It was found by running the check against the real
+file and watching it report nothing.
+
+**The rule.** Any check whose target is a specific real file in this repository gets at least one
+test built from that file's actual content, not from a simplified fixture. Read the real file in the
+test. If the check is meant to fire, inject the triggering content into a copy of the real file and
+assert it fires; if it is meant to stay quiet, assert that against the file as it stands.
+
+Simplified fixtures are still worth having — they isolate the case and they name the intent. They are
+not sufficient on their own, because the thing they cannot test is whether you understood the input.
+
+**This is the same reasoning as RULE-05.** QA does not read `src/**`; it works from design section 6,
+so the test is not derived from the implementation it judges. A fixture hand-written by the author of
+the check is derived from the check, in the same way and with the same failure: it agrees with the
+code about what the world looks like. The real file is the independent source, and it is the only one
+available for a check that reads a specific file.
+
+Applies to `scripts/check-docs.mjs` and every `.claude/hooks/*.mjs` guard that resolves a real path —
+`guard-registry.mjs`, `guard-allowed-paths.mjs`, `guard-tracker-scope.mjs`, `guard-read-scope.mjs`,
+`guard-project-root.mjs`, `chat-guard.mjs`.
 
 ## What makes a test bad here
 

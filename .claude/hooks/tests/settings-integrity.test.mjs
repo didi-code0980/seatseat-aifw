@@ -56,14 +56,28 @@ const REQUIRED_DENY = [
 ];
 
 // matcher -> the hook scripts that must be wired to it, in order.
+//
+// chat-guard.mjs appears twice on purpose. It guards two transports: the tool transport
+// (Agent | Task | SendMessage) and the file transport (a write to 99-questions.md), and the file
+// transport only fires if the hook is wired to Edit|Write as well. Wiring it to one and not the
+// other leaves half of RULE-12 as prose — which is exactly how it was wrong before, when the hook
+// had no matcher at all.
+//
+// Order within Edit|Write matters: the path guards run first, so a question file written outside the
+// project or into the registry is refused on those grounds before RULE-12 is even considered.
 const REQUIRED_HOOKS = {
-  "Edit|Write": ["guard-project-root.mjs", "guard-registry.mjs", "guard-allowed-paths.mjs"],
+  "Edit|Write": [
+    "guard-project-root.mjs",
+    "guard-registry.mjs",
+    "guard-allowed-paths.mjs",
+    "chat-guard.mjs",
+  ],
   "mcp__clickup__.*": ["guard-tracker-scope.mjs"],
   "Agent|Task|SendMessage": ["chat-guard.mjs"],
   "Read|Grep|Glob|NotebookEdit": ["guard-read-scope.mjs"],
 };
 
-const ALL_HOOK_SCRIPTS = Object.values(REQUIRED_HOOKS).flat();
+const ALL_HOOK_SCRIPTS = [...new Set(Object.values(REQUIRED_HOOKS).flat())];
 
 function loadSettings() {
   const raw = fs.readFileSync(SETTINGS, "utf8");

@@ -53,7 +53,30 @@
       "Bash(echo \"LINT_EXIT=$?\")",
       "Bash(command -v docker)",
       "Bash(docker compose *)",
-      "Bash(grep -rhoE 'data-testid=\\\\{`[^`]*`\\\\}' src/)"
+      "Bash(grep -rhoE 'data-testid=\\\\{`[^`]*`\\\\}' src/)",
+      "Bash(git switch *)",
+      "Bash(node .claude/hooks/guard-allowed-paths.mjs)",
+      "Bash(echo \"  [exit=$?]\")",
+      "Bash(node .claude/hooks/chat-guard.mjs)",
+      "Bash(cp src/lib/data/mock/rooms.ts /tmp/rooms-mock.bak)",
+      "Bash(node -e 'const fs=require\\(\"fs\"\\);const f=\"src/lib/data/mock/rooms.ts\";let s=fs.readFileSync\\(f,\"utf8\"\\);s=s.replace\\(/export async function getRoom[\\\\s\\\\S]*$/,\"\"\\);fs.writeFileSync\\(f,s\\);')",
+      "Bash(cp /tmp/rooms-mock.bak src/lib/data/mock/rooms.ts)",
+      "Bash(rm /tmp/rooms-mock.bak)",
+      "Bash(node --test scripts/tests/*.test.mjs)",
+      "Bash(cp prisma/schema.prisma /tmp/schema.bak)",
+      "Bash(node -e 'const fs=require\\(\"fs\"\\);const f=\"prisma/schema.prisma\";let s=fs.readFileSync\\(f,\"utf8\"\\);s=s.replace\\(/datasource db \\\\{\\\\n  provider = \"postgresql\"\\\\n\\\\}/,`datasource db {\\\\n  provider  = \"postgresql\"\\\\n  directUrl = env\\(\"DIRECT_URL\"\\)\\\\n}`\\);fs.writeFileSync\\(f,s\\);')",
+      "Bash(export DATABASE_URL=\"postgresql://u:p@h:6543/db?pgbouncer=true\" DIRECT_URL=\"postgresql://u:p@h:5432/db\")",
+      "Bash(cp /tmp/schema.bak prisma/schema.prisma)",
+      "Bash(grep -n \"INV-0\\\\` + \\\\`9\\\\|^| INV-09\" .ai/registry/invariants.md)",
+      "Bash(echo \"verify: exit $?\")",
+      "Bash(pnpm hooks:test)",
+      "Bash(echo \"test:e2e: exit $?\")",
+      "Bash(cp eslint.config.mjs /tmp/e.bak)",
+      "Bash(node -e 'const fs=require\\(\"fs\"\\);let s=fs.readFileSync\\(\"eslint.config.mjs\",\"utf8\"\\);s=s.replace\\(`\"@prisma/client\",`,`\"@prisma/client\",\\\\n \"@supabase/supabase-js\",`\\);fs.writeFileSync\\(\"eslint.config.mjs\",s\\);')",
+      "Bash(cp /tmp/e.bak eslint.config.mjs)",
+      "Bash(rm /tmp/e.bak)",
+      "Bash(cp /tmp/i.bak .ai/standards/integrations.md)",
+      "Bash(rm /tmp/i.bak)"
     ],
     "deny": [
       "Bash(git push --force:*)",
@@ -66,6 +89,9 @@
       "mcp__clickup__clickup_send_chat_message",
       "mcp__clickup__clickup_search",
       "mcp__clickup__clickup_get_workspace_hierarchy"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   },
   "disableClaudeAiConnectors": true,
@@ -85,6 +111,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-allowed-paths.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/chat-guard.mjs\""
           }
         ]
       },

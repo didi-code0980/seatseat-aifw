@@ -52,8 +52,10 @@ jobs:
       # settings-integrity.test.mjs runs here: it is the second detector for settings.json being
       # clobbered by session permission grants. The first is `git diff .claude/settings.json`, which
       # only helps if a human looks.
+      # scripts/tests covers check-docs.mjs itself. The audit is a control like any other, and a
+      # control nobody tests is a control nobody has observed failing.
       - name: hook guards
-        run: node --test .claude/hooks/tests/*.test.mjs
+        run: node --test .claude/hooks/tests/*.test.mjs scripts/tests/*.test.mjs
 
       - name: Application scaffold present
         run: |

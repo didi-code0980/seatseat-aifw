@@ -4,12 +4,27 @@
 // exists as a file. RULE-15: six messages per pair per ticket, and exhaustion produces a BLOCKED
 // artifact rather than a longer conversation.
 //
-// Identity comes from the documented PreToolUse payload:
-//   agent_type present -> the caller is a subagent, and this may be agent-to-agent chat
-//   agent_type absent  -> the caller is the main thread, i.e. the orchestrator dispatching a stage
+// TWO TRANSPORTS, both guarded here.
 //
-// That distinction matters. Orchestrator dispatch uses the same tool as agent chat, and blocking
-// dispatch would stop the loop rather than constrain it.
+// 1. Tool transport — Agent | Task | SendMessage. Identity comes from the PreToolUse payload:
+//      agent_type present -> the caller is a subagent, and this may be agent-to-agent chat
+//      agent_type absent  -> the caller is the main thread
+//    That distinction matters: orchestrator dispatch uses the same tool as agent chat, and blocking
+//    dispatch would stop the loop rather than constrain it.
+//
+// 2. File transport — a write to `.ai/board/tickets/<ID>/99-questions.md`. This is the transport the
+//    session model actually uses (see .ai/standards/session-model.md): a question is a file write and
+//    an answer is an amendment to the answering agent's own artifact.
+//
+//    The file path cannot rely on agent_type. Under the session model each role runs as its OWN
+//    top-level session, so `developer` writing a question has no agent_type at all — it is the main
+//    thread of its own session. Identity therefore comes from the file's front-matter: `to:` is
+//    required, `from:` is optional and falls back to agent_type.
+//
+//    When the asker is unknown, the guard still blocks a write addressed to a JUDGE whose verdict is
+//    absent. That is sound rather than over-broad: every agent that could plausibly address
+//    `tech-lead-review` or `qa` is on the forbidden list for that pair, and no allowed edge in the
+//    topology points at either of them before their verdict exists.
 //
 // Fails OPEN when there is no active ticket, which is correct: outside a live ticket there is no
 // verdict to protect and no budget to spend.
@@ -120,6 +135,117 @@ try {
 }
 
 const tool = String(payload.tool_name ?? "");
+
+// ---------------------------------------------------------------------------------------------
+// File transport: a write to 99-questions.md.
+// ---------------------------------------------------------------------------------------------
+
+// Agents that pass judgement, and the file whose existence is that judgement. Addressing one of
+// these before its verdict exists is the RULE-12 violation, whoever is asking.
+const JUDGES = { "tech-lead-review": "04-review.md", qa: "06-test-report.md" };
+
+const QUESTIONS_FILE = "99-questions.md";
+
+function targetPath(toolInput) {
+  const v = toolInput?.file_path ?? toolInput?.path ?? toolInput?.notebook_path;
+  return typeof v === "string" ? v : null;
+}
+
+/** Every `to:` value in a block of text, in order, restricted to known agents. */
+function addressees(text) {
+  const out = [];
+  for (const m of text.matchAll(/^\s*to:\s*["']?([a-z-]+)["']?\s*$/gim)) {
+    if (AGENTS.has(m[1])) out.push(m[1]);
+  }
+  return out;
+}
+
+function firstFrom(text) {
+  const m = /^\s*from:\s*["']?([a-z-]+)["']?\s*$/im.exec(text);
+  return m && AGENTS.has(m[1]) ? m[1] : null;
+}
+
+if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(tool)) {
+  const raw = targetPath(payload.tool_input ?? {});
+  if (!raw) process.exit(0);
+
+  const rootF = projectRoot();
+  if (!rootF) process.exit(0);
+
+  const abs = path.isAbsolute(raw) ? raw : path.resolve(rootF, raw);
+  const rel = path.relative(rootF, abs).split(path.sep).join("/");
+
+  const m = /^\.ai\/board\/tickets\/([^/]+)\/99-questions\.md$/.exec(rel);
+  if (!m) process.exit(0); // not the chat file; other guards own this write
+
+  const ticketId = m[1];
+  const ticketDirF = path.join(rootF, ".ai/board/tickets", ticketId);
+  const ticketFileF = path.join(ticketDirF, "ticket.yaml");
+  if (!fs.existsSync(ticketFileF)) process.exit(0); // no active ticket: fail open
+
+  const input = payload.tool_input ?? {};
+  // Write replaces the file; Edit adds to what is already there. Counting the wrong one either
+  // under-counts a budget or blocks a question that was already asked and answered.
+  const added = String(input.content ?? input.new_string ?? "");
+  const existing = tool === "Write" || !fs.existsSync(abs) ? "" : fs.readFileSync(abs, "utf8");
+  const proposed = tool === "Write" ? added : existing + "\n" + added;
+
+  const asker = firstFrom(added) ?? payload.agent_type ?? null;
+  const newlyAddressed = addressees(added);
+
+  // RULE-12 — no addressing your judge before the judgement is on disk.
+  for (const to of new Set(newlyAddressed)) {
+    const verdict = JUDGES[to];
+    if (!verdict) continue;
+    if (fs.existsSync(path.join(ticketDirF, verdict))) continue;
+
+    const who = asker ? `${asker} may not` : "no agent may";
+    const pairNote =
+      asker && !FORBIDDEN.some((f) => f.pair.includes(asker) && f.pair.includes(to))
+        ? " That pair is not an allowed edge in the chat topology either."
+        : "";
+    die(
+      `${who} address ${to} in ${QUESTIONS_FILE} before ${verdict} exists for ticket ${ticketId} ` +
+        `(RULE-12). The verdict is written first; the conversation happens after it, or not at ` +
+        `all.${pairNote}`
+    );
+  }
+
+  // RULE-15 — six per pair per ticket, counted from the entries in the file.
+  const rawTicket = fs.readFileSync(ticketFileF, "utf8");
+  const ticketLines = rawTicket.split(/\r?\n/);
+
+  const counts = new Map();
+  for (const to of addressees(proposed)) counts.set(to, (counts.get(to) ?? 0) + 1);
+
+  for (const [to, count] of counts) {
+    // Prefer the exact pair. With no known asker, accept a single unambiguous `*->to` budget line;
+    // guessing between two would enforce the wrong budget silently, which is worse than not
+    // enforcing one at all.
+    const exact = asker ? `${asker}->${to}` : null;
+    const candidates = ticketLines.filter((l) => l.trim().startsWith(`${to}:`) === false && /->/.test(l));
+    const matching = exact
+      ? candidates.filter((l) => l.trim().startsWith(`${exact}:`))
+      : candidates.filter((l) => l.trim().split(":")[0].trim().endsWith(`->${to}`));
+    if (matching.length !== 1) continue;
+
+    const max = Number(/max:\s*(\d+)/.exec(matching[0])?.[1] ?? 6);
+    if (count > max) {
+      const key = matching[0].trim().split(":")[0].trim();
+      die(
+        `chat budget for ${key} on ${ticketId} is exhausted (${count}/${max}, RULE-15). ` +
+          `Emit a BLOCKED artifact with blocking_reason and stop.`
+      );
+    }
+  }
+
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Tool transport: Agent | Task | SendMessage.
+// ---------------------------------------------------------------------------------------------
+
 if (!/^(Agent|Task|SendMessage)$/.test(tool)) process.exit(0);
 
 const from = payload.agent_type;
