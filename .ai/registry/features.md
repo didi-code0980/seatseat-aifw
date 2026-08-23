@@ -1,6 +1,6 @@
 ---
 doc_version: 2
-last_updated: 2026-08-11
+last_updated: 2026-08-23
 governed_by: [RULE-01, RULE-17]
 ---
 
@@ -50,7 +50,8 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| ROO-01 | Room CRUD UI | ROO | PLANNED | INV-01, INV-04, INV-05, INV-06, INV-07, INV-10, INV-11 | First loop-validation slice. Auth guard deferred to AUT. |
+| ROO-01 | Room CRUD UI | ROO | DONE | INV-01, INV-04, INV-05, INV-06, INV-07, INV-10, INV-11 | First loop-validation slice. Auth guard deferred to AUT. Merged in PR #1, 2026-08-23. |
+
 ## SEA — Seats
 
 | ID | Title | Group | Status | Invariants touched | Notes |
@@ -60,6 +61,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
+| DEV-01 | Device CRUD UI | DEV | PLANNED | INV-04, INV-05, INV-06, INV-07 | Second CRUD slice — tests whether the ROO-01 pattern transfers. Mock-backed. |
 
 ## MEM — Members
 
