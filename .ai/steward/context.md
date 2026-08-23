@@ -65,6 +65,12 @@ was only ever asserted once.
 - **Hold the scope exactly.** Neither widened nor quietly narrowed. Where the work genuinely
   requires going outside it, do so and say in one line what and why — the operator named
   scope drift as a standing cost.
+- **Never ask the operator to open a pull request without handing them the link and the description.**
+  A branch name is not a request, it is homework. Give the compare URL, a title, and a body they can
+  paste — or a URL with title and body already prefilled. The same applies to any action delegated
+  back to them: the ask arrives complete, or it does not arrive. This is the general form of the
+  registry rule above — where a guard or a permission means the operator must press the key, the
+  thinking is still the agent's.
 - **On resuming after a gap, read the board before answering anything about state.** Run `/status`
   first. A resumed session holds the repository as it was when it suspended, and the operator has
   been working since. This prevents the fluent, confident, out-of-date answer, which is worse than
