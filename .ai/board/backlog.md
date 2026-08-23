@@ -14,24 +14,31 @@ file and does not touch `ticket.yaml` to make the view right.
 
 ## READY
 
-Tickets that pass the full Definition of Ready. The orchestrator dispatches the top row.
+Tickets that have been through SPEC and passed the full Definition of Ready. **READY means
+specified, sized, and safe to design** — the next stage for a row here is DESIGN, not SPEC.
 
 | # | Ticket | Title | Size | Depends on |
 |---|--------|-------|------|------------|
 
-Empty. `ROO-01` is at `BACKLOG` and has not been through SPEC; DoR also requires a size, which only
-DESIGN can judge.
+Empty. `ROO-01` passed through here at `2026-08-12T16:23:48Z` and is now `DONE` — see ARCHIVE.
+Nothing else can enter READY until a human adds a feature row to `.ai/registry/features.md`.
 
 ## BACKLOG
 
-Tickets that exist but have not passed the Definition of Ready. **Ordered.** A human reorders; the
-orchestrator takes the top.
+Tickets awaiting SPEC. **Ordered.** A human reorders; the orchestrator takes the top.
 
-| # | Ticket | Title | Blocked on |
-|---|--------|-------|------------|
-| 1 | ROO-01 | Room CRUD UI | Nothing. Needs `/spec` — its `feature_ids` resolves against the registry. |
+Under the current gate placement a ticket sits here until it has been specified — DoR is evaluated
+*after* SPEC. A row still at `BACKLOG` has not failed DoR; it has not reached it. A row showing a
+later state is in flight and appears here because this file has no in-flight section.
 
-`ROO-01` is first deliberately: it measures whether the loop closes, not how hard the domain is.
+| # | Ticket | Title | State | Blocked on |
+|---|--------|-------|-------|------------|
+
+Empty. `ROO-01` was the only row and it is now `DONE`. Nothing is waiting on SPEC, and nothing can
+be added here without a human first adding a feature row — see the section below.
+
+`ROO-01` was first deliberately: it measured whether the loop closes, not how hard the domain is.
+It closed, on the second attempt at every judging gate.
 
 ## Deseeded — waiting on registry rows
 
@@ -74,6 +81,11 @@ Tickets halted on something outside the loop: an unapproved ADR, an escalation, 
 | # | Ticket | Blocked on | Since |
 |---|--------|------------|-------|
 
+Empty. The R8 / INV-11 escalation that sat here from `2026-08-12T16:56:20Z` was resolved by a human
+and verified by execution at the second REVIEW. This row was carried stale for nine days because the
+board was not repaired when the escalation ended — the record of what actually happened is in
+`metrics.md` and `04-review.md`.
+
 ## ARCHIVE (last 20)
 
 Most recent first. Older rows are dropped, not moved elsewhere — the ticket folders and Git are the
@@ -81,3 +93,12 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
+| ROO-01 | 2026-08-23T05:29:36Z | **Not opened** — see the note below | 0 |
+
+**ROO-01 is DONE but unshipped, and the two are recorded separately on purpose.** All four gates
+passed, `pnpm verify` and `pnpm test:e2e` both exit 0, and the Definition of Done holds on every
+item except the `allowed_paths` subset check — which fails on 27 files of model, registry and
+steward work done alongside this ticket, not on anything ROO-01 wrote. `/ship` step 4 could not run
+at all: opening a pull request needs commits on a pushed branch, `gh` is not installed, the branch
+has zero commits and no upstream, and RULE-09 makes committing human-only. Whoever opens the PR fills
+in the column.

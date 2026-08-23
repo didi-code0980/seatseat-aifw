@@ -11,7 +11,12 @@ Run in the **Tech Lead session**, which is persistent and lives until the end of
 into `ticket.yaml`
 **Template:** `.ai/templates/tech-design.md`
 
-**Gate:** all seven sections complete; `allowed_paths` enumerated.
+**Gate:** all seven sections complete; `allowed_paths` enumerated; `size` set.
+
+`size` is your verdict, counted from the `allowed_paths` you just enumerated — S, M, L or XL. It is a
+different field from the BA's `size_estimate`, which gates DoR and is an estimate from the story.
+When they disagree the verdict wins, and the gap is worth reporting: a story estimated M that designs
+out to L means the story was under-specified, so route it back to `ba` rather than splitting silently.
 
 Nothing under `src/**` can be written until this stage fills `allowed_paths` — the guard blocks on
 an empty list by design. Section 6 is what RULE-05 makes load-bearing: get it wrong and QA cannot

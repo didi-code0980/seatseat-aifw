@@ -1,6 +1,6 @@
 # Template: ticket.yaml. Copy to .ai/board/tickets/<ID>/ticket.yaml.
 # ticket.yaml is authoritative; backlog.md is a view (see .ai/01-operating-model.md).
-# state enum: IDEA TRIAGE BACKLOG READY SPEC DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
 id: ROO-01
 title: ""
 feature_ids: []
@@ -8,7 +8,8 @@ group: ROO
 state: BACKLOG
 owner: ""
 branch: ""
-size: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
 depends_on: []
 invariants_touched: []
 allowed_paths: []

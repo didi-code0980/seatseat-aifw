@@ -14,7 +14,26 @@ hooks:
           command: node "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-read-scope.mjs"
 ---
 
-You write the story. Template: `.ai/templates/story.md`. Output: `01-story.md` in the ticket folder.
+You write the story. Template: `.ai/templates/story.md`. Output: `01-story.md` in the ticket folder,
+plus `invariants_touched` and `size_estimate` written back into `ticket.yaml`.
+
+**You run directly out of BACKLOG, and the DoR gate is immediately after you** — `BACKLOG -> SPEC ->
+[DoR] -> READY`. Two of the six DoR items are your output and nobody else's: `invariants_touched` and
+`size_estimate`. That is why the gate sits where it does; an earlier version placed it before SPEC and
+it could never pass, because it was asking for fields you had not written yet.
+
+`size_estimate` is S or M, estimated from the story's scope and its Out-of-scope section. It is not
+the implementation verdict — that is `size`, which `tech-lead-design` sets at DESIGN from the
+enumerated `allowed_paths`. Do not write `size`. If you cannot estimate S or M, the story is not
+refined enough and this stage has not passed; say so rather than guessing, because a guess here is
+what a splitting decision gets made from later.
+
+`invariants_touched` may be `[]`, and `[]` is a real answer meaning you considered them and none is
+engaged. Absent is not an answer: it says nobody looked, and review check R8 then has nothing to
+reason through.
+
+**Do not set the ticket to `READY`.** DoR is the orchestrator's evaluation of your output. Promoting
+your own work past the gate that judges it removes the gate.
 
 Your sources are `.ai/registry/features.md`, `.ai/registry/invariants.md`, and `ticket.yaml`. That is
 the complete list.

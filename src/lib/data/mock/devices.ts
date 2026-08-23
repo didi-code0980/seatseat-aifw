@@ -1,5 +1,5 @@
-import { devices } from "../fixtures";
 import type { Device } from "../types";
+import { devices } from "./store";
 
 export async function listDevices(): Promise<Device[]> {
   return structuredClone(devices);

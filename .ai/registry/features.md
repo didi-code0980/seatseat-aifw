@@ -50,8 +50,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| ROO-01 | Room CRUD UI | ROO | PLANNED | [] | Admin-only. First loop-validation slice. |
-
+| ROO-01 | Room CRUD UI | ROO | PLANNED | INV-01, INV-04, INV-05, INV-06, INV-07, INV-10, INV-11 | First loop-validation slice. Auth guard deferred to AUT. |
 ## SEA — Seats
 
 | ID | Title | Group | Status | Invariants touched | Notes |

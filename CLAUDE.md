@@ -50,10 +50,17 @@ canvas. Gilroy or Manrope for UI, IBM Plex Mono for codes and IDs. Details in
 - **No invention.** No invented feature IDs, acceptance criteria, database fields, or invariants.
   Missing information becomes a placeholder plus an entry under `OPEN QUESTIONS`.
 - **Additive only.** Do not delete or rewrite a file you did not create in the current run.
-- **Humans commit and merge.** Leave the tree dirty; see RULE-09.
+- **Humans merge. The `orchestrator` commits, at `/ship` only.** Every stage leaves the tree dirty;
+  `/ship` classifies it, commits each body of work on its own branch, and opens the pull requests.
+  Merging is permanently human — RULE-09. Scope and limits in
+  [.ai/standards/git-conventions.md](.ai/standards/git-conventions.md).
 
 ## Commands
 
-`/idea` `/triage` `/next-ticket` `/spec` `/design` `/implement` `/review` `/qa` `/ship`
-`/sprint-status` `/pull-tickets` `/sync-tracker` `/docs-audit` — one file each in
-[.claude/commands/](.claude/commands/). They dispatch; the policy lives in the operating model.
+**The loop**, which builds the product — `/idea` `/triage` `/next-ticket` `/spec` `/design`
+`/implement` `/review` `/qa` `/ship` `/sprint-status` `/pull-tickets` `/sync-tracker` `/docs-audit`
+
+**The model**, which maintains the loop — `/thuki` (steward: rules, hooks, checks, registry; never
+ticket work) and `/status` (reads the board; reports what is true and what waits on a human).
+
+One file each in [.claude/commands/](.claude/commands/); policy lives in the operating model.

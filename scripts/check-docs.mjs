@@ -174,6 +174,37 @@ for (const file of allDocs) {
   }
 }
 
+// --- Scope: which documents a check may read --------------------------------------------------
+//
+// **A check whose scope includes agent-produced artifacts gets worked around, not reported.** The
+// reasoning is in "What a check may be scoped to" in `.ai/standards/testing-standards.md`; the short
+// version is that a finding aimed at a human buys a decision, and the same finding aimed at an agent
+// mid-stage is an obstacle between it and its gate, so the cheapest way through is to make it stop
+// appearing. Both roads end at a green audit and only one of them means anything.
+//
+// `.ai/board/**` is agent output — tickets, stage artifacts, `backlog.md` and `metrics.md` alike.
+// `.claude/**` is not: agents and commands are human-authored configuration, and no stage writes
+// there.
+//
+// D5, D6 and D9 are all scoped by this. Each was narrowed after a real false positive:
+//   D9  the first story written hit the front-matter requirement and had `doc_version` pasted into
+//       it, which is the failure mode exactly — satisfied rather than reported
+//   D5  `tech-lead-design` wrote `/rooms` in `02-design.md`, a Next.js route, and D5 read it as a
+//       slash command with no definition. The agent reported it instead of deleting the route name,
+//       which is the right behaviour and not the one to design around
+//   D6  same corpus, same exposure: a design enumerating `allowed_paths` names files that do not
+//       exist yet, because creating them is the next stage's job
+const GOVERNED_ROOTS = [".ai/registry/", ".ai/standards/", ".ai/templates/"];
+const GOVERNED_FILES = [".ai/00-charter.md", ".ai/01-operating-model.md"];
+
+/** A human-owned `.ai/` document: permanent, versioned, and not written by any stage. */
+const isGovernedDoc = (r) =>
+  GOVERNED_ROOTS.some((root) => r.startsWith(root)) || GOVERNED_FILES.includes(r);
+
+/** Anything a check may read: human-owned `.ai/`, all of `.claude/`, and CLAUDE.md. */
+const isHumanOwned = (r) =>
+  isGovernedDoc(r) || r.startsWith(".claude/") || r === "CLAUDE.md";
+
 // --- D5: commands referenced have a definition -----------------------------------------------
 
 const cmdDir = path.join(ROOT, ".claude/commands");
@@ -186,6 +217,9 @@ const commands = new Set(
 for (const file of allDocs) {
   const r = rel(file);
   if (r.startsWith(".claude/commands/")) continue;
+  // Board artifacts are out of scope. `/rooms` in a design is a route, not a command, and a check
+  // that cannot tell them apart is a check an agent has to argue with to finish its stage.
+  if (!isHumanOwned(r)) continue;
   const text = fs.readFileSync(file, "utf8");
   // A slash-command token: preceded by a non-word character, then /name, ending cleanly.
   for (const m of new Set(text.match(/(?<![\w./-])\/([a-z][a-z0-9-]*)(?![\w./-])/g) ?? [])) {
@@ -216,6 +250,10 @@ function pathCandidates(text) {
 
 for (const file of aiFiles) {
   const r = rel(file);
+  // Human-owned `.ai/` documents only. A design's section 5 enumerates `allowed_paths` for files the
+  // NEXT stage creates, so "does not exist on disk" is the expected state at the moment it is
+  // written — the finding would be raised against an agent for correctly describing future work.
+  if (!isGovernedDoc(r)) continue;
   for (const cand of pathCandidates(fs.readFileSync(file, "utf8"))) {
     // A glob is a statement about a set, not a claim that one file exists.
     const concrete = cand.replace(/\/?\*\*.*$/, "").replace(/\*.*$/, "");
@@ -279,9 +317,31 @@ for (const [id, rule] of rules) {
 }
 
 // --- D9: governed_by versions, and front-matter presence ---------------------------------------
+//
+// Scoped to documents a human owns and versions. Not every markdown file under `.ai/`.
+//
+// Document front-matter — `doc_version`, `last_updated`, `governed_by` — describes a governance
+// document: something permanent, versioned, and bumped by a human when a rule it cites changes. A
+// board artifact is none of those. `01-story.md` carries artifact front-matter (`ticket`, `stage`,
+// `agent`, `gate`, `chat_before_verdict`), is produced by one agent at one stage, and is deleted
+// with the ticket. It has no version to bump and no rule set to track, so requiring the three fields
+// asked it to be a kind of document it is not.
+//
+// The first version of D9 read every `.md` under `.ai/`, board included. The result was predictable
+// in hindsight: the first agent to produce a story hit the failure and pasted the three fields into
+// its artifact to clear it. That is the failure mode a check on agent output always has — it is
+// satisfied, not reported, and the satisfying is cheaper than the reporting. See "What a check may
+// be scoped to" in `.ai/standards/testing-standards.md`.
+//
+// `.ai/board/**` is therefore out of scope entirely, and that includes `backlog.md` and `metrics.md`:
+// both are agent-written, and a check an agent can silence by editing its own output measures the
+// agent's compliance rather than the documents.
+//
+// `isGovernedDoc` is defined once, above D5, and shared by D5, D6 and D9.
 
 for (const file of aiFiles) {
   const r = rel(file);
+  if (!isGovernedDoc(r)) continue;
   const text = fs.readFileSync(file, "utf8");
   const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
   if (!fm) {
@@ -479,6 +539,117 @@ if (eslintText) {
   );
   for (const hit of hits) {
     err("D12", "eslint.config.mjs", `no-restricted-imports names ${hit.trim()} — ${SECOND_DOOR}`);
+  }
+}
+
+// --- D13: every Definition of Ready item is satisfiable ----------------------------------------
+//
+// A gate that requires a field no reachable stage produces is unsatisfiable, and nothing else here
+// detects that. It is a structural defect, not a typo: the document reads correctly, every sentence
+// is true, and the loop deadlocks the first time a ticket tries to pass the gate.
+//
+// It took three attempts to place this gate, which is the reason the check exists rather than a
+// footnote to it. First `size` was produced at DESIGN and required at READY. Then the field was split
+// and the estimate moved to SPEC — still after the gate. D13 caught that one on its first run. The
+// third attempt moved the gate instead of the field, to the SPEC -> READY transition, so that the
+// two items the BA produces are read after the BA has produced them.
+//
+// The rule: each DoR item names the stage that produces it, and that stage sits at or before READY.
+// Attribution is what makes the check possible at all — an item that attributes nothing cannot be
+// shown to be satisfiable, and the attribution is what a reader needs anyway to know whose job it is.
+//
+// **Position comes from the state enum in `.ai/templates/ticket.yaml`, which must be in lifecycle
+// order.** That coupling is deliberate but sharp-edged: reordering the lifecycle without reordering
+// the enum leaves this check measuring against the old order and silently agreeing with a document
+// that has changed underneath it. D10 holds the enum and the stage table to the same membership; it
+// does not check order, because order is only meaningful here.
+//
+// Two accepted forms, because the document has used both:
+//   - a table with `Produced at` and `By` columns, which is preferred: the attribution is a field
+//     rather than a sentence, so it cannot be written ambiguously
+//   - `- ` bullets carrying an inline attribution such as "set by the BA at SPEC"
+//
+// `human` counts as a producer and is treated as BACKLOG: the human step between TRIAGE and BACKLOG
+// is where registry rows and approved ADRs come from, and those are legitimately not agent output.
+
+const dorSection = sections(opModel ?? "").get("Definition of Ready");
+
+if (opModel && dorSection === undefined) {
+  err("D13", ".ai/01-operating-model.md", "has no `## Definition of Ready` section");
+} else if (dorSection !== undefined) {
+  // Lifecycle order comes from the state enum, which D10 already holds to the stage ownership table.
+  const enumLine = /^#\s*state enum:\s*(.+)$/m.exec(ticketTpl ?? "")?.[1] ?? "";
+  const lifecycle = enumLine.trim().split(/\s+/).filter(Boolean);
+  const readyAt = lifecycle.indexOf("READY");
+
+  if (readyAt === -1) {
+    err("D13", ".ai/templates/ticket.yaml", "state enum has no READY, so DoR cannot be positioned");
+  } else {
+    // Table form first. A row is `| n | item | Produced at | By |`; only the `Produced at` cell is
+    // read for position, so a stage named in the item text cannot be mistaken for its producer.
+    const items = [];
+    for (const line of dorSection.split(/\r?\n/)) {
+      const cells = /^\s*\|(.+)\|\s*$/.exec(line);
+      if (cells) {
+        const parts = cells[1].split("|").map((c) => c.trim());
+        if (parts.length < 4) continue;
+        if (/^-+$/.test(parts[0])) continue; // separator
+        if (/^#$/.test(parts[0]) || /^item$/i.test(parts[1])) continue; // header
+        items.push({ label: parts[1], attribution: `${parts[2]} ${parts[3]}`, form: "table" });
+        continue;
+      }
+      if (/^-\s+/.test(line)) items.push({ label: line, attribution: line, form: "bullet" });
+      else if (items.length && /^\s+\S/.test(line) && items[items.length - 1].form === "bullet") {
+        items[items.length - 1].label += " " + line.trim();
+        items[items.length - 1].attribution += " " + line.trim();
+      }
+    }
+
+    if (items.length === 0) {
+      err("D13", ".ai/01-operating-model.md", "Definition of Ready lists no items");
+    }
+
+    for (const item of items) {
+      const label = item.label.replace(/\s+/g, " ").slice(0, 60);
+      const source = item.attribution;
+
+      // In a table the `Produced at` cell IS the attribution, so a bare stage name is enough. In a
+      // bullet it is prose, and only `at SPEC` / `by DESIGN` count — "dependencies `DONE`" is a
+      // condition on OTHER tickets, and reading its `DONE` as this item's producer would report a
+      // defect that is not there.
+      const named = lifecycle.filter((s) =>
+        item.form === "table"
+          ? new RegExp(`\\b${s}\\b`).test(source)
+          : new RegExp(`\\b(?:at|by|during|from)\\s+\`?${s}\`?\\b`).test(source)
+      );
+      const byHuman =
+        item.form === "table"
+          ? /\bhumans?\b/i.test(source)
+          : /\b(?:by|at)\s+(?:a\s+)?humans?\b/i.test(source);
+
+      if (named.length === 0 && !byHuman) {
+        err(
+          "D13",
+          ".ai/01-operating-model.md",
+          `DoR item "${label}…" names no producing stage, so it cannot be shown to be satisfiable`
+        );
+        continue;
+      }
+
+      // `human` sits at the BACKLOG step, which is before READY, so it can never be the late one.
+      const positions = named.map((s) => ({ stage: s, at: lifecycle.indexOf(s) }));
+      const late = positions.filter((p) => p.at > readyAt);
+
+      if (late.length > 0 && late.length === positions.length && !byHuman) {
+        err(
+          "D13",
+          ".ai/01-operating-model.md",
+          `DoR item "${label}…" is produced at ${late.map((p) => p.stage).join(", ")}, which is ` +
+            `after READY in the lifecycle. DoR gates READY, so this item can never be satisfied — ` +
+            `the ticket cannot reach the stage that would set it.`
+        );
+      }
+    }
   }
 }
 

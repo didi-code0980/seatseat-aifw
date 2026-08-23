@@ -79,7 +79,10 @@ function run(root) {
   const byCheck = new Map();
   let current = null;
   for (const line of stdout.split("\n")) {
-    const header = /^(?:FAIL|WARN)\s+(D\d+)\b/.exec(line);
+    // PENDING is a header too. Without it, a PENDING block's entries were appended to whichever
+    // check was last opened — so a fixture that happens to mention a Phase B path could add a
+    // finding to an unrelated check and decide an assertion.
+    const header = /^(?:FAIL|WARN|PENDING)\s+(D\d+)\b/.exec(line);
     if (header) {
       current = header[1];
       byCheck.set(current, []);
@@ -442,4 +445,377 @@ test("this repository's real eslint.config.mjs, with one Supabase entry added, f
   const dirty = run(project(LEDGER + UNISSUED, "x", { ...decisions("ADR-002"), "eslint.config.mjs": injected }));
   assert.equal(dirty.findings("D12").length, 1, `real config must not hide the entry: ${dirty.stdout}`);
   assert.match(dirty.findings("D12")[0], /@supabase\/supabase-js/);
+});
+
+// --- D9: scoped to documents a human owns ------------------------------------------------------
+//
+// D9 requires doc_version, last_updated and governed_by. It used to read every .md under .ai/,
+// which included agent-produced board artifacts. The first story written under that scope failed it
+// and the fields were pasted into the artifact to clear the failure — the check was satisfied rather
+// than reported, which is what a check on agent output gets.
+//
+// The real-file test below is the one that matters, per "Fixtures that share the implementation's
+// assumptions" in testing-standards.md. A hand-written stub of a story would carry whatever
+// front-matter the author of the scope rule imagined a story carries. The real artifact carries what
+// the template actually produces.
+
+const realStory = () =>
+  fs.readFileSync(path.join(REPO, ".ai/board/tickets/ROO-01/01-story.md"), "utf8");
+
+test("the real 01-story.md is not a D9 finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/board/tickets/ROO-01/01-story.md": realStory(),
+  }));
+  assert.deepEqual(
+    r.findings("D9"),
+    [],
+    "a board artifact carries artifact front-matter, not document front-matter"
+  );
+});
+
+test("the real 01-story.md carries artifact front-matter and no document front-matter", () => {
+  // Guards the premise rather than the check. If a future story does carry doc_version, this test
+  // fails and someone reads why — instead of the scope rule quietly protecting a pasted field.
+  const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(realStory());
+  assert.ok(fm, "the story has no front-matter at all");
+  for (const field of ["ticket", "stage", "agent", "gate", "chat_before_verdict"]) {
+    assert.match(fm[1], new RegExp(`^${field}:`, "m"), `artifact front-matter is missing ${field}`);
+  }
+  for (const field of ["doc_version", "last_updated", "governed_by"]) {
+    assert.ok(
+      !new RegExp(`^${field}:`, "m").test(fm[1]),
+      `${field} is back in the artifact — the workaround has returned`
+    );
+  }
+});
+
+test("D9 is scoped by path, not switched off: the same artifact under .ai/standards/ is reported", () => {
+  // The failure mode of a narrowing is narrowing to nothing. This is the same bytes as the test
+  // above, moved into a plane a human owns, and all three findings must appear.
+  const r = run(project(LEDGER + UNISSUED, "x", { ".ai/standards/probe2.md": realStory() }));
+  const d9 = r.findings("D9").filter((l) => l.includes("probe2.md"));
+  assert.equal(d9.length, 3, `expected all three fields reported, got: ${d9.join(" | ")}`);
+  assert.ok(d9.some((l) => /no doc_version/.test(l)));
+  assert.ok(d9.some((l) => /no last_updated/.test(l)));
+  assert.ok(d9.some((l) => /no governed_by/.test(l)));
+});
+
+test("a registry document with no front-matter still fails D9", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/probe3.md": "# No front-matter here\n",
+  }));
+  assert.equal(r.code, 1);
+  assert.equal(r.findings("D9").length, 1);
+  assert.match(r.findings("D9")[0], /probe3\.md: has no front-matter/);
+});
+
+test("the operating model and the charter stay in scope", () => {
+  // Neither is under .ai/registry/, and both are human-owned. 01-operating-model.md cites more rules
+  // in governed_by than any other document, so it is where a rule-version bump goes stale first.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/00-charter.md": "# Charter\n",
+    ".ai/01-operating-model.md": "# Operating model\n",
+  }));
+  const named = r.findings("D9").filter((l) => /00-charter|01-operating-model/.test(l));
+  assert.equal(named.length, 2, `both must be checked, got: ${named.join(" | ")}`);
+});
+
+test("templates stay in scope", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", { ".ai/templates/story.md": "# Story template\n" }));
+  assert.equal(r.findings("D9").filter((l) => l.includes("templates/story.md")).length, 1);
+});
+
+test("a rule-version bump the document has not caught up with still fails D9", () => {
+  // The half of D9 that does not care about presence: governed_by naming a rule at a version above
+  // the document's own. This is step 4 of "Changing a rule" in rules.md.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/rules.md": FRONT + "| RULE-01 | Registry is read-only. | 2 | CLAUDE.md |\n",
+  }));
+  const stale = r.findings("D9").filter((l) => /RULE-01 at v2 but doc_version is 1/.test(l));
+  assert.ok(stale.length > 0, `expected a version-drift finding, got:\n${r.stdout}`);
+});
+
+test("board files other than tickets are out of scope too", () => {
+  // backlog.md and metrics.md are written by the orchestrator. A check an agent can silence by
+  // editing its own output measures compliance, not the document.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/board/backlog.md": "# Backlog\n",
+    ".ai/board/metrics.md": "# Metrics\n",
+  }));
+  assert.deepEqual(r.findings("D9").filter((l) => l.includes(".ai/board/")), []);
+});
+
+// --- D13: every Definition of Ready item is satisfiable ----------------------------------------
+
+const ENUM = "# state enum: IDEA TRIAGE BACKLOG READY SPEC DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE";
+
+/** An operating model with the given DoR bullet lines. */
+const OPMODEL = (items) =>
+  FRONT + "# Operating model\n\n## Definition of Ready\n\n" + items.join("\n") + "\n\n## WIP\n\nWIP = 1.\n";
+
+const dorProject = (items, opts = {}) =>
+  project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002"),
+    ".ai/templates/ticket.yaml": (opts.enumLine ?? ENUM) + "\nid: X\n",
+    ".ai/01-operating-model.md": OPMODEL(items),
+  });
+
+test("a DoR item produced before READY passes D13", () => {
+  const r = run(dorProject(["- `feature_ids` non-empty. Added by a human at BACKLOG."]));
+  assert.deepEqual(r.findings("D13"), []);
+});
+
+test("a DoR item produced after READY fails D13", () => {
+  // The defect this check exists for: DoR gates READY, so a field only SPEC can set is unreachable.
+  const r = run(dorProject(["- `size_estimate` is S or M. Set by the BA at SPEC from the story."]));
+  assert.equal(r.code, 1);
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /produced at SPEC, which is after READY/);
+  assert.match(r.findings("D13")[0], /can never be satisfied/);
+});
+
+test("DESIGN is also after READY", () => {
+  const r = run(dorProject(["- `allowed_paths` enumerated at DESIGN."]));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /produced at DESIGN/);
+});
+
+test("an item attributing no stage fails D13", () => {
+  const r = run(dorProject(["- `schema_delta` is `none`, or an approved ADR is linked"]));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /names no producing stage/);
+});
+
+test("a bare stage mention is not an attribution", () => {
+  // "dependencies DONE" is a condition on OTHER tickets. Reading its DONE as this item's producer
+  // would report a defect that is not there.
+  const r = run(dorProject(["- dependencies `DONE`"]));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /names no producing stage/, "must not claim it is produced at DONE");
+});
+
+test("`by a human` counts as a producer and is never late", () => {
+  const r = run(dorProject(["- every ID present in `features.md`, put there by a human"]));
+  assert.deepEqual(r.findings("D13"), []);
+});
+
+test("READY itself is at or before READY", () => {
+  const r = run(dorProject(["- the orchestrator confirms it at READY."]));
+  assert.deepEqual(r.findings("D13"), []);
+});
+
+test("an item continued on following lines is read whole", () => {
+  const r = run(dorProject([
+    "- `size_estimate` is S or M.",
+    "  Set by the BA at SPEC from the story's scope and its",
+    "  Out-of-scope section.",
+  ]));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /produced at SPEC/);
+});
+
+test("an item naming one reachable stage among several passes", () => {
+  const r = run(dorProject(["- set by a human at BACKLOG, and re-checked at DESIGN."]));
+  assert.deepEqual(r.findings("D13"), []);
+});
+
+test("a missing Definition of Ready section is reported", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002"),
+    ".ai/templates/ticket.yaml": ENUM + "\nid: X\n",
+    ".ai/01-operating-model.md": FRONT + "# Operating model\n\n## WIP\n\nWIP = 1.\n",
+  }));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /no `## Definition of Ready` section/);
+});
+
+test("an empty Definition of Ready is reported", () => {
+  const r = run(dorProject([]));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /lists no items/);
+});
+
+test("a state enum with no READY is reported against the template", () => {
+  const r = run(dorProject(["- set by a human at BACKLOG."], { enumLine: "# state enum: IDEA BACKLOG DONE" }));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /state enum has no READY/);
+});
+
+// --- built from the real 01-operating-model.md --------------------------------------------------
+//
+// Per "Fixtures that share the implementation's assumptions" in testing-standards.md. A DoR written
+// by the author of this check would use the phrasing the check expects; the real document does not.
+
+const realOpModel = () => fs.readFileSync(path.join(REPO, ".ai/01-operating-model.md"), "utf8");
+const realTicketTpl = () => fs.readFileSync(path.join(REPO, ".ai/templates/ticket.yaml"), "utf8");
+
+const realDorProject = (opModel) =>
+  project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002"),
+    ".ai/01-operating-model.md": opModel,
+    ".ai/templates/ticket.yaml": realTicketTpl(),
+  });
+
+test("the real Definition of Ready is satisfiable", () => {
+  // Every item must attribute a stage, and every attributed stage must sit at or before READY. This
+  // is the third placement of this gate; the first two failed it.
+  const r = run(realDorProject(realOpModel()));
+  assert.deepEqual(r.findings("D13"), [], "the real DoR should be clean under the current ordering");
+});
+
+test("D13 catches a regression injected into the real 01-operating-model.md", () => {
+  // A check that is green can be green because it is broken. This moves one real DoR item's producer
+  // past the gate, in the real document, and requires the check to notice.
+  const model = realOpModel();
+  const regressed = model.replace(
+    /^(\|\s*5\s*\|[^|]*\|\s*)SPEC(\s*\|)/m,
+    "$1DESIGN$2"
+  );
+  assert.notEqual(regressed, model, "DoR row 5 not found — update this test to match the document");
+
+  const r = run(realDorProject(regressed));
+  assert.equal(r.findings("D13").length, 1, `expected one finding, got:\n${r.stdout}`);
+  assert.match(r.findings("D13")[0], /produced at DESIGN, which is after READY/);
+});
+
+test("D13 catches the enum falling out of lifecycle order", () => {
+  // Position comes from the state enum. Reordering the lifecycle without reordering the enum would
+  // leave the check measuring against the old order and agreeing with a document that has changed.
+  const staleEnum = realTicketTpl().replace(
+    "# state enum: IDEA TRIAGE BACKLOG SPEC READY",
+    "# state enum: IDEA TRIAGE BACKLOG READY SPEC"
+  );
+  assert.notEqual(staleEnum, realTicketTpl(), "enum line not found — update this test");
+
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002"),
+    ".ai/01-operating-model.md": realOpModel(),
+    ".ai/templates/ticket.yaml": staleEnum,
+  }));
+  assert.ok(
+    r.findings("D13").some((l) => /size_estimate/.test(l) && /after READY/.test(l)),
+    `a stale enum must surface as unsatisfiable DoR items, got:\n${r.stdout}`
+  );
+});
+
+test("a table DoR reads the Produced at column, not the item text", () => {
+  // The item text of row 3 contains the word DONE. Only the `Produced at` cell is the attribution.
+  const table = [
+    "| # | Item | Produced at | By |",
+    "|---|------|-------------|-----|",
+    "| 1 | Every ticket in `depends_on` is `DONE` | BACKLOG | a human |",
+  ];
+  const r = run(dorProject(table));
+  assert.deepEqual(r.findings("D13"), [], "DONE in the item text must not be read as the producer");
+});
+
+test("a table row whose Produced at is after READY fails", () => {
+  const table = [
+    "| # | Item | Produced at | By |",
+    "|---|------|-------------|-----|",
+    "| 1 | `allowed_paths` enumerated | DESIGN | `tech-lead-design` |",
+  ];
+  const r = run(dorProject(table));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /produced at DESIGN, which is after READY/);
+});
+
+test("a table row with an empty Produced at cell fails", () => {
+  const table = [
+    "| # | Item | Produced at | By |",
+    "|---|------|-------------|-----|",
+    "| 1 | `schema_delta` is `none` |  |  |",
+  ];
+  const r = run(dorProject(table));
+  assert.equal(r.findings("D13").length, 1);
+  assert.match(r.findings("D13")[0], /names no producing stage/);
+});
+
+// --- D5 and D6: scoped the same way D9 is -------------------------------------------------------
+//
+// Both used to read agent-produced board artifacts. `tech-lead-design` wrote `/rooms` — a Next.js
+// route — into 02-design.md, and D5 reported it as a slash command with no definition. That agent
+// raised the finding instead of renaming the route, which is the correct behaviour and precisely the
+// one not to depend on: the cheap way out is to make the finding stop appearing.
+//
+// D6 has the same exposure for a different reason. A design's section 5 enumerates `allowed_paths`
+// for files the NEXT stage creates, so "does not exist on disk" is the expected state at the moment
+// the design is written.
+//
+// Real artifacts below, not stubs. A hand-written design would contain whatever route names the
+// author of the scope rule imagined; the real one contains what the Tech Lead actually wrote.
+
+const realDesign = () =>
+  fs.readFileSync(path.join(REPO, ".ai/board/tickets/ROO-01/02-design.md"), "utf8");
+
+test("the real 02-design.md contains route-shaped tokens", () => {
+  // If this stops being true the two tests below stop proving anything, and would pass silently.
+  assert.match(realDesign(), /(?<![\w./-])\/rooms(?![\w./-])/, "02-design.md no longer names /rooms");
+});
+
+test("a route in a board artifact is not a D5 finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/board/tickets/ROO-01/02-design.md": realDesign(),
+  }));
+  assert.deepEqual(r.findings("D5"), [], "/rooms is a route in agent output, not a slash command");
+});
+
+test("D5 is scoped by path, not switched off: the same bytes under .ai/standards/ are reported", () => {
+  // The failure mode of a narrowing is narrowing to nothing, and a check that fires on no file
+  // passes everywhere. Same content, human-owned path.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/standards/probe-d5.md": FRONT + "The route is /rooms and it lists rooms.\n",
+  }));
+  const d5 = r.findings("D5").filter((l) => l.includes("probe-d5.md"));
+  assert.equal(d5.length, 1, `expected one D5 finding, got:\n${r.stdout}`);
+  assert.match(d5[0], /references \/rooms, which has no file in \.claude\/commands\//);
+});
+
+test("D5 still reads .claude/**, which is human-authored configuration", () => {
+  // Narrowing to `.ai/registry|standards|templates` alone would have dropped the agent and command
+  // definitions, which is most of what D5 is for.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".claude/agents/probe.md": "Run /not-a-command and stop.\n",
+  }));
+  const d5 = r.findings("D5").filter((l) => l.includes(".claude/agents/probe.md"));
+  assert.equal(d5.length, 1, `expected D5 to cover .claude/**, got:\n${r.stdout}`);
+});
+
+test("a not-yet-created path in a board artifact is not a D6 finding", () => {
+  // package.json makes D6 strict; without it the phase-aware branch defers src/ paths to PENDING
+  // and this test would pass without exercising the scope rule at all.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    "package.json": "{}",
+    ".ai/board/tickets/ROO-01/02-design.md":
+      "allowed_paths:\n- `src/app/(app)/rooms/page.tsx`\n- `src/lib/data/mock/rooms.ts`\n",
+  }));
+  assert.deepEqual(r.findings("D6"), [], "a design names files the next stage creates");
+});
+
+test("D6 is scoped by path, not switched off: the same bytes under .ai/standards/ are reported", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    "package.json": "{}",
+    ".ai/standards/probe-d6.md": FRONT + "See `src/lib/data/nonexistent.ts`.\n",
+  }));
+  const d6 = r.findings("D6").filter((l) => l.includes("probe-d6.md"));
+  assert.equal(d6.length, 1, `expected one D6 finding, got:\n${r.stdout}`);
+  assert.match(d6[0], /src\/lib\/data\/nonexistent\.ts, which does not exist on disk/);
+});
+
+test("D5, D6 and D9 agree on what is out of scope", () => {
+  // One definition, three consumers. If they drift, a board artifact is exempt from one check and
+  // not the others, which is worse than either policy applied consistently.
+  const artifact = FRONT + "Run /rooms. See `src/lib/data/nonexistent.ts`.\n";
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/board/metrics.md": artifact,
+    ".ai/board/backlog.md": artifact,
+    ".ai/board/tickets/ROO-01/04-review.md": artifact,
+  }));
+  for (const check of ["D5", "D6", "D9"]) {
+    assert.deepEqual(
+      r.findings(check).filter((l) => l.includes(".ai/board/")),
+      [],
+      `${check} still reads .ai/board/**`
+    );
+  }
 });
