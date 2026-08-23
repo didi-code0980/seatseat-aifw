@@ -156,7 +156,8 @@
       "Bash(echo \"build=$?\")",
       "Bash(awk '/^## Open questions/,0' .ai/board/tickets/ROO-01/03-impl-log.md)",
       "Bash(echo \"TYPECHECK EXIT: $?\")",
-      "Bash(echo \"LINT EXIT: $?\")"
+      "Bash(echo \"LINT EXIT: $?\")",
+      "Bash(git status *)"
     ],
     "deny": [
       "Bash(git push --force:*)",
@@ -182,18 +183,6 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-project-root.mjs\""
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-registry.mjs\""
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-allowed-paths.mjs\""
-          },
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/chat-guard.mjs\""

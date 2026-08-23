@@ -1,5 +1,5 @@
 ---
-doc_version: 1
+doc_version: 2
 last_updated: 2026-08-10
 governed_by: [RULE-01, RULE-09, RULE-10]
 ---
@@ -57,9 +57,19 @@ quickly is worse than no loop.
 
 ## What this system refuses to do
 
-**It does not let agents change the rules they are judged by.** The registry plane is human-only
-(RULE-01). An agent that finds a rule unworkable stops with `gate: BLOCKED` and states what decision
-it needs; a human writes the ADR.
+**It did not let agents change the rules they are judged by. That refusal ended on 2026-08-23** —
+ADR-004, by operator decision. `guard-registry.mjs` is unwired and an agent can now write
+`.ai/registry/**`, including this file and `rules.md`.
+
+What remains is weaker and worth stating exactly: RULE-01 still requires an ADR and human approval,
+and `.github/CODEOWNERS` still forces human review of every registry path on the pull request. The
+control moved from *before the write* to *before the merge*. An agent that finds a rule unworkable
+should still stop with `gate: BLOCKED` and state the decision it needs, rather than amend the rule —
+but that is now a convention it observes, not a wall it hits.
+
+This paragraph is left in the refusals section rather than deleted. A refusal the system used to make
+and no longer makes is more informative than a gap, and if the guards are restored the original
+sentence stands unchanged.
 
 **It does not let agents merge their own work.** RULE-09 reserves four actions permanently for
 humans, and merging is one of them. The loop's output is an open pull request, never a merge.

@@ -1,0 +1,59 @@
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded from .ai/templates/ticket.yaml at 2026-08-23. Second of the five Phase C tickets to return
+# from the backlog's "Deseeded" section; three remain.
+#
+# Intended to run PARALLEL to DEV-01. .ai/01-operating-model.md sets WIP = 1 and permits parallel
+# dispatch only when allowed_paths are pairwise disjoint after glob expansion, there is no mutual
+# dependency, each ticket has its own worktree, and combined WIP is 3 or less.
+#
+# SPEC is safe to run in parallel today regardless: allowed_paths is [] until DESIGN, and while it is
+# empty an agent can only write inside this ticket folder. The disjointness condition bites at DESIGN.
+id: MEM-01
+title: "Member CRUD UI"
+feature_ids: [MEM-01]
+group: MEM
+state: BACKLOG
+owner: ""
+branch: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+# Empty, but read the note above: whether MEM-01 and DEV-01 can share a window is not a dependency
+# question, it is an allowed_paths question, and SPEC decides it.
+depends_on: []
+# TRANSCRIBED from the features.md row, not reasoned. `ba` owes per-ID reasoning at SPEC and is
+# expected to NARROW this list, not extend it.
+#
+# THE QUESTION SPEC MUST ANSWER FIRST, because it decides whether this ticket can run beside DEV-01:
+#
+#   Deleting a member who currently occupies a seat — refuse, or cascade?
+#
+#   Refuse  -> Member writes touch no seat and no device. allowed_paths stay disjoint from DEV-01's
+#              and the two tickets run in parallel. invariants_touched narrows, probably to [].
+#   Cascade -> The delete is an occupant exit, so INV-06 fires and the seat's primary device must
+#              auto-downgrade. That writes src/lib/data/mock/devices.ts — the file DEV-01 holds.
+#              The tickets collide and MEM-01 waits for DEV-01 to merge before DESIGN.
+#
+# No invariant in the ledger answers this. INV-11 answered the equivalent question for rooms and was
+# issued by a human to do it; there is no INV for members. Raise it, do not assume it.
+invariants_touched: [INV-01, INV-05, INV-06]
+# [] is a control, not a placeholder — but note that guard-allowed-paths.mjs is unwired as of
+# ADR-004, so nothing blocks a write outside this list at write time. Review check R1 and
+# scripts/check-allowed-paths.mjs in CI are what remain, and MD-09 records that the CI check passes
+# vacuously on any branch not named feat/MEM-01.
+allowed_paths: []
+schema_delta: none
+requires_adr: false
+rework_count: 0
+# Four pairs from the template. The template omits `tech-lead-design->ba` and `ba->product` although
+# the chat topology permits both — MD-04, still open.
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }

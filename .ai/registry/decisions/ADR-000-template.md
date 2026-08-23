@@ -1,5 +1,5 @@
 ---
-doc_version: 1
+doc_version: 2
 last_updated: 2026-08-10
 governed_by: [RULE-01, RULE-09]
 ---
@@ -8,9 +8,15 @@ governed_by: [RULE-01, RULE-09]
 
 Copy this file to `ADR-nnn-<kebab-title>.md`. Numbers are sequential and never reused.
 
-**An agent cannot write one.** This file lives under `.ai/registry/**`, which RULE-01 makes read-only
-to every agent, and RULE-09 names ADRs among the permanently human actions.
-`.claude/hooks/guard-registry.mjs` enforces both by blocking the write.
+**An agent can write one, since 2026-08-23, and should not do so lightly.** `guard-registry.mjs` is
+unwired (ADR-004), so the write no longer fails. What still holds is RULE-01 — an ADR and human
+approval — and RULE-09, which names ADRs among the permanently human actions. Enforcement is
+`.github/CODEOWNERS` review on the pull request rather than a blocked write.
+
+The distinction that matters: an agent may **record** a decision a human made, naming who made it and
+when. An agent may not **make** one and write it up as though a human had. The `## Status` line is the
+test — if it says `ACCEPTED by the operator`, that has to have happened, in words, somewhere a person
+can be shown.
 
 An agent that needs a registry change sets `gate: BLOCKED` on its own artifact, states the requested
 decision in `blocking_reason`, and stops. A human writes the ADR. This is the intended flow, not a

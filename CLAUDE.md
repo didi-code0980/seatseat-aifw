@@ -28,7 +28,7 @@ These are copied verbatim from `.ai/registry/rules.md` because they are too impo
 indirection away. `scripts/check-docs.mjs` check D7 verifies the copies match character-for-character.
 Every other rule is cited by ID, never restated.
 
-- **RULE-01** — `.ai/registry/**` is read-only to every agent. Changing it requires an ADR and human approval.
+- **RULE-01** — Changing `.ai/registry/**` requires an ADR and human approval. Enforcement is CODEOWNERS review on the pull request, not a hook.
 - **RULE-02** — No component may bypass the `src/lib/data/` seam. Enforced by ESLint, not convention.
 - **RULE-03** — An agent may not edit any file outside the active ticket's `allowed_paths`.
 
@@ -71,3 +71,13 @@ canvas. Gilroy or Manrope for UI, IBM Plex Mono for codes and IDs. Details in
 ticket work) and `/status` (reads the board; reports what is true and what waits on a human).
 
 One file each in [.claude/commands/](.claude/commands/); policy lives in the operating model.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

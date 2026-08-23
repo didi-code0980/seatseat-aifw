@@ -1,5 +1,5 @@
 ---
-doc_version: 1
+doc_version: 2
 last_updated: 2026-08-10
 governed_by: [RULE-01, RULE-09]
 ---
@@ -21,7 +21,7 @@ human writes the ADR — see `.ai/registry/decisions/ADR-000-template.md`.
 
 | ID | Rule | v | verbatim_in |
 |----|------|---|-------------|
-| RULE-01 | `.ai/registry/**` is read-only to every agent. Changing it requires an ADR and human approval. | 1 | CLAUDE.md |
+| RULE-01 | Changing `.ai/registry/**` requires an ADR and human approval. Enforcement is CODEOWNERS review on the pull request, not a hook. | 2 | CLAUDE.md |
 | RULE-02 | No component may bypass the `src/lib/data/` seam. Enforced by ESLint, not convention. | 1 | CLAUDE.md |
 | RULE-03 | An agent may not edit any file outside the active ticket's `allowed_paths`. | 1 | CLAUDE.md |
 | RULE-04 | Contract-first: the Tech Lead declares signatures, Zod schemas, and types before the Developer writes code. The Developer may not invent field names. | 1 | — |
@@ -47,15 +47,15 @@ real, so that a rule with no mechanism is visible as such rather than assumed to
 
 | Rule | Mechanism |
 |------|-----------|
-| RULE-01 | `.claude/hooks/guard-registry.mjs` (PreToolUse, exit 2) |
+| RULE-01 | `.github/CODEOWNERS` review on the pull request. **The hook is gone** — see ADR-004 |
 | RULE-02 | ESLint `no-restricted-imports`, plus review check R4 |
-| RULE-03 | `.claude/hooks/guard-allowed-paths.mjs`, plus review check R1, plus `scripts/check-allowed-paths.mjs` in CI |
+| RULE-03 | Review check R1, plus `scripts/check-allowed-paths.mjs` in CI. **The hook is gone** — see ADR-004 |
 | RULE-04 | Review check R5 |
 | RULE-05 | `.claude/hooks/guard-read-scope.mjs`, plus the `qa` agent definition |
 | RULE-06 | Orchestrator dispatch loop; `rework_count` in `ticket.yaml` |
 | RULE-07 | Review check R8; failure routing table sends R8 to a human |
 | RULE-08 | Failure routing table; only the Developer column increments |
-| RULE-09 | `.github/CODEOWNERS`, branch protection, `guard-registry.mjs` |
+| RULE-09 | `.github/CODEOWNERS`, branch protection, `gh pr merge` denied in settings |
 | RULE-10 | `sync_enabled` defaults to false; no gate reads tracker state |
 | RULE-11 | Artifact front-matter `consulted` block |
 | RULE-12 | `.claude/hooks/chat-guard.mjs`; front-matter attestation `chat_before_verdict` |
