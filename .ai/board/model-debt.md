@@ -25,6 +25,7 @@ Reviewed after each ticket closes.
 | MD-07 | ROO-01, `/ship`, 2026-08-23 | **`/ship` could not complete its own step 4.** It requires an open pull request; a pull request requires commits on a pushed branch; `.ai/standards/git-conventions.md` forbade agents to commit, and no step asked a human to. Raised by `orchestrator` when ROO-01 reached ship. Same shape as MD-01 — a step the model mandates and gives nobody a way to take. | Blocks the loop | **Resolved 2026-08-23.** A commit exception for `orchestrator` inside `/ship`, with the grouping left to its judgement and the branch boundary fixed by CI. **RULE-09 was not amended and no ADR was needed** — it names schema changes, ADRs, registry edits and merges, never commits. The prohibition lived in `.ai/standards/git-conventions.md` and was restated more broadly than RULE-09 reads in `CLAUDE.md` and `.claude/commands/ship.md`. All three amended; the registry was not touched. |
 | MD-08 | Steward, 2026-08-23 | **RULE-03 is enforced per tool, not per action.** `guard-allowed-paths.mjs` is wired only to the `Edit\|Write` matcher, so a file write performed through `Bash` — `node -e`, a heredoc, `sed -i` — is never seen. Demonstrated accidentally and in one session: a write to `.ai/standards/git-conventions.md` via `node -e` succeeded, and the identical edit to `CLAUDE.md` via the `Edit` tool was blocked, on the same branch by the same caller. Every agent holding `Bash` (`developer`, `qa`, `devops`, `orchestrator`, `steward`) can write outside `allowed_paths` undetected. | Real | Undecided. Wiring the guard to `Bash` needs a command parser and would be guessing at shell grammar — the same class of mistake the settings metacharacter test already warns about. `scripts/check-allowed-paths.mjs` catches the result in CI, so the branch is protected even when the session is not; the gap is between the write and the push. |
 | MD-09 | ROO-01 ship, 2026-08-23 | **`scripts/check-allowed-paths.mjs` is keyed on the branch name, so ticket work committed on a branch not named `feat/<ID>` is never checked.** The script exits 0 on any non-`feat/` branch by design — chore work has no ticket. ROO-01 was committed whole as `f5fd2e7` on `ops/orchestrator-commit-authority` and merged as PR #1, so the check took the "nothing to check" exit and RULE-03 was never enforced on the one diff it exists to police. This also voids MD-08's mitigation: the CI backstop only catches a stray write if the branch happens to be named after the ticket. | Real | Resolve the ticket from something the committer cannot rename — a `ticket:` line in the PR body, or the set of ticket folders whose state is not DONE — and refuse to pass vacuously when the diff touches `src/**` while no ticket resolves. |
+| MD-10 | ADR-004, 2026-08-23 | **RULE-03 has no pre-write enforcement.** `guard-allowed-paths.mjs` is unwired, so no tool call is refused for writing outside the active ticket's `allowed_paths` — any agent can write any file in the repository at any time. What remains runs after the fact: review check R1, which depends on a reviewer reading carefully, and `scripts/check-allowed-paths.mjs` in CI, which MD-09 shows is skipped entirely on any branch not named `feat/<ID>`. The accepted cost of ADR-004, recorded here so it is a known price rather than a discovery. | Real | A decision: restore `guard-allowed-paths.mjs`, or close MD-09 so the CI check resolves its ticket from something the committer cannot rename and stops being skippable. Doing neither leaves RULE-03 as a convention. |
 
 ## Notes
 
@@ -70,11 +71,29 @@ that caught every ticket. Merging the two is an open decision for the operator. 
 disagreeing is itself model debt; it is not listed as an MD item because recording it in one of the
 two files would be the same mistake again.
 
+**MD-08 and MD-09 are history as of 2026-08-23, not fixed.** ADR-004 unwired
+`guard-allowed-paths.mjs`, so MD-08's complaint — that the guard is wired to `Edit|Write` and misses
+`Bash` — describes a guard that no longer runs on any tool. MD-09's complaint about
+`check-allowed-paths.mjs` passing vacuously on non-`feat/` branches still stands, and it now matters
+more rather than less: with the hook gone, that script and review check R1 are the **only** things
+enforcing RULE-03, and one of them is asleep on any branch not named after a ticket.
+
+Both rows are kept rather than struck. If the guards are ever restored, both apply again unchanged,
+and the record of what they cost is the cheapest argument for or against restoring them.
+
+**MD-10 is the new one, and it is the price of ADR-004.** RULE-03 has no pre-write enforcement at
+all. An agent can write any file in the repository at any time; nothing refuses. Review check R1
+catches it if a reviewer reads carefully, and CI catches it only on a `feat/<ID>` branch. Severity is
+**Real**, and the fix shape is a decision rather than an implementation: either restore
+`guard-allowed-paths.mjs`, or fix MD-09 so the CI check resolves its ticket from something other than
+the branch name and therefore stops being skippable.
+
 ## Review log
 
 | Date | Ticket | Items closed | Items added |
 |------|--------|--------------|-------------|
 | 2026-08-23 | ROO-01 | MD-07 | MD-07, MD-08, MD-09 |
+| 2026-08-23 | — | none | MD-10 |
 
 **MD-07 opened and closed on the same day, and that is not tidiness.** It blocked the loop the moment
 it was found, and the fix turned out to be three prose edits outside the registry — RULE-09 had never

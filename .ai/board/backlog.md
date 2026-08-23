@@ -33,9 +33,18 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
+| 1 | MEM-01 | Member CRUD UI | BACKLOG | nothing — next for `/spec` |
 
-Empty. `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
+`DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
 rather than by Phase C, ran the full loop the same day, and is `DONE`.
+
+`MEM-01` was added the same day, and it is the first registry row written by an agent rather than by
+the operator — see ADR-004. **Whether it can share a window with another ticket is not settled**, and
+one question at SPEC settles it: if deleting a member who occupies a seat *refuses*, its files stay
+disjoint and it parallelises; if it *cascades*, INV-06 fires, the delete writes
+`src/lib/data/mock/devices.ts`, and it has to run alone. Its `ticket.yaml` carries the question in
+full. That question was written while DEV-01 was still in flight; DEV-01 is now `DONE`, so nothing
+collides today — but the answer still decides whether MEM-01 can run beside whatever comes next.
 
 `ROO-01` was first deliberately: it measured whether the loop closes, not how hard the domain is. It
 closed, on the second attempt at every judging gate. `DEV-01` then closed on the first attempt at
@@ -47,13 +56,14 @@ make possible.
 Five tickets were seeded in Phase C and have been **removed from the board**. They are *not*
 cancelled. Each is expected back, unchanged, the moment its feature row exists.
 
-**One has come back.** Device CRUD UI was restored as `DEV-01` on 2026-08-23 by exactly the route
-described below — a human added the row, then the ticket was re-seeded from the template with
-`feature_ids` populated. Four remain.
+**Two have come back**, both on 2026-08-23, by exactly the route described below. Device CRUD UI
+returned as `DEV-01` after the operator added the row by hand. Member CRUD UI returned as `MEM-01`
+after ADR-004 removed the write guard and the steward added the row itself. **Three remain**, and the
+route below is now cheaper than the paragraph describing it suggests — an agent can add the feature
+row, so restoring one is a request rather than a chore.
 
 | Title | Group | Waiting on |
 |---|---|---|
-| Member CRUD UI | MEM | a row in the `MEM` table |
 | Account management UI | AUT | a row in the `AUT` table |
 | Role assignment UI | AUT | a row in the `AUT` table |
 | User self-release | REG | a row in the `REG` table |
