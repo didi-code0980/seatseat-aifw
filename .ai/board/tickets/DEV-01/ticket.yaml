@@ -9,11 +9,30 @@ id: DEV-01
 title: "Device CRUD UI"
 feature_ids: [DEV-01]
 group: DEV
-state: BACKLOG
-owner: ""
-branch: ""
-size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
-size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+state: DONE
+owner: "developer"
+# Created by tech-lead-design at DESIGN, from `main` at 0d651f7. The name is not decoration:
+# guard-allowed-paths.mjs:164 resolves the active ticket from it and disables itself on any
+# non-feat/ branch, and scripts/check-allowed-paths.mjs does the same in CI (MD-09). Writing
+# 02-design.md from `main` would have left RULE-03 unenforced for the whole of IN_PROGRESS.
+branch: "feat/DEV-01"
+size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md scope and its
+                      # Out-of-scope section, not from any implementation. Fourteen ACs over one
+                      # surface: list, create, edit, assign, unassign, designate primary, delete —
+                      # the same shape as ROO-01, which was M at twelve files, plus the INV-04 and
+                      # INV-05 checks in the seam. Not S: eight of the fourteen ACs are invariant
+                      # enforcement, and the surface has to display a seat's occupant (AC-1) as well
+                      # as the device. Not estimated L or higher because eleven out-of-scope items
+                      # hold it to one surface with no schema change. If DESIGN enumerates more than
+                      # twelve allowed_paths, the gap routes back here rather than splitting
+                      # silently — .ai/01-operating-model.md, Sizing.
+size: "M"             # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+                      # VERDICT at DESIGN 2026-08-23: ten files plus the ticket folder, against the
+                      # sizing table's "M — up to 12". Agrees with size_estimate, so nothing routes
+                      # back to SPEC and the ticket is not split. Not XL by the rule a human set on
+                      # ROO-01's Q4 (MD-4): the test is whether existing callers must change, and
+                      # none do — types.ts gains eight types and alters none, and the three existing
+                      # device seam functions keep their names, arity and return types.
 # Empty deliberately. ROO-01 is DONE and merged, so nothing here waits on it. The seam functions
 # DEV-01 needs (listDevices, and whatever create/update/delete it specifies) sit beside the room
 # functions rather than on top of them.
@@ -27,10 +46,36 @@ depends_on: []
 # them directly: INV-04, INV-05 and INV-06 govern primary devices — at most one per seat, and the
 # primary belonging to whoever occupies it. This is the ticket where those become code rather than
 # a consequence of deleting a room.
+#
+# CONFIRMED by `ba` at SPEC on 2026-08-23, with per-ID reasoning in 01-story.md. All four are
+# engaged and none is removed; INV-01, INV-02, INV-03, INV-08, INV-10 and INV-11 were reasoned
+# through and found not engaged, and that reasoning is in the story so R8 can check it. INV-06 is
+# engaged in one direction only — DEV-01 builds no occupant-exit path (out-of-scope item 7) and its
+# obligation is not to make the downgrade unreachable.
 invariants_touched: [INV-04, INV-05, INV-06, INV-07]
 # [] is a control, not a placeholder: guard-allowed-paths.mjs blocks every write outside this ticket
 # folder while it is empty. DESIGN fills it.
-allowed_paths: []
+#
+# FILLED by tech-lead-design at DESIGN 2026-08-23, verbatim from 02-design.md section 5. Every entry
+# is a file path — `src/app/(app)/devices/**` would have been shorter and would have left check R1
+# unable to tell this ticket's diff from any other change under that route.
+#
+# tests/e2e/smoke.spec.ts is here because this design breaks it: section 6 keys device rows by
+# assetTag instead of by id, and smoke.spec.ts:57 addresses `devices-row-dev-05`. Listed now rather
+# than after QA reports it — ROO-01's Q11 learned that a design which breaks a file must put that
+# file in reach of the ticket that broke it, or the repair has no owner.
+allowed_paths:
+  - "src/app/(app)/devices/page.tsx"
+  - "src/app/(app)/devices/devices-manager.tsx"
+  - "src/actions/devices.ts"
+  - "src/lib/validation/device.ts"
+  - "src/lib/data/types.ts"
+  - "src/lib/data/mock/devices.ts"
+  - "src/lib/data/prisma/devices.ts"
+  - "tests/unit/devices.test.ts"
+  - "tests/e2e/devices.spec.ts"
+  - "tests/e2e/smoke.spec.ts"
+  - ".ai/board/tickets/DEV-01/**"
 schema_delta: none
 requires_adr: false
 rework_count: 0
@@ -45,7 +90,76 @@ chat_budget:
   qa->tech-lead-design:        { used: 0, max: 6 }
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
-  spec:   { passed: false, at: null }
-  design: { passed: false, at: null }
-  review: { passed: false, at: null }
-  qa:     { passed: false, at: null }
+  spec:   { passed: true,  at: "2026-08-23T06:53:48Z" }
+  # PASS. Seven sections complete, allowed_paths enumerated, size set. schema_delta stays `none` and
+  # requires_adr stays `false`. Five findings raised against 01-story.md — F-1 to F-5, section 0 of
+  # 02-design.md and routed in 99-questions.md — none blocking: each answers a question the story
+  # asked or makes a criterion more specific, and none changes what the Developer builds. F-1 leaves
+  # a refusal in the code with no acceptance criterion naming it, which costs a test rather than a
+  # behaviour, so all five are safe to carry into IN_PROGRESS and must be amended before /qa.
+  design: { passed: true,  at: "2026-08-23T07:19:53Z" }
+  # IN_PROGRESS passed on 2026-08-23T07:42:00Z, recorded here as a comment because this map has four
+  # keys and IN_PROGRESS is not one of them — the template defines spec, design, review and qa, and
+  # /ship checks exactly those four. The stage's own record is 03-impl-log.md, whose front matter
+  # carries `gate: PASS`.
+  #
+  # `pnpm typecheck` and `pnpm lint` both exit 0, every contract item in 02-design.md section 1 is
+  # implemented, and 03-impl-log.md lists all seven files touched with a reason and a contract item
+  # each. `pnpm test` (45 tests, seam parity included) and `pnpm build` also exit 0 — neither is the
+  # gate, both were run because the gate exercises none of the seven seam rules. Two deviations
+  # declared, both scaffold files the design called new; no consultation opened, so `chat_budget` is
+  # untouched. F-1 to F-5 are still open and still route to `ba` before /qa, and
+  # tests/e2e/smoke.spec.ts:57 is knowingly left broken for QA, per 02-design.md section 5.
+  #
+  # State moves to REVIEW. The reviewer's session is fresh and inherits nothing (RULE-13).
+  review: { passed: true,  at: "2026-08-23T07:50:28Z" }
+  # PASS. R1-R9 all pass, each citing file:line; 04-review.md carries the reasoning. No finding, so
+  # `rework_count` stays 0 and nothing routes. R8 in particular: INV-04, INV-05, INV-06 and INV-07
+  # were reasoned individually against every `.rank`/`.seatId` write in `src/`, not against the
+  # implementation's own account of them, and each is held by a seam refusal or by the shape of a
+  # write — never by a UI affordance. Nothing escalates under RULE-07.
+  #
+  # R1 was verified path-by-path rather than asserted. The tree holds three bodies of work at once
+  # and the session is on `ops/guards-removed`, not `feat/DEV-01`: `guard-allowed-paths.mjs` is
+  # unwired under ADR-004 (MD-10) and `scripts/check-allowed-paths.mjs` skips vacuously off a
+  # `feat/` branch (MD-09), so that reading was the only enforcement of RULE-03 this ticket got.
+  #
+  # Three items carry into QA and none is a finding: F-1 to F-5 still open against 01-story.md and
+  # routed to `ba` under RULE-14 (F-1 leaves the duplicate-tag refusal with no criterion, which QA
+  # may not invent); tests/e2e/smoke.spec.ts:57 knowingly broken by the assetTag re-keying, repair
+  # assigned to QA by 02-design.md section 5; and 03-impl-log.md open question 3, which is a
+  # `tech-lead-design` question spanning rooms and devices rather than this gate's.
+  #
+  # State moves to QA. That session must be fresh and is discarded after its verdict (RULE-13).
+  qa:     { passed: true,  at: "2026-08-23T08:06:50Z" }
+  # PASS. Fourteen acceptance criteria, twenty-six tests, every test name carrying its AC ID.
+  # `pnpm test` exits 0 with 61 passed and none skipped; `pnpm test:e2e` exits 0 with 38 passed and
+  # none skipped. The e2e suite was run twice from a cold build, because a suite that mutates a
+  # shared store can pass once by leaving behind the state the next run needs — both runs green.
+  # `pnpm typecheck` and `pnpm lint` also exit 0; neither is the gate, both were run because a test
+  # file that does not compile is not evidence of anything.
+  #
+  # No failure, so nothing routes to `developer` and `rework_count` stays 0. All four IDs in
+  # `invariants_touched` were probed and none is violated, so nothing escalates under RULE-07.
+  # INV-04 and INV-05 are asserted as sweeps over every device in the store after every act, not as
+  # spot checks. INV-06 is observed in one direction only and is recorded that way rather than as a
+  # clean pass: DEV-01 builds no occupant-exit path, so its obligation is the negative one
+  # `01-story.md` describes and AC-6 and AC-10 discharge.
+  #
+  # tests/e2e/smoke.spec.ts:56 — the breakage 02-design.md section 5 assigned to QA — is repaired.
+  # Not by substituting the seeded device's asset tag for its id: that value lives in fixtures.ts,
+  # which RULE-05 puts out of QA's reach and which no artifact reaching QA discloses. The INV-07
+  # assertion is now made over the `-seat` cells instead, which is what the test was always for and
+  # no longer depends on any identifier.
+  #
+  # ONE THING CARRIES PAST THIS GATE AND IT IS NOT A FAILURE. F-1 is still open: the seam refuses a
+  # duplicate asset tag, section 6 carries the selector marked *pending F-1*, and `01-story.md` has
+  # no criterion for it. QA may not invent one (RULE-05), so a real refusal in the shipped code has
+  # no test — deleting that check would not fail either suite. Routed to `ba` under RULE-08, which
+  # is why `rework_count` is untouched. F-2, F-3, F-4 and F-5 cost this stage nothing; section 6
+  # already carried what QA needed for each. 99-questions.md and 06-test-report.md both say so.
+  #
+  # `chat_budget` is untouched: nothing was consulted, `chat_before_verdict` is `none` in both
+  # artifacts, and this session read neither 03-impl-log.md nor 04-review.md.
+  #
+  # State moves to DONE. This session is discarded (RULE-13); a re-run would open a new one.
