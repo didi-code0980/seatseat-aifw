@@ -33,9 +33,11 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
+| 1 | DEV-01 | Device CRUD UI | BACKLOG | nothing — next for `/spec` |
 
-Empty. `ROO-01` was the only row and it is now `DONE`. Nothing is waiting on SPEC, and nothing can
-be added here without a human first adding a feature row — see the section below.
+`DEV-01` returned to the board on 2026-08-23, after a human added its row to
+`.ai/registry/features.md`. It is the first ticket seeded under the normal path rather than by
+Phase C, and it is here rather than in READY because DoR is evaluated after SPEC.
 
 `ROO-01` was first deliberately: it measured whether the loop closes, not how hard the domain is.
 It closed, on the second attempt at every judging gate.
@@ -45,9 +47,12 @@ It closed, on the second attempt at every judging gate.
 Five tickets were seeded in Phase C and have been **removed from the board**. They are *not*
 cancelled. Each is expected back, unchanged, the moment its feature row exists.
 
+**One has come back.** Device CRUD UI was restored as `DEV-01` on 2026-08-23 by exactly the route
+described below — a human added the row, then the ticket was re-seeded from the template with
+`feature_ids` populated. Four remain.
+
 | Title | Group | Waiting on |
 |---|---|---|
-| Device CRUD UI | DEV | a row in the `DEV` table of `features.md` |
 | Member CRUD UI | MEM | a row in the `MEM` table |
 | Account management UI | AUT | a row in the `AUT` table |
 | Role assignment UI | AUT | a row in the `AUT` table |
