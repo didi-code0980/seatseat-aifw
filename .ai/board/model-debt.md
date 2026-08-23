@@ -45,6 +45,23 @@ the whole of MD-06's "not yet incurred".
 **MD-05 was verified, not assumed**, against `01-operating-model.md:18` and `guard-registry.mjs:86`.
 Worth stating because it is the kind of claim that reads as obviously true and is cheap to check.
 
+**MD-08 is narrower than it was recorded, and the correction is worth more than the original entry.**
+The row above says any agent holding `Bash` can write outside `allowed_paths` undetected. For
+`.ai/standards/**` and `.claude/**` that is true and was demonstrated. For `.ai/registry/**` it is
+**not**: the harness refuses a `Bash` command that writes there before the command runs, independently
+of `guard-registry.mjs`. Established by attempt on 2026-08-23 — the operator instructed the steward
+to make an agreed registry edit directly, and both controls refused in turn, the project hook on the
+`Edit` tool and the harness on the `Bash` route.
+
+So the registry has two nets and everything else has one. That changes what MD-08 is worth fixing
+for: not the registry, which is covered twice, but the standards and command planes, which are
+covered once and only by a matcher that names two tool types.
+
+It also settles a question the model had only ever asserted. `.ai/registry/**` being human-only is not
+a convention the agents observe out of discipline — it survives an operator instructing an agent
+three times to override it, which is a stronger property than anything written in `rules.md` can
+claim on its own.
+
 **A second register exists.** `.ai/board/model-defects.md` records overlapping defects under a
 different numbering — `MD-1` is this file's `MD-01`, `MD-2` is `MD-04` — and additionally holds two
 *resolved* entries with history absent here: the circular Definition of Ready, and the XL sizing row
