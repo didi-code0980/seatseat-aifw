@@ -20,8 +20,8 @@ specified, sized, and safe to design** — the next stage for a row here is DESI
 | # | Ticket | Title | Size | Depends on |
 |---|--------|-------|------|------------|
 
-Empty. `ROO-01` passed through here at `2026-08-12T16:23:48Z` and is now `DONE` — see ARCHIVE.
-Nothing else can enter READY until a human adds a feature row to `.ai/registry/features.md`.
+Empty. Both tickets that have existed are `DONE` — see ARCHIVE. Nothing else can enter READY until a
+human adds a feature row to `.ai/registry/features.md`; eight of the ten group tables are still bare.
 
 ## BACKLOG
 
@@ -33,14 +33,14 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
-| 1 | DEV-01 | Device CRUD UI | BACKLOG | nothing — next for `/spec` |
 
-`DEV-01` returned to the board on 2026-08-23, after a human added its row to
-`.ai/registry/features.md`. It is the first ticket seeded under the normal path rather than by
-Phase C, and it is here rather than in READY because DoR is evaluated after SPEC.
+Empty. `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
+rather than by Phase C, ran the full loop the same day, and is `DONE`.
 
-`ROO-01` was first deliberately: it measured whether the loop closes, not how hard the domain is.
-It closed, on the second attempt at every judging gate.
+`ROO-01` was first deliberately: it measured whether the loop closes, not how hard the domain is. It
+closed, on the second attempt at every judging gate. `DEV-01` then closed on the first attempt at
+every gate, with no escalation and `rework_count: 0`, which is the result the ROO-01 run was run to
+make possible.
 
 ## Deseeded — waiting on registry rows
 
@@ -98,12 +98,15 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
-| ROO-01 | 2026-08-23T05:29:36Z | **Not opened** — see the note below | 0 |
+| DEV-01 | 2026-08-23T08:35:53Z | *pending — see the note below* | 0 |
+| ROO-01 | 2026-08-23T05:29:36Z | [#1](https://github.com/didi-code0980/seatseat-aifw/pull/1) — merged 2026-08-23 | 0 |
 
-**ROO-01 is DONE but unshipped, and the two are recorded separately on purpose.** All four gates
-passed, `pnpm verify` and `pnpm test:e2e` both exit 0, and the Definition of Done holds on every
-item except the `allowed_paths` subset check — which fails on 27 files of model, registry and
-steward work done alongside this ticket, not on anything ROO-01 wrote. `/ship` step 4 could not run
-at all: opening a pull request needs commits on a pushed branch, `gh` is not installed, the branch
-has zero commits and no upstream, and RULE-09 makes committing human-only. Whoever opens the PR fills
-in the column.
+**ROO-01's PR column was wrong and is corrected here.** It read "Not opened" from the 2026-08-23
+`/ship` run, when `gh` was absent and the branch had no commits. The PR was opened and merged as
+**#1** shortly afterwards; `.ai/registry/features.md` recorded that and this file did not. The
+registry was ahead of the board for half a day.
+
+**DEV-01's PR is pending, and for a narrower reason than ROO-01's was.** `gh` is now installed
+(2.98.0) but not authenticated — `gh auth status` reports no logged-in host, and OAuth cannot be
+run from a non-interactive session. The commit and the push are done and the branch is real; only
+`gh pr create` is outstanding. Whoever runs `gh auth login` fills in the column.
