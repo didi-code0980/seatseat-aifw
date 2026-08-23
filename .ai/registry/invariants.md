@@ -1,6 +1,6 @@
 ---
-doc_version: 3
-last_updated: 2026-08-12
+doc_version: 4
+last_updated: 2026-08-23
 governed_by: [RULE-01, RULE-07, RULE-09]
 ---
 
@@ -34,6 +34,7 @@ different people to decide what happens next.
 | INV-08 | There is no self-signup. Accounts are created by Manager or Admin only. |
 | INV-10 | Within a room, no two seats may occupy overlapping grid cells. A seat's placement is a grid coordinate plus a rectangular footprint. |
 | INV-11 | Deleting a room deletes its seats. The deletion is destructive and cannot be undone; the interface must obtain explicit confirmation naming the number of seats that will be lost. |
+| INV-12 | A Member may not be deleted while they occupy a seat or own a device. The deletion is refused, not cascaded; the references are removed first. |
 
 ## Unissued IDs
 
@@ -49,7 +50,7 @@ Two candidates were considered and rejected as domain invariants:
   workflow, not a constraint on data.
 
 IDs are stable references cited from `02-design.md`, `04-review.md`, and `ticket.yaml`. They are
-never renumbered and never reused. The next invariant issued will be `INV-12`.
+never renumbered and never reused. The next invariant issued will be `INV-13`.
 
 This section exists so a later reader does not conclude a row went missing. Check D2 in
 `scripts/check-docs.mjs` reads this section as its source of legitimately-unissued IDs, so prose

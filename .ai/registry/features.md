@@ -67,7 +67,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| MEM-01 | Member CRUD UI | MEM | PLANNED | INV-01, INV-05, INV-06 | Runs parallel to DEV-01. The three invariants engage only if SPEC resolves member deletion to a cascade; if it resolves to a refusal, `ba` narrows this list and the two tickets keep disjoint `allowed_paths`. First row written by an agent, under ADR-004. |
+| MEM-01 | Member CRUD UI | MEM | PLANNED | INV-08, INV-12 | Third CRUD slice, first row written by an agent (ADR-004). Member deletion resolved to a **refusal** at SPEC — ADR-005, which issues INV-12. INV-01, INV-05 and INV-06 were on this row conditionally and fall away with that answer; INV-12 is on it because MEM-01 is the ticket that implements the deletion INV-12 governs. |
 
 ## GRP — Groups
 
