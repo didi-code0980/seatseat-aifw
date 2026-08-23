@@ -36,9 +36,13 @@ test("the seam reports mock mode", async ({ page }) => {
 });
 
 test("fixtures reach the rooms table", async ({ page }) => {
+  // Rows are keyed by room `code`, not by room id — ROO-01 design section 6. The ids these two
+  // assertions used to carry (`room-a`, `room-b`) are minted with `crypto.randomUUID()` in the real
+  // implementation and were never addressable for a room a test creates. Selectors only; the thing
+  // being asserted is unchanged.
   await page.goto("/rooms");
-  await expect(page.getByTestId("rooms-row-room-a")).toBeVisible();
-  await expect(page.getByTestId("rooms-row-room-b")).toBeVisible();
+  await expect(page.getByTestId("rooms-row-ROOM-A")).toBeVisible();
+  await expect(page.getByTestId("rooms-row-ROOM-B")).toBeVisible();
 });
 
 test("seat status is derived and rendered — INV-03", async ({ page }) => {

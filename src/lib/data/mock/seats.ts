@@ -1,5 +1,5 @@
-import { seats } from "../fixtures";
 import type { Seat } from "../types";
+import { seats } from "./store";
 
 export { deriveSeatStatus } from "../derive";
 

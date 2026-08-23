@@ -42,6 +42,40 @@ const REQUIRED_ALLOW = [
   "mcp__clickup__clickup_filter_tasks",
 ];
 
+// Read-only commands, allowlisted deliberately rather than prompted for one at a time.
+//
+// The reasoning is about attention, not convenience. A prompt for `ls` teaches that prompts are
+// noise to be cleared, and that habit is spent on the one prompt that actually matters. Every rule
+// below names a command that cannot change the repository, so approving it carries no information
+// and asking for it costs vigilance.
+//
+// The test exists because this block is the kind of thing a clobber drops silently: nothing looks
+// different afterwards except that the prompts come back, and by then the habit is already relearned.
+const REQUIRED_READONLY_ALLOW = [
+  "Bash(ls:*)",
+  "Bash(cat:*)",
+  "Bash(head:*)",
+  "Bash(tail:*)",
+  "Bash(wc:*)",
+  "Bash(find:*)",
+  "Bash(grep:*)",
+  "Bash(rg:*)",
+  "Bash(tree:*)",
+  "Bash(pwd)",
+  "Bash(echo:*)",
+  "Bash(node --version)",
+  "Bash(pnpm --version)",
+  "Bash(node --test:*)",
+  "Bash(pnpm typecheck)",
+  "Bash(pnpm lint)",
+  "Bash(pnpm test)",
+  "Bash(pnpm test:e2e)",
+  "Bash(pnpm verify)",
+  "Bash(pnpm hooks:test)",
+  "Bash(node scripts/check-docs.mjs)",
+  "Bash(node scripts/check-allowed-paths.mjs)",
+];
+
 const REQUIRED_DENY = [
   "Bash(git push --force:*)",
   "Bash(git push origin main:*)",
@@ -117,6 +151,38 @@ test("every required allow rule is present", () => {
   const allow = new Set(json.permissions?.allow ?? []);
   for (const rule of REQUIRED_ALLOW) {
     assert.ok(allow.has(rule), `allow rule missing: ${rule}`);
+  }
+});
+
+test("every read-only allow rule is present", () => {
+  const { json } = loadSettings();
+  const allow = new Set(json.permissions?.allow ?? []);
+  const missing = REQUIRED_READONLY_ALLOW.filter((rule) => !allow.has(rule));
+  assert.deepEqual(
+    missing,
+    [],
+    `read-only allow rules missing: ${missing.join(", ")}. These were added deliberately so that ` +
+      `commands which cannot change anything stop generating prompts. Losing them does not fail ` +
+      `anything visibly — it just restores the noise that trains reflexive approval. Do not delete ` +
+      `one to "clean up" the allow list.`
+  );
+});
+
+// A guard on the guard. `Bash(cat:*)` is read-only; `Bash(cat:* > f)` is a file write wearing the
+// same name. The permission matcher does not parse shell grammar, so a metacharacter inside an
+// allow pattern smuggles a write primitive past a list everyone reads as read-only. This asserts
+// the rules stay as narrow as they were written — it deliberately checks only the rules above, not
+// the whole allow list, which is full of session grants that do legitimately copy and remove files.
+test("no read-only allow rule contains a shell metacharacter", () => {
+  const FORBIDDEN = /[>|;&`$(){}]|\btee\b|\bsed\b|\brm\b|\bmv\b|\bchmod\b/;
+  for (const rule of REQUIRED_READONLY_ALLOW) {
+    const body = rule.replace(/^Bash\(/, "").replace(/\)$/, "");
+    assert.ok(
+      !FORBIDDEN.test(body),
+      `read-only allow rule ${rule} contains a shell metacharacter or a write command. A pattern ` +
+        `like this grants far more than its name suggests — a redirect turns any reader into a ` +
+        `writer. Narrow the rule instead of widening the list.`
+    );
   }
 });
 

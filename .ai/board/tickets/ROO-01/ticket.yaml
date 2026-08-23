@@ -1,20 +1,223 @@
-# state enum: IDEA TRIAGE BACKLOG READY SPEC DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
 # Seeded by Phase C. No story, design, or acceptance criteria here — those are agent output.
 # feature_ids resolves against .ai/registry/features.md.
 id: ROO-01
 title: "Room CRUD UI"
 feature_ids: [ROO-01]
 group: ROO
-state: BACKLOG
-owner: ""
-branch: ""
-size: ""
-depends_on: []
-invariants_touched: []
-allowed_paths: []
+# Returned from ESCALATED to SPEC by human decision, 2026-08-12T16:19:31Z, given in prose: there is
+# no /resume command, because the model defines ESCALATED as human-resolved without saying how a
+# human resolves it. That gap is known and gets a command after this ticket closes.
+#
+# The three DESIGN blockers are resolved. B1 — by scope cut: AC-8 through AC-11 are withdrawn to
+# out-of-scope item 5 (AUT group), so no auth work is needed here and the Better Auth / Member
+# reconciliation no longer sits on this ticket's path. B2 and B3 — by ba, in the 01-story.md
+# amendment recorded in its Changelog at 2026-08-12T15:41:00Z. Q4 — the Sizing table's "touches the
+# seam" wording was wrong and is corrected in 01-operating-model.md; adding new functions to
+# src/lib/data/ is ordinary feature work, not XL. ROO-01 is M. H-1, H-2 and H-3 — the three stale
+# registry rows are fixed: features.md carries the seven invariant IDs and drops "Admin-only",
+# invariants.md carries INV-11 and the note on its cascade chain to devices.
+#
+# Q5 (the tech-lead-design->ba pair missing from chat_budget) is still unanswered. It does not gate
+# DoR and does not block this ticket.
+# Promoted SPEC -> READY by the orchestrator at 2026-08-12T16:23:48Z: all six DoR items pass. READY
+# means specified, sized and safe to design. The next stage is DESIGN.
+#
+# FOR DESIGN — one gap in the story, to be raised rather than assumed. Deleting a room destroys its
+# NetworkPorts: prisma/schema.prisma declares NetworkPort->Seat `onDelete: Cascade`, and INV-11
+# already cascades Room -> Seat. No acceptance criterion covers port loss, and out-of-scope item 7
+# sends ports to SEA without noting they are destroyed here. It may want an AC in AC-14's shape, or
+# an explicit line saying the loss is intended. Ask `ba`; do not decide it at DESIGN.
+#
+# That question travels with a second `ba` amendment already owed: 01-story.md out-of-scope item 3
+# still says this ticket carries a pending `schema_delta` and `requires_adr: true`. Both were
+# returned to `none` and `false`. One RULE-14 pass covers both.
+#
+# DESIGN passed at 2026-08-12T16:30:41Z. Two questions are open with `ba` as Q6 and Q7 in
+# 99-questions.md — network ports destroyed by the INV-11 cascade with no criterion, and AC-6's
+# three-seat room, which no fixture room is. Neither blocks /implement and both block /qa: each
+# resolves to a test or a number, and neither changes a signature, a file in allowed_paths, or a
+# data-testid. They travel with the out-of-scope-item-3 correction already owed; one RULE-14 pass
+# covers all three.
+# IN_PROGRESS passed at 2026-08-12T16:45:54Z. Ten files under src/**, all inside allowed_paths; the
+# two under tests/ are untouched and remain QA's. typecheck, lint and test exit 0, and `pnpm build`
+# was run as well because section 1.4 puts exported types in a "use server" module. Two naming
+# deviations are declared in 03-impl-log.md and neither changes a signature or a selector. Five open
+# questions are recorded there; the first — mock/layout.ts still reads fixtures.ts and so does not
+# observe the INV-11 cascade — is a real inconsistency this ticket introduced, and it wants a design
+# amendment adding that file to allowed_paths rather than a Developer deciding it. Q6 and Q7 remain
+# open with `ba` and still block /qa, unchanged.
+# REVIEW failed at 2026-08-12T16:56:20Z on R8, and R8 alone. Eight of nine checks pass with citation;
+# 04-review.md carries all nine. The failing invariant is INV-11: `src/lib/data/mock/layout.ts:1`
+# still reads `../fixtures` while `deleteRoom` writes `src/lib/data/mock/store.ts`, so after a room
+# delete `layout.getRoomLayout(deletedRoomId)` returns the room with all six of its deleted seats and
+# `layout.listRoomLayouts()` still lists the room. Verified by execution, not by reading. The
+# divergence is introduced by this ticket — before it, every mock module read one array and could not
+# disagree — and 03-impl-log.md open question 1 raised it correctly rather than editing outside
+# allowed_paths.
+#
+# Per RULE-07 and the failure routing table, R8 escalates to a human on first occurrence, never enters
+# REWORK, and does not increment rework_count. The ticket halts here and does not self-resume. The
+# human decision is twofold: whether a stale layout of a deleted room is INV-11 being false (a reading
+# of the invariant, .ai/registry/invariants.md is human-only), and if so whether the fix is a design
+# amendment adding src/lib/data/mock/layout.ts — and src/lib/data/mock/requests.ts, same root cause,
+# no invariant — to allowed_paths. Three import lines either way; no signature changes.
+#
+# Q6 and Q7 remain open with `ba` and still block /qa, unchanged by this verdict.
+#
+# DESIGN re-run and amended at 2026-08-21T03:23:13Z, resolving the R8 escalation. The fix is NOT the
+# one 04-review.md sketched. Repointing mock/layout.ts at the store fixes the one module that has
+# diverged and leaves the trap for the next; instead mock/store.ts stops cloning fixtures.ts and
+# re-exports its arrays, so there is one array per collection and no seam module can disagree.
+# mock/layout.ts and mock/requests.ts are NOT added to allowed_paths and need no edit. Three lines in
+# one file already in the list, so allowed_paths and size are unchanged at 12 files and M — an added
+# file would have made this L, "must split at DESIGN", over one import line.
+#
+# Both candidates were executed against a copy of src/lib/data/ before the amendment was written;
+# both hold INV-11. 02-design.md sections 0.3, 3 and 7 carry the evidence and the reasoning, including
+# the reversal: version 2 rejected exactly this design, and that rejection is what R8 cost.
+#
+# The reading of INV-11 that 04-review.md puts to a human is NOT taken here and is not needed — after
+# this change no seam read path returns a deleted room, so the invariant holds under either reading.
+# If the intent in re-running /design was the opposite, to accept the divergence and carry it to LAY,
+# this amendment should be reverted rather than reinterpreted.
+#
+# Q8 raised with `ba`: whether the cascade should null seatId on requests naming a destroyed seat
+# (prisma/schema.prisma says onDelete: SetNull would). It blocks neither gate. Q6 and Q7 unchanged and
+# still block /qa.
+# IN_PROGRESS re-run and passed at 2026-08-21T03:51:08Z, applying the v3 design. One line of code:
+# mock/store.ts re-exports the fixtures.ts arrays instead of cloning them, so there is one array per
+# collection. mock/layout.ts and mock/requests.ts were NOT edited and are still absent from
+# allowed_paths, as v3 intends. No signature, selector or file-count change; size stays M.
+#
+# The R8 defect is verified gone by execution, not by reading: after deleteRoom("room-a"),
+# layout.getRoomLayout("room-a") is null and layout.listRoomLayouts() no longer contains room-a, with
+# mock/layout.ts unedited and still importing ../fixtures. typecheck, lint, test and build all exit 0;
+# seam-parity.test.ts still passes unedited. 03-impl-log.md carries the read-path table and a
+# Changelog separating the two cycles.
+#
+# Open question 2 of 03-impl-log.md is now `ba`'s Q8 — req-01 still names a destroyed seat, unchanged
+# by this fix and by the alternative the review sketched. Q6 and Q7 remain open with `ba` and still
+# block /qa. rework_count stays 0: R8 escalated and never entered REWORK (RULE-07).
+# REVIEW re-run and passed at 2026-08-21T04:18:29Z, in a fresh session per RULE-13. Nine of nine checks
+# pass with `file:line` citation; 04-review.md carries all nine plus the per-ID R8 table.
+#
+# The R8 escalation is resolved. INV-11 now holds on all three mechanisms, and the third — the one that
+# failed last pass — was verified by executing the seam rather than by reading the design amendment:
+# `src/lib/data/mock/store.ts:36,39,41` re-exports the fixture arrays, so `store.rooms === fixtures.rooms`
+# is true, and after `deleteRoom("room-a")` both `layout.getRoomLayout("room-a")` (null) and
+# `layout.listRoomLayouts()` (room-b alone) observe the cascade with `mock/layout.ts` unedited and still
+# importing `../fixtures`. typecheck, lint and test all exit 0; package.json and pnpm-lock.yaml are clean.
+#
+# `mock/requests.ts` still returns req-01 naming the destroyed seat-a-03. Reasoned through and NOT an R8
+# failure: it returns an id string, not the deleted Room or Seat object, and no invariant in the ledger
+# has a seat request as its subject. That is `ba`'s Q8 and blocks no gate.
+#
+# rework_count stays 0. The prior failure was R8, which escalates and never enters REWORK (RULE-07).
+#
+# FOR QA — Q6 and Q7 remain open with `ba` and still block /qa, unchanged by this verdict. Q7 is the
+# sharper one: AC-6 requires a room of exactly three seats and both fixture rooms hold six
+# (`deleteRoom("room-a")` reports seatsDeleted: 6). One RULE-14 pass still covers Q6, Q7 and the
+# out-of-scope-item-3 correction 01-story.md still owes.#
+# DESIGN re-run and amended at 2026-08-21T09:33:29Z (v4), answering Q10 and Q11 from 06-test-report.md.
+# Both were design-side omissions and NEITHER changes a line of src/**, so this does not return the
+# ticket to the Developer — the work it unblocks is QA's, in QA's own files. Next command is /qa.
+#
+# Q10 — design section 6 told QA to write a seam unit test for AC-14 while naming only deleteRoom.
+# Asserting a device "still exists" needs a device read, RULE-05 keeps QA out of src/**, and CLAUDE.md
+# forbids inventing a name, so AC-14 could not be written at all. QA declined to stub it, which is
+# correct. New section 6.1 names the three seam calls QA may make — listRooms, deleteRoom, listDevices
+# — with arguments and the return fields AC-14 asserts on.
+#
+# Q11 — section 6 re-keyed row testids from id to code, which broke tests/e2e/smoke.spec.ts:40-41, and
+# section 5 had left that file out of allowed_paths, so no agent on this ticket could repair it. The
+# re-keying stands; the file is added. Resolution (a) of the two QA offered.
+#
+# size moves M -> L on the honest count of 13 files. The ticket is NOT split: the L row says "must
+# split at DESIGN" and the model glosses it as an under-specified story routing back to SPEC, and
+# neither describes a two-line test repair on a ticket that is implemented with a REVIEW PASS. That
+# judgement, and the model debt behind it, are in 02-design.md section 5.
+#
+# AC-6's unsatisfiable Given (Q7) and AC-14's unnamed device (Q9) were answered by `ba` at
+# 2026-08-21T16:28 and are amended into 01-story.md. All of Q6 to Q9 are now answered, so the /qa
+# re-run has every input it lacked.
+# QA passed at 2026-08-21T17:06:00Z, third pass, in a fresh session per RULE-13. Both halves of the gate
+# are met: ten live criteria map to eighteen named tests, and `pnpm test` (45) and `pnpm test:e2e` (24)
+# both exit 0 with nothing skipped. typecheck and lint exit 0 as well.
+#
+# One test changed since the second pass, and it is QA's own: AC-14's control test drops the
+# `dev-04 is primary` assertion that `ba` withdrew answering Q12 at 2026-08-21T10:12:00Z, keeps its
+# deep-equality comparison against the pre-delete snapshot, and is renamed to match the amended clause.
+# No src/** file was read or touched. Q6 to Q12 are all answered and closed; `consulted` is empty.
+#
+# Six of the seven touched invariants are probed and all six hold, INV-11 on both halves. INV-01 is
+# unprobed and that is structural — nothing on this ticket reads an occupancy — recorded in
+# 06-test-report.md rather than omitted. No violation, so nothing escalates under RULE-07.
+#
+# rework_count stays 0. Neither QA failure reached the Developer: the first pass routed two design
+# defects to tech-lead-design (Q10, Q11) and the second routed one unsatisfiable Given to ba (Q12),
+# and RULE-08 keeps all three off the Developer's RULE-06 budget.
+#
+# Two residual gaps are stated in 06-test-report.md rather than left to be rediscovered: AC-6's confirm
+# through the UI on a room holding seats is covered at the seam (the e2e harness runs one mutable store
+# in parallel, and playwright.config.ts is outside allowed_paths), and `rooms-empty` is asserted absent
+# and never present because the seed always holds rooms.
+#
+# Next command is /ship ROO-01 in the orchestrator session.
+state: DONE
+owner: "qa"
+branch: "feat/ROO-01"
+size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Re-checked after the AC-8..AC-11 cut and
+                      # held at M: the cut removed four criteria that had no implementation, and the
+                      # B2/B3 resolution added three fields, two refusals and a confirmation.
+size: "L"             # v4 verdict, 2026-08-21T09:33:29Z: 13 files. Was M at 12; adding
+                      # tests/e2e/smoke.spec.ts crosses the L row. NOT split, and 02-design.md
+                      # section 5 carries the reasoning: the L row says "must split at DESIGN" and
+                      # the model glosses it as an under-specified story routing back to SPEC.
+                      # Neither describes a two-line test repair on a ticket that is implemented and
+                      # has a REVIEW PASS. Second instance of the Sizing table having no notion of an
+                      # amendment to an already-implemented design — steward's, not this ticket's.
+                      # Not XL: no existing caller changes
+                      # (the Q4 rule). Agrees with size_estimate. It sits on the M/L boundary and
+                      # INV-11's cascade is what put it there — 02-design.md section 5.
+depends_on: []        # correct as empty. B1 wanted this to name the AUT session work; the scope cut
+                      # removed the dependency rather than declaring it.
+# Corrected at the 2026-08-12 amendment. The earlier [] was reasoned circularly: it assumed the
+# safest delete, then concluded nothing was engaged because of that assumption. INV-11 now mandates
+# the destructive cascade. Per-ID reasoning, including the three considered and excluded, is in
+# 01-story.md under "Invariants touched".
+invariants_touched: [INV-01, INV-04, INV-05, INV-06, INV-07, INV-10, INV-11]
+# Written by tech-lead-design at 2026-08-12T16:30:41Z, verbatim from 02-design.md section 5. Twelve
+# files: the six under src/lib/data/ are the seam work INV-11's cascade requires, and the two under
+# tests/ are QA's. fixtures.ts, src/lib/auth/**, src/components/shared/** and seam-parity.test.ts are
+# deliberately absent — section 5 says why for each.
+allowed_paths:
+  - "src/app/(app)/rooms/page.tsx"
+  - "src/app/(app)/rooms/rooms-manager.tsx"
+  - "src/actions/rooms.ts"
+  - "src/lib/validation/room.ts"
+  - "src/lib/data/types.ts"
+  - "src/lib/data/mock/store.ts"
+  - "src/lib/data/mock/rooms.ts"
+  - "src/lib/data/mock/seats.ts"
+  - "src/lib/data/mock/devices.ts"
+  - "src/lib/data/prisma/rooms.ts"
+  - "tests/unit/rooms.test.ts"
+  - "tests/e2e/rooms.spec.ts"
+  # Added at the v4 amendment, 2026-08-21T09:33:29Z, answering Q11. Design section 6 re-keyed the row
+  # testids from room id to room code, which broke tests/e2e/smoke.spec.ts:40-41 — a Phase B test no
+  # agent on this ticket could edit, because this list did not contain it. A design that breaks a file
+  # must put that file in reach of the ticket that broke it. Two selector strings; no behaviour.
+  - "tests/e2e/smoke.spec.ts"
+  - ".ai/board/tickets/ROO-01/**"
+# Back to `none`. 02-design.md section 4 named two schema decisions and neither now applies: decision
+# 1 (Better Auth versus Member) existed only to make AC-8..AC-11 checkable, and the scope cut
+# withdrew them; decision 2 was contingent on Q1 resolving to (b), and it resolved to (a). The INV-11
+# cascade needs no migration either — schema.prisma already declares Seat->Room `onDelete: Cascade`,
+# which AC-6 now wants, and Device->Seat `onDelete: SetNull`, which is what AC-14 requires.
 schema_delta: none
 requires_adr: false
-rework_count: 0
+rework_count: 0    # unchanged. R8 escalates and never enters REWORK (RULE-07), so no increment.
 chat_budget:
   developer->tech-lead-design: { used: 0, max: 6 }
   developer->ba:               { used: 0, max: 6 }
@@ -22,7 +225,12 @@ chat_budget:
   qa->tech-lead-design:        { used: 0, max: 6 }
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
-  spec:   { passed: false, at: null }
-  design: { passed: false, at: null }
-  review: { passed: false, at: null }
-  qa:     { passed: false, at: null }
+  spec:   { passed: true,  at: "2026-08-12T04:59:46Z" }
+  design: { passed: true,  at: "2026-08-21T09:33:29Z" }   # v4, amended for Q10 and Q11 from QA.
+                                                          # v3 (03:23:13Z) resolved the R8 escalation.
+  review: { passed: true,  at: "2026-08-21T04:18:29Z" }   # PASS, second pass, fresh session. The
+                                                          # 2026-08-12 FAIL on R8 / INV-11 is resolved
+                                                          # and verified by execution. See 04-review.md.
+  qa:     { passed: true,  at: "2026-08-21T17:06:00Z" }   # PASS, third pass, fresh session.
+                                                          # Both suites exit 0; every live AC is
+                                                          # mapped. See 06-test-report.md.

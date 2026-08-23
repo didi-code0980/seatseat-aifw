@@ -72,7 +72,25 @@ model Seat {
   id     String @id @default(cuid())
   code   String @unique
   roomId String
-  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  // INV-11: deleting a room deletes its seats. `Cascade` is the decision, not an oversight.
+  //
+  // An earlier draft of ROO-01 refused deletion outright while this line said the opposite, and the
+  // design recorded the pair as an unresolved contradiction. It is resolved: the operator chose a
+  // real cascading delete over a refusal and over a soft delete, and INV-11 records that choice.
+  //
+  // What INV-11 asks for is NOT a database constraint. The database is meant to comply — silently
+  // and completely — so nothing here holds the invariant. The guard is the confirmation in the
+  // interface, which must name the number of seats that will be lost before the delete is issued.
+  // That makes INV-11 the one invariant on this schema that permits data loss rather than preventing
+  // it, and the one whose enforcement point is a UI affordance.
+  //
+  // A rule that lives only in the interface is the kind that disappears in a refactor, so review
+  // check R8 is what keeps it: every LAY and ROO ticket touching deletion carries INV-11 in
+  // `invariants_touched`, and R8 requires the reviewer to cite where the confirmation is held.
+  //
+  // No migration follows from this comment. The schema is still a draft awaiting approval (RULE-09).
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   // Grid coordinate plus rectangular footprint. Freeform pixel placement is out of scope.
   //

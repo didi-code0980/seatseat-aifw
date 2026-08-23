@@ -31,11 +31,54 @@ Other prefixes: `ops/` for chores, `fix/` for defects. Neither activates the pat
 
 ## Commits
 
-**Agents do not commit.** The loop leaves the working tree dirty and a human commits. This is
-deliberate: a commit is an assertion that a change is coherent, and that assertion is one of the
-things being validated.
+**Agents do not commit — with one exception: the `orchestrator`, inside `/ship`.** Every other
+stage leaves the working tree dirty and a human commits. That is deliberate: a commit is an assertion
+that a change is coherent, and that assertion is one of the things being validated.
 
-Where a human commits on behalf of the loop, the message references the ticket ID and the stage:
+The exception exists because `/ship` could not complete itself. Its step 4 requires an open pull
+request; a pull request requires commits on a pushed branch; and this section forbade the only agent
+in that command from producing them, while no step asked a human to. MD-07.
+
+**RULE-09 is unchanged and needed no ADR.** It names schema changes, ADRs, registry edits and PR
+merges. Committing was never among them — the prohibition lived here, in a standard, and it is this
+standard that was amended.
+
+### What the orchestrator decides
+
+How the work is grouped. It classifies the working tree, chooses which files form one coherent
+change, how many commits there are, and what each message says. That judgement is its own and this
+document does not constrain it.
+
+### What it does not decide
+
+**The branch boundary, because CI is branch-scoped and not commit-scoped.**
+`scripts/check-allowed-paths.mjs` computes its diff as `origin/main...HEAD` — the whole branch.
+Splitting mixed work into separate *commits* on `feat/<TICKET-ID>` therefore buys nothing: the
+`allowed-paths` check still sees every file on the branch, fails, and branch protection then blocks
+the very merge a human is meant to perform. The split has to be by branch.
+
+| Set | Contents | Branch | Result |
+|---|---|---|---|
+| Ticket | paths matching `allowed_paths`, plus `.ai/board/tickets/<TICKET-ID>/**` | `feat/<TICKET-ID>` | the ticket's pull request |
+| Everything else | model, registry, standards, hooks, scripts, tooling | `ops/<slug>` cut from `main` | a second pull request, reviewed on its own |
+
+The `ops/` branch is not a lesser pull request, and committing a CODEOWNERS path is not a rule being
+bent. `.github/CODEOWNERS` requires human review on `.ai/registry/`, `.ai/standards/`, `prisma/`,
+`.claude/`, `.github/` and `.mcp.json`. That is what makes recording such a change safe to automate:
+the orchestrator records it, a human still approves it. **Recording is not authoring.** RULE-01
+governs who *writes* the registry, `guard-registry.mjs` still refuses the orchestrator's `Edit`, and
+neither is touched by this exception.
+
+Two limits are not the orchestrator's to weigh:
+
+- **`main` is never a commit or a push target.** `git push origin main` and `git push --force` stay
+  denied in settings.
+- **Merging stays human.** RULE-09. `gh pr merge` stays denied.
+
+`git push` is deliberately absent from the allow list, so every push prompts once. That prompt is the
+last point at which a human sees a branch name before history exists.
+
+The message references the ticket ID and the stage, whoever writes it:
 
 ```
 <TICKET-ID>: implement room list read path

@@ -1,5 +1,5 @@
 ---
-doc_version: 2
+doc_version: 3
 last_updated: 2026-08-12
 governed_by: [RULE-01, RULE-07, RULE-09]
 ---
@@ -33,6 +33,7 @@ different people to decide what happens next.
 | INV-07 | Devices may exist unassigned in inventory. |
 | INV-08 | There is no self-signup. Accounts are created by Manager or Admin only. |
 | INV-10 | Within a room, no two seats may occupy overlapping grid cells. A seat's placement is a grid coordinate plus a rectangular footprint. |
+| INV-11 | Deleting a room deletes its seats. The deletion is destructive and cannot be undone; the interface must obtain explicit confirmation naming the number of seats that will be lost. |
 
 ## Unissued IDs
 
@@ -48,7 +49,7 @@ Two candidates were considered and rejected as domain invariants:
   workflow, not a constraint on data.
 
 IDs are stable references cited from `02-design.md`, `04-review.md`, and `ticket.yaml`. They are
-never renumbered and never reused. The next invariant issued will be `INV-11`.
+never renumbered and never reused. The next invariant issued will be `INV-12`.
 
 This section exists so a later reader does not conclude a row went missing. Check D2 in
 `scripts/check-docs.mjs` reads this section as its source of legitimately-unissued IDs, so prose
@@ -58,6 +59,11 @@ explaining the gap does not fail the audit.
 
 **In a story.** The BA populates `invariants_touched` in `ticket.yaml` with the IDs a change could
 plausibly affect. Empty is a legitimate answer and must be written as `[]`; absent is not.
+
+The list records what the change **could** affect, not what survives the mitigation. Choosing the
+safest behaviour and then concluding no invariant is engaged is circular reasoning: the fact that the
+behaviour had to be chosen is the evidence that the invariant was in play. Follow indirect chains —
+an invariant reached through a cascade is still reached.
 
 **In a design.** The Tech Lead states, per listed ID, which mechanism holds it: a database
 constraint, a check inside `src/lib/data/`, or a UI affordance that makes the violating action
@@ -90,3 +96,24 @@ does nothing else.
 that bypasses `src/lib/data/` a lint failure. That is a real weakness and it is stated here rather
 than hidden. It matters most for the Layout Designer: overlap is the failure dnd-kit produces most
 easily and the eye catches least reliably.
+
+**INV-11** is the one invariant that permits data loss rather than preventing it. It is stated as an
+invariant because the confirmation is the only thing standing between a mis-click and the permanent
+loss of a room's occupancy history. `schema.prisma` declares `onDelete: Cascade` from Seat to Room,
+so the database will comply silently — the guard has to live in the interface, and a rule that lives
+only in the interface is exactly the kind that gets dropped in a refactor unless something checks for
+it. R8 is that something.
+
+Soft delete was considered and rejected: the operator chose a real delete. That choice is recorded
+here rather than in a story, because every future ticket touching room deletion inherits it.
+
+**INV-11 reaches devices, though its wording does not say so.** The chain: deleting a room deletes
+its seats; deleting a seat is an occupant exit; INV-06 then applies to whatever primary device sat
+there, and INV-04, INV-05, and INV-07 follow from where that device ends up. A room-delete ticket
+therefore engages INV-04 through INV-07 indirectly, and INV-01 directly, because occupancy is
+destroyed.
+
+This chain is written down because it is invisible from INV-11's own text. A reviewer checking R8
+against a room delete has to walk it, and a BA populating `invariants_touched` has to list the
+indirect IDs as well as the obvious one. The first story written against this invariant listed none
+of them.

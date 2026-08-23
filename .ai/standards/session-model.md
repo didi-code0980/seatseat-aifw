@@ -53,17 +53,24 @@ call is not.
 
 ## One ticket, six commands
 
-Each line is run in the session named. `/next-ticket` between stages is optional; the orchestrator
-prints the next line after each gate.
+Each line is run in the session named. The orchestrator prints the next line after each gate.
+
+`BACKLOG -> SPEC -> [DoR] -> READY -> DESIGN -> IN_PROGRESS -> REVIEW -> QA -> DONE`
 
 | # | Command | Session | Produces |
 |---|---|---|---|
-| 1 | `/spec ROO-01` | BA — persistent | `01-story.md` |
-| 2 | `/design ROO-01` | Tech Lead — persistent | `02-design.md`, `allowed_paths` in `ticket.yaml` |
+| 1 | `/spec ROO-01` | BA — persistent | `01-story.md`, plus `invariants_touched` and `size_estimate` in `ticket.yaml` |
+| — | `/next-ticket` | orchestrator — lead | the DoR evaluation; `SPEC -> READY` on a pass, back to `BACKLOG` on a fail |
+| 2 | `/design ROO-01` | Tech Lead — persistent | `02-design.md`, `allowed_paths` and `size` in `ticket.yaml` |
 | 3 | `/implement ROO-01` | Developer — fresh, kept until DONE or ESCALATED | code, `03-impl-log.md` |
 | 4 | `/review ROO-01` | **fresh session, discarded after the verdict** | `04-review.md` |
 | 5 | `/qa ROO-01` | **fresh session, discarded after the verdict** | `05-test-plan.md`, `06-test-report.md`, `tests/**` |
 | 6 | `/ship ROO-01` | orchestrator — lead | PR opened; a human merges (RULE-09) |
+
+**The unnumbered row is not optional.** SPEC runs directly out of BACKLOG, and DoR is evaluated
+between SPEC and READY, because two of its six items are the BA's output. The BA does not promote its
+own ticket to READY — that evaluation belongs to the orchestrator, and an agent that walks its own
+work past the gate judging it has removed the gate.
 
 On a FAIL at step 4 or 5, the failure routes per the table in `.ai/01-operating-model.md`. Re-running
 `/review` opens **another** fresh session — a re-review never reuses the session that produced the

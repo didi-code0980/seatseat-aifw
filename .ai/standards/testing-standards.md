@@ -1,5 +1,5 @@
 ---
-doc_version: 2
+doc_version: 3
 last_updated: 2026-08-12
 governed_by: [RULE-05, RULE-07, RULE-08]
 ---
@@ -111,6 +111,45 @@ available for a check that reads a specific file.
 Applies to `scripts/check-docs.mjs` and every `.claude/hooks/*.mjs` guard that resolves a real path —
 `guard-registry.mjs`, `guard-allowed-paths.mjs`, `guard-tracker-scope.mjs`, `guard-read-scope.mjs`,
 `guard-project-root.mjs`, `chat-guard.mjs`.
+
+## What a check may be scoped to
+
+**A check whose scope includes agent-produced artifacts will be worked around by agents rather than
+reported. Scope checks to what humans own.**
+
+A check is a message to whoever can act on it. When the reader is a human, a finding costs a
+conversation and buys a decision. When the reader is an agent mid-stage, the finding is an obstacle
+between it and its gate, and the cheapest way through is to make the finding stop appearing. Both
+paths end with a green check; only one of them means anything.
+
+This is not about agents behaving badly. Satisfying the check is usually the *correct* local move —
+the finding says a field is missing, so the agent adds the field. Nothing in the stage tells it that
+the check was aimed at a different class of file and that its artifact was never supposed to be in
+scope. A rule that depends on every future agent noticing that distinction under time pressure is a
+rule that holds until the first busy one.
+
+**This has already happened here.** Check D9 requires `doc_version`, `last_updated`, and
+`governed_by`, and its first implementation read every `.md` under `.ai/` — board artifacts included.
+The first story ever written failed it. The BA flagged the mismatch in its report, which is the
+outcome the check wanted, and *also* pasted the three fields into `01-story.md` to get to a clean
+audit, which is the outcome it will get by default. A ticket artifact has no version to bump and no
+rule set to track; the fields were meaningless there. The next agent, with less room, would have done
+only the second half, and the check would have read as passing on a document it had stopped
+describing.
+
+**The rule.** Before adding a check, name the person who fixes a finding from it. If the answer is an
+agent in the middle of a stage, the check is measuring compliance, not the thing it names — either
+narrow its scope to the human-owned plane, or move the enforcement into a gate, where a disagreement
+is adjudicated rather than edited away.
+
+For this repository the human-owned documents are `.ai/registry/**`, `.ai/standards/**`,
+`.ai/templates/**`, `.ai/00-charter.md`, and `.ai/01-operating-model.md`. `.ai/board/**` is agent
+output — tickets, artifacts, `backlog.md`, and `metrics.md` alike — and belongs to the gates in
+`.ai/01-operating-model.md`, not to the documentation audit.
+
+**A narrowing needs its own test.** The way this fix fails is by narrowing to nothing, and a check
+that fires on no file passes everywhere. Test both directions: the artifact that must not be reported,
+and the same content under a human-owned path, which must be.
 
 ## What makes a test bad here
 

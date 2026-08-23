@@ -31,6 +31,33 @@ export interface Room {
   gridHeight: number;
 }
 
+/** Input to createRoom. Every field the model requires; the id is minted by the seam. */
+export type NewRoom = Omit<Room, "id">;
+
+/** Input to updateRoom. Only the name is editable in this ticket (AC-4). */
+export interface RoomPatch {
+  name: string;
+}
+
+/**
+ * INV-11 wording: code uniqueness is a fact about stored data, so the refusal belongs to the seam
+ * and not to the action that calls it. A caller has to narrow this before it can claim success.
+ */
+export type CreateRoomOutcome =
+  | { created: true; room: Room }
+  | { created: false; reason: "DUPLICATE_CODE" };
+
+/**
+ * INV-11: the delete is destructive and cascades. The counts are returned rather than inferred so
+ * that AC-6 and AC-14 are assertable at the seam, where the cascade actually happens.
+ *
+ * seatsDeleted    — seats destroyed with the room, and with them their ports and occupancy rows
+ * devicesDetached — devices that sat on those seats, now seatId: null and rank: "SECONDARY"
+ */
+export type DeleteRoomOutcome =
+  | { deleted: true; seatsDeleted: number; devicesDetached: number }
+  | { deleted: false; reason: "NOT_FOUND" };
+
 export interface NetworkPort {
   id: string;
   /** A port belongs to a seat, not to a device or a room. */
