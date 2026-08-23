@@ -14,6 +14,13 @@ ownership across organizational rooms. Three roles: Admin, Manager, User.
 | [.ai/registry/features.md](.ai/registry/features.md) | The only valid source of feature IDs |
 | [.ai/standards/](.ai/standards/) | Architecture, coding, data model, RBAC, testing, UI, git, integrations |
 | [.claude/PERMISSIONS.md](.claude/PERMISSIONS.md) | Why each permission and hook exists |
+| [.ai/steward/context.md](.ai/steward/context.md) | **How the operator wants to be worked with.** Standing instructions, and the log of what changed and why |
+
+**Read the standing instructions in `.ai/steward/context.md` before your first reply in a session,
+whichever agent you are.** They are durable operator preferences — autonomy, answer length, language,
+what to verify before speaking — and they apply whether or not the current message repeats them. The
+operator named "having to explain the same preference again" as a standing cost; that file is the
+mechanism against it. It is board plane and agent-writable, but only the steward appends to it.
 
 ## Three rules reproduced here
 
