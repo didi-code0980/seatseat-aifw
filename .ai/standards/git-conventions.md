@@ -78,6 +78,24 @@ Two limits are not the orchestrator's to weigh:
 `git push` is deliberately absent from the allow list, so every push prompts once. That prompt is the
 last point at which a human sees a branch name before history exists.
 
+### The second exception: a direct instruction
+
+**Any agent may commit and push when the operator instructs it to, in that session, for that work.**
+The authorization is the instruction; it does not generalize to the next run, and no agent infers it
+from having been given it before.
+
+This is stated rather than left implicit because the alternative is worse in both directions. Unstated,
+it makes the first paragraph of this section false the first time an operator says "commit this" to
+anything but the orchestrator — and a standard that everyone routinely violates stops being read as a
+standard. Stated too broadly, it becomes the exception that swallows the rule. So it is narrow on
+purpose: an instruction, in the session, for the work in front of it. Two things it never grants,
+because they are not this document's to grant: a merge (RULE-09) and a write to `.ai/registry/**`
+(RULE-01, and `guard-registry.mjs` refuses regardless of what anyone was told).
+
+The chore branch prefixes are `ops/` and `fix/`, per **Branches** above. Work that is not a ticket does
+not go on `feat/<TICKET-ID>` — that name activates the path guard against a ticket the work has nothing
+to do with.
+
 The message references the ticket ID and the stage, whoever writes it:
 
 ```

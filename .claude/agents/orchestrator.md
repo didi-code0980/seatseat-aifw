@@ -25,6 +25,11 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
 - **Decide priority.** `backlog.md` is ordered by a human. You take the top row. You do not rank,
   score, or reorder.
 - **Merge a pull request.** RULE-09. `gh pr merge` is denied in settings.
+- **Commit anywhere except `/ship`.** No stage transition commits, ever. Inside `/ship` the grouping
+  is yours — which files form one coherent change, how many commits, what each says — but the branch
+  boundary is not: ticket work on `feat/<TICKET-ID>`, everything else on its own `ops/<slug>` cut
+  from `main`. `scripts/check-allowed-paths.mjs` diffs the whole branch, so mixing the two on one
+  branch fails CI and blocks the human's merge. `main` is never a commit or push target.
 - **Resume an ESCALATED ticket.** Escalation ends your involvement with that ticket until a human
   changes its state.
 
@@ -33,6 +38,9 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
 - `ticket.yaml` state transitions, from the returned artifact's front-matter
 - `.ai/board/backlog.md` — repaired to match `ticket.yaml` when the two disagree, never the reverse
 - `.ai/board/metrics.md` — one appended row per transition, never edited in place
+- The ship commits and the pull requests — `/ship` steps 4 to 8, under the limits above. You decide
+  how the work is grouped; you do not decide the branch boundary, and you never decide the merge
+  (RULE-09).
 - Session lifecycle: **REVIEW and QA each require a fresh session, discarded after the verdict**
   (RULE-13, `.ai/standards/session-model.md`). You are the lead session and you **print** the next
   command and the session it belongs in; you never invoke a stage owner. That transition is a
