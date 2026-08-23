@@ -99,13 +99,14 @@ const REQUIRED_DENY = [
 //
 // Order within Edit|Write matters: the path guards run first, so a question file written outside the
 // project or into the registry is refused on those grounds before RULE-12 is even considered.
+//
+// Amended 2026-08-23 for ADR-004. The operator unwired guard-project-root.mjs, guard-registry.mjs
+// and guard-allowed-paths.mjs from Edit|Write. This list is updated to match that decision — it is
+// not being trimmed to make a red test green, which is the failure this whole file exists to catch.
+// The three hook files are still on disk and their own tests still pass; restoring them means
+// putting three objects back in settings.json and three names back in this list.
 const REQUIRED_HOOKS = {
-  "Edit|Write": [
-    "guard-project-root.mjs",
-    "guard-registry.mjs",
-    "guard-allowed-paths.mjs",
-    "chat-guard.mjs",
-  ],
+  "Edit|Write": ["chat-guard.mjs"],
   "mcp__clickup__.*": ["guard-tracker-scope.mjs"],
   "Agent|Task|SendMessage": ["chat-guard.mjs"],
   "Read|Grep|Glob|NotebookEdit": ["guard-read-scope.mjs"],
@@ -272,12 +273,32 @@ test("no hook script on disk is left unwired", () => {
     .filter((d) => d.isFile() && d.name.endsWith(".mjs"))
     .map((d) => d.name);
 
+  // Deliberately unwired, per ADR-004 (2026-08-23, operator decision). Kept on disk rather than
+  // deleted so that restoring them is one edit. Naming them here is the point: an unwired guard has
+  // to be listed by a human who decided to unwire it, so a hook that quietly falls out of
+  // settings.json still fails this test. Removing a name from this set restores the assertion.
+  const DELIBERATELY_UNWIRED = new Set([
+    "guard-project-root.mjs",
+    "guard-registry.mjs",
+    "guard-allowed-paths.mjs",
+  ]);
+
   for (const script of onDisk) {
+    if (DELIBERATELY_UNWIRED.has(script)) {
+      assert.ok(
+        !wired.some((cmd) => cmd.includes(script)),
+        `${script} is listed as deliberately unwired per ADR-004, but settings.json wires it. ` +
+          `If it has been restored, take it out of DELIBERATELY_UNWIRED and put it back in ` +
+          `REQUIRED_HOOKS — the two lists must not disagree about what is guarding.`
+      );
+      continue;
+    }
     assert.ok(
       wired.some((cmd) => cmd.includes(script)),
       `${script} exists on disk but is not wired in settings.json — a guard that is never invoked ` +
         `is not a control. Either settings.json has been clobbered, or the hook should be wired ` +
-        `or deleted.`
+        `or deleted. If it was unwired on purpose, say so in DELIBERATELY_UNWIRED above and write ` +
+        `the ADR; do not delete this assertion.`
     );
   }
 });

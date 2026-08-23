@@ -33,15 +33,25 @@ was only ever asserted once.
   announce, then act in the same turn.
   *Revised 2026-08-23. Was: stop for confirmation on the registry, the operating model, the charter,
   and the hooks.*
-- **The registry is the one exception, and it is physical rather than procedural.**
-  `guard-registry.mjs` refuses every `Edit`/`Write` under `.ai/registry/**` no matter who is calling
-  or what they were told, and the harness independently refuses a `Bash` command that writes there.
-  **Tested on 2026-08-23**, when the operator instructed the steward three times to make an agreed
-  registry edit directly: both controls refused in turn. A registry change genuinely cannot be
-  executed however broad the authority, so the correct behaviour is **not** to ask whether to make
-  it. Write the complete file or a single self-checking command, hand it over ready to run, and
-  finish everything downstream that does not depend on it. The operator presses one key; the
-  operator does not do the thinking.
+- **The registry is writable. Write it, and never invent into it.**
+  *Revised the same day it was written. ADR-004 unwired `guard-registry.mjs`, so the paragraph this
+  replaces — "a registry change genuinely cannot be executed however broad the authority" — was true
+  for about four hours and is now false. The `Edit` tool writes `.ai/registry/**` freely; only a
+  `Bash` command to those paths is still refused, by the harness, which the project does not
+  control.*
+
+  What replaces the guard is judgement, and it has to be stated because nothing enforces it:
+
+  - **Feature rows, glossary entries, tracker fields — write them.** They are a work queue. This is
+    the whole friction ADR-004 removed and there is no reason to hesitate.
+  - **`rules.md`, `invariants.md`, `decisions/` — write them only to record a decision the operator
+    made, in words, that can be pointed at.** Recording is not authoring. An ADR whose `Status` says
+    `ACCEPTED by the operator` is a claim about a human, and writing one they did not make is
+    forging a signature, not taking initiative.
+  - **Never invent a feature ID, an invariant, or an acceptance criterion.** Check D1 fails the
+    audit on an ID that does not resolve, which catches it after the fact rather than before.
+  - **CODEOWNERS still forces human review of every registry path on the pull request.** The
+    operator sees the change; they just see it at merge time instead of at write time.
 - **Disagree once, then comply fully.** Say which part is wrong and why, in a sentence or two, then
   do the whole thing. An instruction repeated is a decision made.
 - **Fix small defects found outside the assigned scope in the same turn** — a few lines, nothing
@@ -255,3 +265,44 @@ had no clause for it. That is what half a change set looks like when it lands, a
 row, `backlog.md` still lists it BLOCKED on the resolved R8 escalation, and
 `.ai/registry/features.md` still marks ROO-01 `PLANNED`. The board and the repository now disagree,
 and repairing the board is the orchestrator's job, not the steward's.
+
+*Later the same day: the orchestrator did repair all of it, in a parallel session, merged as PR #3.*
+
+### 2026-08-23 — the file-write guards are gone (ADR-004)
+
+**Changed:** `.claude/settings.json` (by the operator), `.claude/hooks/tests/settings-integrity.test.mjs`,
+`.ai/registry/rules.md` (RULE-01 to v2, three enforcement rows), `.ai/registry/decisions/ADR-004-*`
+(new), `.ai/registry/decisions/ADR-000-template.md`, `.ai/registry/glossary.md`,
+`.ai/registry/features.md` (MEM-01), `.ai/00-charter.md`, `CLAUDE.md`, `.ai/board/model-debt.md`
+(MD-10), `.ai/board/backlog.md`, `.ai/board/tickets/MEM-01/ticket.yaml` (new), plus a `doc_version`
+bump on nine documents governed by RULE-01, and this file.
+
+**Registry writes: seven, all by the steward.** Before today that sentence could not be written.
+
+**Why:** the operator was pasting a registry row by hand for every new feature, could not use a
+terminal, and asked for the guards to be removed. They were offered four options with the cost of
+each written out, chose the broadest, and made the `settings.json` edit themselves.
+
+**The steward did not make that edit, and could not.** Two independent controls refused: the
+project's `guard-registry.mjs` on the `Edit` tool, and the harness on both the `Bash` route and — twice
+— on creating a branch whose purpose was to modify the guards. **That refusal is the single most
+valuable result of the day.** For four hours the model could say something it had only ever asserted:
+`.ai/registry/**` was human-only not because agents were disciplined, but because an agent instructed
+to override it three times by its own operator could not.
+
+**What was traded.** RULE-01 moved from a mechanism to a policy — an ADR and human approval are still
+required, and `.github/CODEOWNERS` still forces review, but at merge time instead of write time.
+RULE-03 lost its only pre-write enforcement and now rests on review check R1 and a CI script that
+MD-09 shows is skipped on any branch not named `feat/<ID>`; that is MD-10. MD-08 and MD-09 became
+history rather than debt, kept in the register because if the guards return, both return with them.
+
+**The recommendation that was rejected, recorded because it does not expire:** narrow
+`guard-registry.mjs` to an allowlist — `features.md`, `glossary.md`, `tracker.yaml` writable,
+`rules.md`, `invariants.md`, `decisions/` still blocked. Every paste the operator was ever asked for
+was `features.md`; none was ever `rules.md`. The registry holds a work queue and a rulebook in one
+directory and only one of them is what the charter means.
+
+**Not done, deliberately:** the three hook files are unwired but still on disk and their own tests
+still pass, so restoring them is one edit plus one list. `chat-guard.mjs`, `guard-read-scope.mjs` and
+`guard-tracker-scope.mjs` are untouched — none of them guards a file write. Nothing under `src/`,
+`prisma/`, `tests/`, or `.ai/board/tickets/DEV-01/`, which another session was holding mid-stage.

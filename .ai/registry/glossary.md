@@ -1,5 +1,5 @@
 ---
-doc_version: 1
+doc_version: 2
 last_updated: 2026-08-10
 governed_by: [RULE-01]
 ---
@@ -12,8 +12,9 @@ Terms whose meaning is fixed by this system. Where a term is a process term its 
 
 ## Process terms
 
-**Registry plane.** `.ai/registry/` and `.ai/standards/`. Permanent, human-only (RULE-01). The
-statements a ticket is judged against.
+**Registry plane.** `.ai/registry/` and `.ai/standards/`. Permanent. The statements a ticket is
+judged against. **Human-*owned*, no longer human-*only*** — since ADR-004 an agent can write here,
+and RULE-01 is enforced by CODEOWNERS review on the pull request rather than by a blocked write.
 
 **Board plane.** `.ai/board/`. Transient, agent-writable. The record of one unit of work moving
 through the lifecycle.
