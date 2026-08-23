@@ -56,6 +56,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
+| SEA-01 | Seat occupancy — assign and release | SEA | PLANNED | INV-01, INV-02, INV-03, INV-06 | Fourth slice, specced parallel to MEM-01's implementation. **Placement is deliberately out of this row**: INV-10 governs grid overlap, and `types.ts:77` assigns it to every LAY ticket. SPEC must confirm the split before DESIGN — if placement is pulled in, INV-10 joins this list and the ticket becomes LAY's problem instead. INV-06 is the reason this ticket writes `mock/devices.ts`: releasing an occupant auto-downgrades that seat's primary device. |
 
 ## DEV — Devices
 
@@ -67,7 +68,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| MEM-01 | Member CRUD UI | MEM | PLANNED | INV-01, INV-05, INV-06 | Runs parallel to DEV-01. The three invariants engage only if SPEC resolves member deletion to a cascade; if it resolves to a refusal, `ba` narrows this list and the two tickets keep disjoint `allowed_paths`. First row written by an agent, under ADR-004. |
+| MEM-01 | Member CRUD UI | MEM | PLANNED | INV-08, INV-12 | Third CRUD slice, first row written by an agent (ADR-004). Member deletion resolved to a **refusal** at SPEC — ADR-005, which issues INV-12. INV-01, INV-05 and INV-06 were on this row conditionally and fall away with that answer; INV-12 is on it because MEM-01 is the ticket that implements the deletion INV-12 governs. |
 
 ## GRP — Groups
 

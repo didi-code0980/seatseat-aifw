@@ -1,0 +1,70 @@
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded from .ai/templates/ticket.yaml at 2026-08-23. Third of the five Phase C tickets to return
+# from the backlog's "Deseeded" section — except this one was never on that list: seats were not
+# among the five, so this is the first ticket seeded from a feature row that did not previously exist
+# as a deseeded title.
+#
+# INTENDED TO RUN PARALLEL to MEM-01. .ai/01-operating-model.md sets WIP = 1 and permits parallel
+# dispatch only when allowed_paths are pairwise disjoint after glob expansion, there is no mutual
+# dependency, each ticket has its own worktree, and combined WIP is 3 or less.
+#
+# The disjointness was checked against the seam rather than assumed:
+#
+#   MEM-01 enforces INV-12 by READING — it filters `listSeats()` on occupantId and `listDevices()`
+#   on ownerId. Both functions already exist. It writes only members files.
+#   SEA-01 writes mock/seats.ts and, because of INV-06, mock/devices.ts.
+#
+#   They are disjoint TODAY. The one decision that would break it is MEM-01's DESIGN adding a
+#   member-centric helper such as `seatsOccupiedBy(memberId)` into mock/seats.ts. If that helper is
+#   wanted, it belongs in mock/members.ts. That is a real architectural trade-off, not a free
+#   workaround: the query is seat-shaped and putting it in members.ts costs cohesion to buy
+#   parallelism. Whoever runs MEM-01's DESIGN should decide it deliberately and say so.
+id: SEA-01
+title: "Seat occupancy — assign and release"
+feature_ids: [SEA-01]
+group: SEA
+state: BACKLOG
+owner: ""
+branch: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+# ROO-01 and DEV-01 are both DONE and merged. MEM-01 does not block this: the two are disjoint, and
+# nothing SEA-01 needs is produced by it.
+depends_on: []
+# TRANSCRIBED from the features.md row, not reasoned. `ba` owes per-ID reasoning at SPEC.
+#
+# THE SCOPE QUESTION SPEC MUST SETTLE FIRST, because it decides which group owns this ticket:
+#
+#   Does SEA-01 include seat PLACEMENT — creating a seat at a grid coordinate with a footprint?
+#
+#   No  -> assignment and release only. The four IDs below are right, and this stays a SEA ticket.
+#   Yes -> INV-10 joins the list, and `src/lib/data/types.ts:77` says every ticket carrying INV-10
+#          is a LAY ticket. The row would move groups, and the standards call INV-10 "the failure
+#          dnd-kit produces most easily and the eye catches least reliably" — which is an argument
+#          for giving it its own ticket rather than appending it to this one.
+#
+# INV-06 is why this ticket writes mock/devices.ts. Releasing an occupant must auto-downgrade that
+# seat's primary device; that is a write, not a read, and it is the whole reason DEV-01 had to land
+# first.
+invariants_touched: [INV-01, INV-02, INV-03, INV-06]
+# [] is a control, not a placeholder — but note that guard-allowed-paths.mjs is unwired as of
+# ADR-004, so nothing refuses a write outside this list at write time. Review check R1 and
+# scripts/check-allowed-paths.mjs in CI are what remain, and MD-09 records that the CI check is
+# skipped entirely on any branch not named feat/SEA-01.
+allowed_paths: []
+schema_delta: none
+requires_adr: false
+rework_count: 0
+# Four pairs from the template. The template omits `tech-lead-design->ba` and `ba->product` although
+# the chat topology permits both — MD-04, still open after three tickets.
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
