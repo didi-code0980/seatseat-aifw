@@ -34,6 +34,7 @@ later state is in flight and appears here because this file has no in-flight sec
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
 | 1 | MEM-01 | Member CRUD UI | BACKLOG | nothing — next for `/spec` |
+| 2 | SEA-01 | Seat occupancy — assign and release | BACKLOG | nothing — specced parallel to MEM-01's implementation |
 
 `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
 rather than by Phase C, ran the full loop the same day, and is `DONE`.
