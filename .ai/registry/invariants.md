@@ -1,6 +1,6 @@
 ---
-doc_version: 4
-last_updated: 2026-08-23
+doc_version: 5
+last_updated: 2026-08-24
 governed_by: [RULE-01, RULE-07, RULE-09]
 ---
 
@@ -91,6 +91,16 @@ write path that does not exist is not caught by a constraint that is never evalu
 creates an account, and no first-run bootstrap that self-registers. The login page authenticates and
 does nothing else.
 
+**INV-08's enforcement changed on 2026-08-24 and is now weaker than the words above imply. The
+invariant text is unchanged; only what holds it changed.** ADR-006 replaced Better Auth with Supabase
+Auth. Better Auth held this invariant with two controls in code — `disableSignUp: true` and the
+absence of a route — either of which a reviewer could read and a test could assert. Under ADR-006 the
+operator chose a client-side configuration flag in `localStorage`. `localStorage` is browser storage:
+the value lives on the machine of the person it restrains, and one line in a developer console
+changes it with no server-side trace. **This invariant is therefore currently held by intent rather
+than by a control**, which is recorded as MD-14 with the fix shape. It is written here, in the
+registry, because an invariant whose enforcement has quietly lapsed is worse than one that was never
+claimed — a reader of the table above would otherwise assume a guarantee that does not exist.
 **INV-10** is held at the data-access layer, not by a database constraint — no unique index expresses
 "these two rectangles do not intersect". A `btree_gist` EXCLUDE constraint could, and is sketched in
 `constraints.draft.sql`. Until it is applied, the invariant holds only because RULE-02 makes a write

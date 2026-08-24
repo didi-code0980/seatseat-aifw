@@ -15,6 +15,19 @@ const SEAM_MESSAGE =
   "Import the seam, not an implementation. If the seam lacks what you need, the seam changes — " +
   "and that is a design decision, recorded in `02-design.md` section 3.";
 
+// ADR-006 added the second group. Supabase Auth replaced Better Auth, and the whole of ADR-002's
+// decision to leave Row Level Security off rests on `src/lib/data/` staying the only path to data.
+// A Supabase client constructed in a client component makes that false — the browser would hold a
+// credential that reaches the database directly, past the seam, past `can()`, past R4 and R6.
+//
+// So the package is restricted everywhere and exempted for exactly one path: `src/lib/auth/**`.
+// `src/lib/data/` is deliberately NOT exempted. The data seam has no reason to hold an auth client,
+// and the exemption list is the document that says so.
+const AUTH_MESSAGE =
+  "ADR-006: the Supabase client is constructed server-side only, from `src/lib/auth/**`. " +
+  "A Supabase client in a client component reaches the database past the seam, which is the " +
+  "condition ADR-002 named as invalidating its decision to leave Row Level Security off.";
+
 const RESTRICTED_SEAM_IMPORTS = [
   "error",
   {
@@ -31,6 +44,10 @@ const RESTRICTED_SEAM_IMPORTS = [
           "**/lib/data/prisma/**",
         ],
         message: SEAM_MESSAGE,
+      },
+      {
+        group: ["@supabase/*", "@supabase/*/**"],
+        message: AUTH_MESSAGE,
       },
     ],
   },
@@ -72,6 +89,10 @@ const config = [
     // purpose. The rule found this file on its own before the exception existed, which is the
     // cleanest evidence available that the restriction is real and not decorative — R4 is a lint
     // failure, not a reviewer's opinion.
+    //
+    // This block turns the rule OFF entirely, which is why the Supabase exemption below is a
+    // separate block rather than another entry in this list: these four files may name Prisma, and
+    // they may not name Supabase.
     files: [
       "src/lib/data/prisma/**/*.ts",
       "src/lib/data/index.ts",
@@ -80,6 +101,37 @@ const config = [
     ],
     rules: {
       "no-restricted-imports": "off",
+    },
+  },
+
+  {
+    // The one place the Supabase client may be constructed (ADR-006, OQ-4).
+    //
+    // The seam restriction is re-stated here rather than dropped: turning the whole rule off would
+    // let the auth module import `@/lib/data/prisma/**` too, and nothing about holding an auth
+    // client earns that. Only the Supabase group is lifted.
+    files: ["src/lib/auth/**/*.ts", "src/lib/auth/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@prisma/client",
+                "@prisma/client/*",
+                "**/generated/prisma",
+                "**/generated/prisma/**",
+                "@/lib/data/prisma",
+                "@/lib/data/prisma/**",
+                "**/lib/data/prisma",
+                "**/lib/data/prisma/**",
+              ],
+              message: SEAM_MESSAGE,
+            },
+          ],
+        },
+      ],
     },
   },
 ];

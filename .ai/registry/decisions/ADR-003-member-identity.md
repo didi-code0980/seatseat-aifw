@@ -1,6 +1,6 @@
 ---
-doc_version: 2
-last_updated: 2026-08-12
+doc_version: 3
+last_updated: 2026-08-24
 governed_by: [RULE-01, RULE-09]
 ---
 
@@ -8,7 +8,19 @@ governed_by: [RULE-01, RULE-09]
 
 ## Status
 
-`ACCEPTED` — 2026-08-12, by the operator.
+`ACCEPTED` — 2026-08-12, by the operator. **AMENDED by ADR-006 — 2026-08-24: the referent changed,
+the decision did not.**
+
+Better Auth was removed. Everywhere this document says "Better Auth's `user`", read Supabase's
+`auth.users`. The decision itself is untouched and was not re-litigated: `Member` is still its own
+table, still carries a nullable one-to-one link to the identity provider's user, and a Member without
+that link is still a person the organization tracks who cannot sign in. The title of this ADR names a
+library that no longer exists in the project and is deliberately not rewritten — renaming it would
+make the file disagree with the pull request that accepted it.
+
+**One mechanical detail moved with the referent.** `auth.users` lives in the `auth` Postgres schema,
+not `public`, so the relation may not be expressible as a Prisma foreign key. ADR-006 OQ-3 decides
+the column shape and recommends a plain unique UUID with no relation.
 
 ## Context
 

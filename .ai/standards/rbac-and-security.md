@@ -1,6 +1,6 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
+doc_version: 2
+last_updated: 2026-08-24
 governed_by: [RULE-02, RULE-09]
 ---
 
@@ -49,13 +49,36 @@ are created by a Manager or an Admin.
 This is an invariant, not a configuration choice, which means a change to it escalates under RULE-07
 rather than being implemented.
 
+**What holds it, as of ADR-006, is a client-side flag in `localStorage`, and that is not a control.**
+The operator decided this on 2026-08-24 against the steward's recommendation, and the honest
+statement is the one in `.ai/registry/invariants.md`: `localStorage` is browser storage, so the check
+sits on the machine of the person being checked and a developer console changes it in one line. Any
+ticket that touches account creation should read MD-14 before assuming this invariant is enforced.
+The sentence above — accounts are created by a Manager or an Admin — remains the rule. Nothing
+currently makes it true.
+
 ## Auth implementation
 
-Better Auth, wired from its installed types under `node_modules/` or current documentation — not from
-memory. Anything unverified carries `TODO(verify):`.
+**Supabase Auth, per ADR-006.** Better Auth was removed on 2026-08-24 — the dependency, the server
+instance, the browser client and the catch-all route handler all go, and its four tables never enter
+the schema. Wire from installed types under `node_modules/` or current documentation, never from
+memory; anything unverified carries `TODO(verify):`.
 
-The auth tables belong to Better Auth. They appear in the draft schema because Prisma needs them, and
-they are governed by RULE-09 like every other schema element.
+**The client is server-side only.** `@supabase/ssr`, constructed in server components, route handlers
+and server actions. No Supabase client in a `"use client"` file. This is what keeps `src/lib/data/`
+the only path to data, and it is why Row Level Security stays off — ADR-002's argument survives ADR-006
+only because of this constraint. `no-restricted-imports` enforces it and check D12 re-checks it;
+`src/lib/auth/**` is the single exempted path and `src/lib/data/` is deliberately not exempted.
+
+**Authorization did not move.** `src/lib/auth/permissions.ts` never depended on Better Auth — it
+imports `type Role` from the seam and nothing else. `ROLE_RANK`, `can()` and the role helpers are
+unchanged by the provider switch. Supabase Auth answers *who is this*; it is never asked *what may
+they do*.
+
+**Identity link.** `Member.authUserId` is a nullable unique string holding the Supabase user UUID,
+with no foreign key — `auth.users` lives in the `auth` Postgres schema and is not modelled by Prisma.
+ADR-003 governs the meaning: a Member without that link is a person the organization tracks who
+cannot sign in.
 
 ## Secrets
 

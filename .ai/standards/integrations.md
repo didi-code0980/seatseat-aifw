@@ -1,29 +1,37 @@
 ---
-doc_version: 2
-last_updated: 2026-08-11
+doc_version: 3
+last_updated: 2026-08-24
 governed_by: [RULE-02, RULE-09, RULE-10, RULE-17, RULE-18]
 ---
 
 # Integrations
 
-## Supabase — hosted Postgres, and nothing else
+## Supabase — hosted Postgres and authentication
 
-The database is Supabase. **Only as a hosted Postgres instance**, per ADR-002.
+The database is Supabase, per ADR-002. **Authentication is also Supabase, per ADR-006** — that row
+reversed on 2026-08-24 and the table below is the current state, not the original one.
 
 | Supabase feature | Status |
 |---|---|
-| Postgres | In use. The only reason Supabase is here. |
-| Supabase Auth | **Out of scope.** Authentication is Better Auth and does not change. |
-| Row Level Security | **Off by decision, not by omission.** See ADR-002. |
+| Postgres | In use. The original and still the main reason Supabase is here. |
+| Supabase Auth | **In use, server-side only**, per ADR-006. Replaced Better Auth, which was removed entirely. |
+| Row Level Security | **Off by decision, not by omission.** See ADR-002 — and see the constraint below, which is what keeps that decision valid. |
 | Realtime | Out of scope. |
 | Storage | Out of scope. |
 
-**Prisma is the only database client.** There is no `@supabase/supabase-js` in this project and
-adding one to `src/` would bypass the seam, which is a RULE-02 violation and a lint failure. If a
-future ticket genuinely needs the Supabase SDK, it goes on the `no-restricted-imports` allow-list
-beside `@prisma/client`, reachable only from `src/lib/data/prisma/**` — the same exception path, for
-the same reason. That is a design decision recorded in `02-design.md` section 3, not an import
-somebody adds.
+**Prisma is the only database client, and this did not change.** Supabase Auth authenticates; it does
+not read or write application data. `@supabase/supabase-js` is not in this project. The only Supabase
+package is `@supabase/ssr`.
+
+**The constraint that makes all of this hold: the Supabase client is constructed server-side only.**
+No Supabase client in a `"use client"` file, no key in the browser as a data credential. This is not
+a style preference — ADR-002 switched Row Level Security off on the single premise that
+`src/lib/data/` is the only path to data, and a Supabase client in the browser makes that premise
+false, which is ADR-002's own revert condition. `no-restricted-imports` restricts `@supabase/*`
+across the repository and exempts exactly one path, `src/lib/auth/**`. `src/lib/data/` is **not**
+exempted: the data seam has no reason to hold an auth client. Check D12 in `scripts/check-docs.mjs`
+verifies the whole shape — the package, the lint restriction, the single exemption, and that nothing
+under `src/` outside `src/lib/auth/` imports Supabase at all.
 
 ### Two connection strings
 
