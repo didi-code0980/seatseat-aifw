@@ -13,11 +13,14 @@ against a summary.
 
 Steps:
 
-0. **Acquire the branch.** `git fetch && git switch feat/$ARGUMENTS && git pull`.
+0. **Confirm the branch. Mode: stop** — the table in `.ai/standards/git-conventions.md`, *The branch
+   check every ticket command runs*. `pwd`, `git branch --show-current`, `git fetch origin --quiet`,
+   `git status --porcelain`, then `git switch feat/$ARGUMENTS && git pull --ff-only`.
 
    If the switch fails with `fatal: 'feat/$ARGUMENTS' is already checked out at ...`, the build lane
    has not run `/handoff` and this ticket is not ready to ship. Print the folder git named and stop —
-   do not work around it, and never `git worktree` your way past it.
+   do not work around it, and never `git worktree` your way past it. **If the branch does not exist
+   at all, stop and report**; this command never creates one.
 
    The implementation, the tests and artifacts 03–06 arrive already committed, by `/handoff`. Do not
    expect a dirty tree full of `src/**`; if you find one, the build lane's hand-off did not complete
@@ -94,10 +97,16 @@ pushed and its branch is free.
 Name the folder, not just the command. Three worktrees mean a correct command in the wrong folder
 writes to the wrong branch, and since ADR-004 nothing refuses it.
 
-11. **Release `feat/$ARGUMENTS` before you finish.** `git switch --detach` if step 8 has not already
-    moved you off it. The pull request is open and the branch now belongs to whoever merges it; this
-    folder's next job is `/spec` on a different ticket, and it cannot cut a branch while holding this
-    one. Same mechanism as `/handoff` step 6, same reason.
+11. **Park the lane on the latest `main`** — same three commands as `/handoff` step 6, same reasons:
+
+    ```
+    git fetch origin --quiet
+    git switch --detach origin/main
+    git fetch origin main:main --quiet
+    ```
+
+    The pull request is open and the branch belongs to whoever merges it. This folder's next job is
+    `/spec` on a different ticket, and it cannot cut one while holding this.
 
 **The output is an open pull request. Never a merge.** RULE-09 makes merging permanently human, and
 `gh pr merge` is denied in settings.

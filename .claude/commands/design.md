@@ -6,6 +6,27 @@ argument-hint: <TICKET-ID>
 Run in the **Tech Lead session**, which is persistent and lives until the end of the run
 (`.ai/standards/session-model.md`). You are `tech-lead-design`; nothing is dispatched.
 
+## Step 0 — confirm the branch before writing anything
+
+**Mode: stop.** Run the four reads and follow the table in `.ai/standards/git-conventions.md`,
+*The branch check every ticket command runs*. This command may **not** create `feat/$ARGUMENTS`.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+- Already on `feat/$ARGUMENTS` — proceed.
+- Elsewhere or detached, tree clean, the branch exists on `refs/heads` or `refs/remotes/origin` —
+  `git switch feat/$ARGUMENTS` (add `-c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it is
+  remote-only), then `git pull --ff-only`.
+- Tree dirty — **stop.** Print the paths and say which ticket they belong to.
+- **The branch does not exist — stop and report to the operator.** Do not create it. Only `/spec`
+  creates a `feat/` branch. Arriving here with no branch means SPEC never ran, a `/handoff` never
+  pushed, or the ID is wrong, and the three need different answers. Say which you cannot rule out.
+
 **Artifacts in:** `ticket.yaml`, `01-story.md`, `.ai/registry/**`, `.ai/standards/**`
 **Artifacts out:** `.ai/board/tickets/$ARGUMENTS/02-design.md`, plus `allowed_paths` written back
 into `ticket.yaml`

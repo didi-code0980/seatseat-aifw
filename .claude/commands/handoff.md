@@ -24,11 +24,24 @@ fatal: 'feat/<TICKET-ID>' is already checked out at '/Users/mpa/Desktop/<folder>
 MD-15. Two hand-offs use this command — design→build, and build→ship — and the shape is the same
 both times.
 
-## 0. Confirm where you are, before anything
+## 0. Confirm the branch and the folder, before anything
 
-`pwd` and `git branch --show-current`. Print both. A hand-off run from the wrong folder pushes the
-wrong lane's work, and since ADR-004 nothing stops it (`.ai/standards/session-model.md`, *What no
-longer protects this*).
+**Mode: stop** — the table in `.ai/standards/git-conventions.md`, *The branch check every ticket
+command runs*. This command never creates a branch; it is the one that hands an existing one on.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+You must already be on `feat/$ARGUMENTS`. **If you are not, stop** — a hand-off is a claim about the
+work in *this* worktree, and switching to the branch first would leave the dirty files behind and push
+an empty lane. If the branch does not exist, stop and report; there is nothing to hand off.
+
+A hand-off run from the wrong folder pushes the wrong lane's work, and since ADR-004 nothing stops it
+(`.ai/standards/session-model.md`, *What no longer protects this*).
 
 ## 1. Decide which hand-off this is, from `ticket.yaml`
 
@@ -90,36 +103,48 @@ If that set touches a CODEOWNERS path — `.ai/registry/`, `.ai/standards/`, `pr
 `.github/`, `.mcp.json` — say so explicitly, file by file, in the output. You are recording a human's
 change so it can be reviewed, not authoring one.
 
-## 6. Release the branch. This step is the whole point
+## 6. Park the lane on the latest `main`. This step is the whole point
 
-If you are still on `feat/$ARGUMENTS` — that is, step 5 did not already move you — detach:
+Once the branch is pushed, put the worktree back on current `main` and give the name up:
 
 ```
-git switch --detach
+git fetch origin --quiet
+git switch --detach origin/main
+git fetch origin main:main --quiet
 ```
 
-The worktree stays on exactly the same commit and keeps working; only the *branch name* is freed, and
-the name is what git holds exclusively. `git switch main` also works and is a matter of taste;
-`--detach` is preferred because the folder still shows the code that was just handed on, which makes
-the hand-off auditable from either side.
+**Line 2 is detached-at-`origin/main`, not `git switch main`, and the difference is not stylistic.**
+Git holds every branch name exclusively across worktrees and `main` is not special. Verified by
+attempt, 2026-08-24, with two throwaway worktrees:
 
-**Verify it, do not assume it.** `git branch --show-current` must print nothing (detached) or a name
-other than `feat/$ARGUMENTS`. A hand-off that reports success while still holding the branch is the
-one failure this command exists to prevent, and it fails in the *other* folder, minutes later, where
-it is hardest to read.
+```
+$ git -C wt2 switch main
+fatal: 'main' is already checked out at '.../wt1'
+```
+
+Both lanes run `/handoff`. If both parked on the branch `main`, whichever ran second would fail
+outright. Detaching at `origin/main` gives the same working tree — the latest `main`, ready for
+whatever comes next — and collides with nothing.
+
+**Line 3 fast-forwards the local `main` ref without checking it out**, so `main` stops drifting behind
+the remote. It is a courtesy rather than a requirement: every branch in this model is cut from
+`origin/main`, so nothing reads local `main`. If it fails — not fast-forwardable, or some worktree does
+hold `main` — say so in one line and carry on. It is not a reason to stop a completed hand-off.
+
+**Verify the release, do not assume it.** `git branch --show-current` must print nothing. A hand-off
+that reports success while still holding `feat/$ARGUMENTS` is the one failure this command exists to
+prevent, and it fails in the *other* folder, minutes later, where it is hardest to read.
 
 ## 7. Print the next command and its folder — do not invoke it
 
 ```
-SEA-01 design lane complete and pushed. Branch released; this folder is detached.
+SEA-01 design lane complete and pushed. Branch released; this folder is parked on main.
 Run /implement SEA-01 in the aiw folder.
 ```
 
-**When the next move in this folder is `/spec`, the command is enough on its own.** Since 2026-08-24
-`ba` holds `Bash` and `/spec` step 0 cuts or switches to `feat/<ID>` itself, from a detached HEAD or
-from any other branch (MD-18). Leaving this folder detached is therefore correct and expected — do not
-switch to `main` as a courtesy, because a clean detached HEAD is exactly the state step 0 is written
-against.
+**When the next move in this folder is `/spec`, the command is enough on its own.** `ba` holds `Bash`
+and `/spec` step 0 cuts `feat/<ID>` from `origin/main` itself (MD-18) — which is exactly the state
+step 6 left this folder in, so the next ticket starts from current `main` with nothing to remember.
 
 ## What this command never does
 

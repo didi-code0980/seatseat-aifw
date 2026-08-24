@@ -7,6 +7,27 @@ Run in a **fresh session that is discarded after the verdict** — files only, n
 (RULE-13). You are `qa`; nothing is dispatched. A re-run after rework opens another new session, for
 the same reason the reviewer does (`.ai/standards/session-model.md`).
 
+## Step 0 — confirm the branch before writing anything
+
+**Mode: stop.** Run the four reads and follow the table in `.ai/standards/git-conventions.md`,
+*The branch check every ticket command runs*. This command may **not** create `feat/$ARGUMENTS`.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+- Already on `feat/$ARGUMENTS` — proceed.
+- Elsewhere or detached, tree clean, the branch exists on `refs/heads` or `refs/remotes/origin` —
+  `git switch feat/$ARGUMENTS` (add `-c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it is
+  remote-only), then `git pull --ff-only`.
+- Tree dirty — **stop.** Print the paths and say which ticket they belong to.
+- **The branch does not exist — stop and report to the operator.** Do not create it. Only `/spec`
+  creates a `feat/` branch. Arriving here with no branch means SPEC never ran, a `/handoff` never
+  pushed, or the ID is wrong, and the three need different answers. Say which you cannot rule out.
+
 **Artifacts in:** `01-story.md` and **section 6 of `02-design.md` only**. Do not pass the whole
 ticket folder — a QA agent that can see `04-review.md` is testing the reviewer's conclusions instead
 of the story.

@@ -636,3 +636,56 @@ written in terms of stages and folders without checking, per role, which tools t
 `ba` and `tech-lead-design` having no `Bash` is the fact that generated all three.
 
 **Registry writes: none.**
+
+### 2026-08-24 — branch naming, and the same check in every ticket command
+
+**Changed:** `.ai/standards/git-conventions.md` (§Branches rewritten — the four names, and the shared
+branch check), `.claude/commands/spec.md` `design.md` `implement.md` `review.md` `qa.md` `handoff.md`
+`ship.md` (step 0 in all seven), `.ai/board/model-debt.md` (MD-20), this file.
+
+**Why:** the operator's instruction — a naming convention including `bugfix/BUG_<FEATURE-ID>_<NN>`,
+the branch check in every workflow command, only `/spec` allowed to create a `feat/` branch, and
+`/handoff` returning the lane to the latest `main` after pushing.
+
+**Two modes, and the asymmetry is the whole design.** `/spec` is **create**; the other six are
+**stop**. A later stage arriving at a missing branch means SPEC never ran, a `/handoff` never pushed,
+or the ID is wrong — three different problems needing three different answers, and creating the branch
+there would manufacture something that looks like progress and hide which of the three it was. The
+protocol is written once in `git-conventions.md` and each command's step 0 names its mode rather than
+restating it.
+
+**`fix/` is retired.** It was in this document from the first day and never used once. It had no ID
+scheme, so two defects on one feature produced two names with nothing in common. `bugfix/` carries the
+parent feature inside the bug ID.
+
+**MD-20, found by writing the convention rather than by running it.** `bugfix/` branches run with
+RULE-03 unenforced — both resolvers hard-code `feat/`, so the guard exits 0 and the CI check prints
+*nothing to check*. That is the one class of work that edits code already in `main`, usually in a
+hurry. `ops/` being exempt is correct because chore work has no ticket; `bugfix/` is exempt by accident
+of string matching. Recorded rather than fixed, because the fix touches two guarded files with their
+own tests and is a change worth reviewing on its own. **No `bugfix/` branch exists yet, which makes now
+the cheapest moment.**
+
+**One instruction realised rather than followed, and it was verified rather than reasoned.** The
+operator asked that `/handoff` end with `checkout main` and `pull`. Git holds every branch name
+exclusively across worktrees and `main` is not special — tested with two throwaway worktrees in the
+scratchpad:
+
+```
+$ git -C wt2 switch main
+fatal: 'main' is already checked out at '.../wt1'
+```
+
+Both lanes run `/handoff`, so whichever ran second would fail outright. Step 6 is now
+`git switch --detach origin/main`, which delivers the intent exactly — the worktree shows the latest
+`main` — and collides with nothing, plus `git fetch origin main:main` to stop the local `main` ref
+drifting. That third line is a courtesy and explicitly not a reason to fail a completed hand-off:
+every branch here is cut from `origin/main`, so nothing reads local `main`. `/ship` step 11 parks the
+same way.
+
+**Also corrected in the same run:** the audit rejected `scripts/check-allowed-paths.mjs:85` as a path
+that does not exist — check D6 has no notion of a `:line` suffix. Two citations lost their line
+numbers. Worth noting because the habit of citing `file:line` is a standing instruction and D6 refuses
+it in documents; the two rules disagree and the audit wins by default.
+
+**Registry writes: none.**

@@ -8,6 +8,11 @@ until the end of the run (`.ai/standards/session-model.md`). You are the BA; not
 
 ## Step 0 — put yourself on `feat/$ARGUMENTS` before writing anything
 
+**Mode: create. `/spec` is the only command permitted to bring a `feat/` branch into existence** —
+see *The branch check every ticket command runs* in `.ai/standards/git-conventions.md`. Every later
+stage arriving at a missing branch stops and reports instead, because at that point a missing branch
+means something upstream did not happen and manufacturing one hides which.
+
 **Run this first, every time, including a re-run.** You hold `Bash` for this and only this
 (`.claude/agents/ba.md`). Print each command and its output; a branch decision made silently is one
 nobody can audit later.
