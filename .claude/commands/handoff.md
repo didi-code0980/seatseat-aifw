@@ -115,13 +115,11 @@ SEA-01 design lane complete and pushed. Branch released; this folder is detached
 Run /implement SEA-01 in the aiw folder.
 ```
 
-**When the next move in this folder is `/spec`, print the branch-cut with it.** The lane is detached
-and `ba` cannot cut its own branch (MD-18), so the instruction is incomplete without the command:
-
-```
-Next in this folder: git fetch && git switch -c feat/SYS-01 origin/main
-Then /spec SYS-01 in the BA session.
-```
+**When the next move in this folder is `/spec`, the command is enough on its own.** Since 2026-08-24
+`ba` holds `Bash` and `/spec` step 0 cuts or switches to `feat/<ID>` itself, from a detached HEAD or
+from any other branch (MD-18). Leaving this folder detached is therefore correct and expected — do not
+switch to `main` as a courtesy, because a clean detached HEAD is exactly the state step 0 is written
+against.
 
 ## What this command never does
 

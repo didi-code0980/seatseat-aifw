@@ -594,3 +594,45 @@ stop-and-ask table for the registry, the operating model, the charter and the ho
 the standing instructions above replaced on 2026-08-23. The command outlived its own policy by a day,
 and this session followed the newer of the two. No audit check compares a command against these
 standing instructions, which is why it survived.
+
+### 2026-08-24 — the BA cuts its own branch, and gains `Bash` to do it
+
+**Changed:** `.claude/agents/ba.md` (`tools`, plus a scope section for the new tool),
+`.claude/commands/spec.md` (step 0 replaces the prose precondition written two hours earlier),
+`.claude/commands/handoff.md` (stops printing a branch-cut, and states that leaving the lane detached
+is correct), `.ai/board/model-debt.md` (MD-18 resolved, MD-19 new), this file.
+
+**Why:** the operator asked that `/spec` check the branch and switch or cut it itself. The first fix
+for MD-18 had been a prose precondition telling them to run `git switch -c` before dispatching the BA.
+They rejected it, and were right to: a documented manual step is a step that works until someone is in
+a hurry, and the whole of MD-18 is that nothing enforces the branch.
+
+**The disagreement, stated once and then dropped.** Doing this requires granting `ba` the `Bash` tool,
+which it had never held, and `guard-read-scope.mjs` — wired on `Read|Grep|Glob|NotebookEdit`, refusing
+`ba` and `qa` any path under `src/**` — is walked around by `cat`. It is the only guard of the original
+set that both survived ADR-004 and names these roles. That was said, the operator's instruction stands,
+and the tool is granted. What mitigates it is not a mechanism: `.claude/agents/ba.md` now lists the
+seven git verbs `Bash` exists for and forbids shell reads of `src/**` by name. **MD-19 records that
+this is a convention and not a control**, so nobody later mistakes it for one, and names the two
+signatures to watch for — an `inputs_read` citing `src/**`, or an AC carrying a field name the registry
+does not hold.
+
+**One place the instruction was realised rather than followed literally.** It said checkout `main` then
+cut the new branch; step 0 cuts from `origin/main`. Nothing in this loop updates local `main`, because
+no lane ever checks it out — it was eight commits behind when this was written. A branch cut from it
+looks correct and silently omits everything merged since, and the gap surfaces as a conflict at
+`/ship`. "Back to main" means the current main.
+
+**Step 0 is four paths, not one command**, because the interesting cases are the ones that are not a
+fresh cut: already correct (do nothing), dirty tree (stop — that is MD-18 in the form that produced
+this step), branch exists locally or only on the remote (switch), branch absent (cut). Existence is
+checked against `refs/heads` and `refs/remotes` separately, because a branch released by `/handoff`
+exists remotely while the worktree that produced it sits detached.
+
+**Three operator questions in a row each found a real gap** — who runs `/handoff` (two orchestrator
+sessions, unstated), what clears `gh auth` (MD-17, `/ship` step 7 had failed two out of two with no
+fallback), and whether `/spec` cuts its branch (MD-18). All three have one cause: the lane flow was
+written in terms of stages and folders without checking, per role, which tools that role actually holds.
+`ba` and `tech-lead-design` having no `Bash` is the fact that generated all three.
+
+**Registry writes: none.**
