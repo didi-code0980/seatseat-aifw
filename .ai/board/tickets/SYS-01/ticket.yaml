@@ -29,14 +29,124 @@ id: SYS-01
 title: "Replace Better Auth with Supabase Auth"
 feature_ids: [SYS-01]
 group: SYS
-state: BACKLOG
+state: IN_PROGRESS
+# BACKLOG -> SPEC by ba, 2026-08-24T07:12:03Z. It stops here. DoR is evaluated after SPEC, not before
+# it (two of its six items are produced by this stage), and the READY transition is the orchestrator's.
 owner: ""
 branch: ""
-size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
-size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md's scope and
+                      # its Out-of-scope section, not from any implementation — `size` is the Tech
+                      # Lead's at DESIGN and is a different judgement.
+                      #
+                      # M rather than S, and the boundary is close enough to state the count. The
+                      # story's scope names nine files: package.json and the lockfile (AC-1, AC-3),
+                      # three deletions — src/lib/auth/auth.ts, src/lib/auth/client.ts and the
+                      # src/app/api/auth/ handler (AC-2), one new server-side Supabase module under
+                      # src/lib/auth/ (AC-4), the login page (AC-9, and Q-1 asks whether it changes
+                      # at all), whatever holds the self-signup flag (AC-10, AC-11, Q-2), and
+                      # .env.example (Q-3). The S band is up to six. Nine is over it even if two of
+                      # the nine fall away.
+                      #
+                      # M rather than L: L is more than twelve and would have to split at DESIGN,
+                      # and there is nothing here to split along. The operating model splits by
+                      # operation, then surface, then role — this ticket has one operation, no new
+                      # surface, and no role. A provider swap that lands half-swapped is a repository
+                      # with two auth providers and a red build, which is worse than either end
+                      # state.
+                      #
+                      # Not XL, and each of the three triggers is checked rather than waved past:
+                      # schema_delta is `none` and out-of-scope items 1 and 3 hold it there; no
+                      # src/lib/data/ signature changes, because the seam is not touched at all and
+                      # is deliberately NOT exempted from the Supabase lint restriction (AC-5); and
+                      # types.ts is unchanged — `type Role` is what permissions.ts imports from the
+                      # seam, and AC-7 asserts permissions.ts does not change.
+                      #
+                      # The estimate carries one risk worth naming for DESIGN. Every count above is
+                      # a deletion, a dependency line, or a config line. The only genuinely new code
+                      # is the server-side @supabase/ssr client, and CLAUDE.md records that Better
+                      # Auth, Prisma 7 and Next.js 16 are all past reliable recall. If wiring that
+                      # client against the installed types turns out to need more than one module,
+                      # the count moves inside M rather than out of it.
+size: "M"             # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting.
+                      # Counted from the allowed_paths enumerated below: THIRTEEN entries, TWELVE of
+                      # which are files. Twelve is the M row (M is up to 12). At the ceiling with
+                      # zero headroom. Agrees with the ba's size_estimate, so nothing routes to SPEC.
+                      #
+                      # THE THIRTEENTH ENTRY IS NOT A FILE, and this is the first ticket where the
+                      # distinction decides the band. `.ai/board/tickets/SYS-01/**` authorises
+                      # nothing: scripts/check-allowed-paths.mjs:113 exempts the ticket's own
+                      # directory unconditionally, BEFORE any glob is tested. Listing it is
+                      # documentation, not permission, and a line that authorises nothing cannot be a
+                      # unit of work. Full reasoning and the two supporting arguments are 02-design.md
+                      # F-8, which routes the gap in the sizing table to the steward — the table does
+                      # not say which entries count, and the next ticket on this boundary will have to
+                      # re-derive it from the same script.
+                      #
+                      # ZERO HEADROOM, and what that means at IN_PROGRESS: a thirteenth FILE is not a
+                      # small overrun, it is the L row, and L says "must split at DESIGN" — which
+                      # cannot happen from IN_PROGRESS. If the implementation needs a path this list
+                      # does not name, that is a finding through 99-questions.md to
+                      # tech-lead-design, not a path added here. The two likely candidates are already
+                      # answered: docker/docker-compose.yml goes to `devops` (F-6), and
+                      # eslint.config.mjs is already correct (out-of-scope item 9, H-1).
+                      #
+                      # Not XL; all three triggers checked. schema_delta is `none` and prisma/ is not
+                      # in the list; no src/lib/data/ signature changes because the seam is not
+                      # touched at all; types.ts is unchanged and absent from the list.
+                      #
+                      # The ba estimated nine files and this design enumerates twelve. The band did
+                      # not move and the estimate was sound: all three extra files come from the one
+                      # decision the story delegated as Q-2 — the flag needs a pure resolver, a client
+                      # island to report it, and a unit test that exercises the fail-closed paths
+                      # without a browser.
 depends_on: []
 invariants_touched: [INV-08]
-allowed_paths: []
+# CONFIRMED by ba at SPEC, 2026-08-24 — not changed. All twelve issued ledger invariants are
+# accounted for in 01-story.md's "Invariants touched" section: INV-08 engaged, the other eleven
+# reasoned individually and found not engaged. INV-09 was never issued.
+#
+# INV-08 is on this list as a WARNING and not as a reassurance, which is the reading ticket.yaml's
+# header asked for and the story carries through. This ticket REMOVES the two controls that held the
+# invariant — `disableSignUp: true` and the absence of a route — and what replaces them is a
+# client-side flag in localStorage (ADR-006 decision 7, OQ-2, operator's choice against the steward's
+# recommendation). localStorage is browser storage: the check runs on the machine of the person being
+# checked. AC-12 exists so no downstream artifact reports INV-08 as enforced. MD-14 carries the gap
+# and its fix shape; out-of-scope item 10 records that this ticket knowingly does not apply it.
+# Enumerated by tech-lead-design at DESIGN, 2026-08-24. Reasoning in 02-design.md section 5.
+#
+# THREE OF THESE ARE DELETIONS — auth.ts, client.ts, route.ts. A deleted path appears in
+# `git diff --name-only`, so it is enumerated exactly as an edit is.
+#
+# The bracketed path is safe as a glob and was checked rather than assumed:
+# scripts/check-allowed-paths.mjs:76 escapes `[`, `]` and `.` before building the RegExp, so
+# `[...all]` compiles to a literal and not to a character class matching one of `.al`.
+#
+# SIX THINGS DELIBERATELY ABSENT, each of which a Developer might reach for:
+#   src/lib/auth/permissions.ts     AC-7. Absent from this list means CI REFUSES a change to it,
+#   tests/unit/permissions.test.ts  which is stronger than a reviewer noticing.
+#   prisma/schema.prisma            schema_delta is none; RULE-09 makes approving it human.
+#   eslint.config.mjs               already carries the ADR-006 shape — verified by reading. AC-5 and
+#   scripts/check-docs.mjs          AC-6 assert their BEHAVIOUR; out-of-scope item 9 forbids rewriting
+#                                   them, and H-1 records that ADR-006's own table is stale here.
+#   docker/docker-compose.yml       carries three stale BETTER_AUTH_* vars after this ticket. No
+#                                   criterion covers it and docker/ is `devops`'s surface. Routed to
+#                                   devops with the change written out — 02-design.md F-6.
+#   tests/e2e/smoke.spec.ts         AC-9 passes against it UNEDITED. Leaving it out makes "the
+#                                   existing test still passes untouched" a CI-enforced claim.
+allowed_paths:
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - ".env.example"
+  - "src/lib/auth/auth.ts"
+  - "src/lib/auth/client.ts"
+  - "src/app/api/auth/[...all]/route.ts"
+  - "src/lib/auth/supabase.ts"
+  - "src/lib/auth/self-signup.ts"
+  - "src/app/(auth)/login/page.tsx"
+  - "src/app/(auth)/login/self-signup-notice.tsx"
+  - "tests/unit/self-signup.test.ts"
+  - "tests/e2e/self-signup.spec.ts"
+  - ".ai/board/tickets/SYS-01/**"
 schema_delta: none
 requires_adr: false
 rework_count: 0
@@ -47,8 +157,107 @@ chat_budget:
   qa->tech-lead-design:        { used: 0, max: 6 }
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
-  spec:   { passed: false, at: null }
-  design: { passed: false, at: null }
+  spec:   { passed: true,  at: "2026-08-24T07:12:03Z" }
+  # PASS. All four gate items hold: twelve ACs in Given/When/Then, each with an ID (AC-1 to AC-12);
+  # `invariants_touched` populated and confirmed at [INV-08], all twelve issued ledger invariants
+  # accounted for between engaged and reasoned-not-engaged; Out-of-scope has thirteen items, each
+  # naming where the work goes instead; `size_estimate` set to M.
+  #
+  # The first SYS ticket, and the two habits ticket.yaml warned would not transfer did not transfer.
+  # There is no data-testid table to fill because there is no new surface, and most criteria assert
+  # an ABSENCE — a package that is gone, an import that does not appear, a route that does not exist.
+  # 01-story.md opens with the section that makes those observable without reading src/** (RULE-05):
+  # the dependency tree, eslint.config.mjs, `node scripts/check-docs.mjs` and its D12 check, file
+  # existence, the running login route, and tests/unit/permissions.test.ts passing UNEDITED. AC-3,
+  # AC-6 and AC-8 assert presence, so an empty repository fails the set rather than satisfying it.
+  #
+  # Six questions raised and none blocks. H-1 is a human item under RULE-01: ADR-006's "Affected
+  # documents" table says nothing below it has been changed, and three of its rows are already done —
+  # rbac-and-security.md is at doc_version 2, integrations.md at 3, invariants.md at 5, and both
+  # eslint.config.mjs and check-docs.mjs already carry the ADR-006 shape. Verified by reading those
+  # files, which are not src/**. It is raised rather than corrected because the ADR is registry, and
+  # it matters because a reader trusting that table would size this ticket at roughly twice the work.
+  # Out-of-scope item 9 is what stops it being done twice.
+  #
+  # A-1 and A-2 are assumptions and ship: the self-signup flag reads DISABLED when absent (fail
+  # closed, because an invariant that lapses on a fresh browser is not an invariant), and its enabled
+  # branch has nothing to enable, because INV-08 forbids the route and the AUT feature table is
+  # empty. A-2 is the one to watch — if a human reads ADR-006 decision 7 as authorising the BUILDING
+  # of a self-signup path, AC-11 is wrong and the conflict escalates under RULE-07 rather than being
+  # settled at DESIGN.
+  #
+  # Q-1 to Q-4 are DESIGN's and none gates /design: whether the login page changes at all beyond
+  # ceasing to reference the deleted client (a src/** fact this story may not read); the flag's key,
+  # storage shape and values, which are contract items under RULE-04; which environment variables the
+  # server-side client needs and whether .env.example moves; and whether pnpm-lock.yaml is enumerated
+  # in allowed_paths, which AC-1 and AC-3 make unavoidable and check-allowed-paths.mjs fails on if it
+  # is missed.
+  #
+  # State left at SPEC. DoR is the orchestrator's evaluation, and an agent that promotes its own
+  # output past the gate that judges it has removed the gate.
+  #
+  # No row was written to .ai/board/metrics.md, and that is deliberate rather than an omission. The
+  # /spec command still instructs the BA to append one, but .ai/standards/session-model.md — revised
+  # 2026-08-24, "The one surface that still collides" — makes /ship the single writer of metrics.md
+  # and backlog.md, and .claude/commands/ship.md repeats it as "yours and only yours. No other
+  # command writes them." SEA-01's SPEC and DESIGN both passed on 2026-08-24 and appended nothing,
+  # which is the same reading. The gate record is here, in ticket.yaml, where /ship reads it.
+  design: { passed: true,  at: "2026-08-24T08:47:49Z" }
+  # PASS. All three gate items hold: seven sections complete in 02-design.md, `allowed_paths`
+  # enumerated and written back here, `size` set to M.
+  #
+  # schema_delta stays `none` and requires_adr stays `false`. The registry row said a schema
+  # conclusion here would be "a finding to raise, not a decision to take"; this design did not reach
+  # one. The switch is deliverable with DATA_SOURCE=mock and no database, because
+  # createSupabaseServerClient is a constructor with no caller and nothing here reads or writes an
+  # identity. prisma/schema.prisma is not in allowed_paths.
+  #
+  # THE FINDING THAT DECIDED THE TICKET IS F-2, and it was settled by running it rather than by
+  # reading documentation. @supabase/ssr@0.12.4 declares a PEER DEPENDENCY on @supabase/supabase-js
+  # ^2.111.0 — the package AC-3 names as the one to watch and the one ADR-002's revert condition was
+  # written about. Verified in a throwaway directory on this repository's pinned pnpm 10.15.1:
+  # `pnpm add @supabase/ssr` writes ONLY @supabase/ssr into package.json; supabase-js lands in
+  # pnpm's virtual store and the lockfile; node_modules/@supabase/ holds `ssr` alone; and a probe
+  # calling createServerClient typechecks under this project's exact compilerOptions, pulling in 52
+  # supabase type files and exiting 0 (proved genuinely compiled by injecting an error). So AC-3
+  # holds, D12 passes — check-docs.mjs reads package.json's three dependency fields and nothing else
+  # — and the lint group ["@supabase/*"] still refuses the browser client everywhere outside
+  # src/lib/auth/**. THE RULE THAT FOLLOWS: no file in this repository may name
+  # @supabase/supabase-js. The factory's return type is INFERRED and must never be annotated.
+  #
+  # Nine findings, none blocking, all in 02-design.md section 0:
+  #   F-1 answers Q-1 — the login page NEVER referenced Better Auth. It imports Button and Input and
+  #       nothing else. Deleting client.ts breaks nothing. The page is in allowed_paths for the flag.
+  #   F-2 above.
+  #   F-3 answers Q-2 — key `sdt.self-signup`, values "enabled"/"disabled" (NOT true/false, because a
+  #       boolean-shaped string invites Boolean("false") === true), everything else fails closed. The
+  #       likeliest defect in this ticket is a hydration mismatch: the notice must resolve the value
+  #       in useEffect, never in the render body.
+  #   F-4 answers Q-3 — SUPABASE_URL and SUPABASE_ANON_KEY, NEITHER with the NEXT_PUBLIC_ prefix,
+  #       which is what makes AC-4's fourth clause a property of the naming. .env.example changes by
+  #       CORRECTION as well as addition: its ADR-002 block asserts "Authentication is Better Auth"
+  #       and "There is no SUPABASE_URL and no anon key here on purpose", which becomes false.
+  #   F-5 answers Q-4 — yes, pnpm-lock.yaml is enumerated and it is unavoidable.
+  #   F-6 — docker/docker-compose.yml:26-28 carries three BETTER_AUTH_* vars. NOT in allowed_paths:
+  #       no criterion covers it and docker/ is `devops`'s. Routed to devops with the change written.
+  #   F-7 — AC-10 AND AC-11 ARE UNFALSIFIABLE AS WRITTEN. Every remaining clause is already true of
+  #       the login page today, before any work. The design renders the resolved setting as
+  #       `login-self-signup` so the criteria measure something. RULE-14 amendment to `ba`.
+  #   F-8 — the sizing rule does not say whether this ticket's own artifact glob counts as a file.
+  #       See the `size` comment above. Routed to the steward.
+  #   F-9 — `pnpm build` CANNOT RUN IN THIS LANE. aiw-work/node_modules is a symlink out of the
+  #       worktree and Turbopack refuses it, so pnpm build fails against unmodified main. AC-8's
+  #       `pnpm verify` belongs to the build lane. Baseline measured here instead: tsc clean, eslint
+  #       clean, 61 tests in 4 files green, check-docs 0/0/0.
+  #
+  # F-1, F-7 and the Q-2 half of F-3 are RULE-14 amendments routed to `ba`. None changes a signature.
+  #
+  # AC-12 is a criterion about this ticket's OWN artifacts. 02-design.md section 2.2 is the wording to
+  # agree with: the flag is client-side configuration, what holds INV-08 is the absence of a route and
+  # of a control, and that is WEAKER than what it replaced. A report saying "self-signup is disabled"
+  # without saying "by browser storage" has failed AC-12.
+  #
+  # H-1 untouched: ADR-006's "Affected documents" table is stale on three rows. Registry, RULE-01.
   review: { passed: false, at: null }
   qa:     { passed: false, at: null }
 
