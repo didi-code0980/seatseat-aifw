@@ -472,3 +472,59 @@ new row: the `SYS` group is still empty and the ticket that implements ADR-006 h
 
 **State when this entry was written:** `check-docs` 0 errors 0 warnings, 106/106 hook tests passing,
 MEM-01 still mid-`/implement` in the build worktree, `gh` still unauthenticated.
+
+### 2026-08-24 — SYS-01 seeded, and the lanes turn out to have no handoff
+
+**Changed:** `.ai/registry/features.md` (SYS-01 row — the first `SYS` row ever written),
+`.ai/board/tickets/SYS-01/ticket.yaml` (new), `.ai/board/backlog.md`,
+`.ai/standards/session-model.md` (`doc_version` 2 -> 3), `.ai/board/model-debt.md` (MD-15), this file.
+
+**Registry writes: one.** A feature row, which the standing instruction treats as a work queue.
+ADR-006 is the ADR RULE-01 requires and it merged as PR #12 before this row was written.
+
+**SYS-01 is scoped to stop short of the schema, deliberately.** ADR-006 authorises removing Better
+Auth and adopting Supabase Auth server-side; it does not authorise a migration. `schema_delta` stays
+`none` and `Member.authUserId` is not in this ticket, because `DATA_SOURCE=mock` does not need it and
+pulling it in would put a RULE-09 human signature in the middle of the loop. A ticket that cannot
+finish without stopping for a human is the MD-01 and MD-07 shape, and it is avoidable here by drawing
+the line one file earlier.
+
+**`invariants_touched: [INV-08]` is a warning on this ticket, not a reassurance**, and the ticket
+header says so: QA should assert the localStorage flag behaves as specified and must not report that
+INV-08 is enforced, because MD-14 records that it is not.
+
+**MD-15 — the finding of this run, and it was found by trying to answer a practical question.** The
+operator asked what `aiw-work` needs in order to start SYS-01. It needs SEA-01 out of the way, and
+there is no sanctioned way to put it there. `session-model.md` says a feature enters the build lane
+only when the previous one has merged, and that the design lane may run ahead. Both halves are sound;
+together they have no mechanism. SEA-01 has passed SPEC and DESIGN, has roughly 90 KB of gated
+artifacts, and every one of them is uncommitted — because every stage leaves the tree dirty and
+`git-conventions.md` permits a commit only from `orchestrator` inside `/ship` or on a direct operator
+instruction. Parking is neither. The worktree cannot take the next ticket, because a branch switch
+carries both the modified and the untracked files onto the new branch and `check-allowed-paths.mjs`
+diffs the whole branch.
+
+The fix shape is a third narrow commit exception, symmetrical with the `/ship` one: the design lane
+commits its own gated artifacts to `feat/<ID>` when the ticket parks, no push, no PR. The assertion
+being made is only *these artifacts passed their gate*, which their front-matter already claims.
+Not taken here — it amends a standard's commit authority, which is the kind of change that should be
+proposed and decided rather than slipped in beside a ticket seed.
+
+**One small correction made in passing**, per the standing instruction to fix small defects found
+outside scope: `session-model.md` said a parked feature "holds at READY in the design lane". It holds
+at `IN_PROGRESS` — the design lane's last stage is DESIGN, whose `next_state` is `IN_PROGRESS`, so
+`READY` is already behind it. SEA-01 is the first ticket to occupy the position and it reads
+`IN_PROGRESS`, which is how the error surfaced.
+
+**The board view is stale for two rows and was left that way on purpose.** `backlog.md` still lists
+MEM-01 and SEA-01 as `BACKLOG`; both are `IN_PROGRESS`. A note now says so and names `ticket.yaml` as
+authoritative. Repairing the view is the orchestrator's job — RULE-10 and the `/status` rule that a
+command which quietly reconciles a drift destroys the evidence that it happened.
+
+**Not done, deliberately:** no second `SYS` row. The seam wiring, the first migration and
+`Member.authUserId` are the next ticket and it is not issued — issuing it now would put a row on the
+board whose first gate cannot pass without a schema approval nobody has asked for yet. Its ID is not
+written here either, for the reason `backlog.md` gives about the deseeded five: naming an ID that
+does not exist recreates the D1 finding from this file. That happened twice while writing this
+session's entries, which is the check working. Nothing under `src/`,
+`package.json` or `prisma/`.

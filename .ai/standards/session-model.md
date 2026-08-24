@@ -1,6 +1,6 @@
 ---
-doc_version: 2
-last_updated: 2026-08-23
+doc_version: 3
+last_updated: 2026-08-24
 governed_by: [RULE-11, RULE-12, RULE-13, RULE-14, RULE-15, RULE-16]
 ---
 
@@ -154,8 +154,21 @@ lanes**, and unsafe the moment both reach IN_PROGRESS.
 ### The rule that keeps it honest
 
 **A feature may enter the build lane only when the previous one has merged.** Not shipped — merged.
-Until then it holds at READY in the design lane. The design lane may run as far ahead as the board
-allows; the build lane is strictly one at a time.
+The design lane may run as far ahead as the board allows; the build lane is strictly one at a time.
+
+**Where it holds while it waits: at `IN_PROGRESS`, in the design lane.** An earlier wording said
+`READY` and was wrong — the design lane's last stage is DESIGN, whose `next_state` is `IN_PROGRESS`,
+so a ticket that has finished this lane has already passed `READY`. Corrected 2026-08-24 against
+SEA-01, which is the first ticket to actually occupy this position: both gates passed, nothing to do
+here, and the build lane full.
+
+**Handing the lane on is not free, and the model does not yet say who does it.** A ticket holding
+here leaves its gated artifacts uncommitted, because every stage leaves the tree dirty and
+`.ai/standards/git-conventions.md` permits a commit only from `orchestrator` inside `/ship` or on a
+direct operator instruction. Neither applies to a ticket that is merely parked. The next ticket
+cannot enter this worktree until they are dealt with, because a branch switch carries both the
+modified and the untracked files onto the new branch and `scripts/check-allowed-paths.mjs` diffs the
+whole branch. **MD-15** carries this.
 
 ### The one surface that still collides
 
