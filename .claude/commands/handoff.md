@@ -111,8 +111,16 @@ it is hardest to read.
 ## 7. Print the next command and its folder — do not invoke it
 
 ```
-SEA-01 design lane complete and pushed. Branch released.
+SEA-01 design lane complete and pushed. Branch released; this folder is detached.
 Run /implement SEA-01 in the aiw folder.
+```
+
+**When the next move in this folder is `/spec`, print the branch-cut with it.** The lane is detached
+and `ba` cannot cut its own branch (MD-18), so the instruction is incomplete without the command:
+
+```
+Next in this folder: git fetch && git switch -c feat/SYS-01 origin/main
+Then /spec SYS-01 in the BA session.
 ```
 
 ## What this command never does
