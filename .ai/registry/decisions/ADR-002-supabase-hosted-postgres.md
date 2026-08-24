@@ -1,6 +1,6 @@
 ---
-doc_version: 2
-last_updated: 2026-08-12
+doc_version: 3
+last_updated: 2026-08-24
 governed_by: [RULE-01, RULE-02, RULE-09]
 ---
 
@@ -8,7 +8,18 @@ governed_by: [RULE-01, RULE-02, RULE-09]
 
 ## Status
 
-`ACCEPTED` — 2026-08-11, by the operator.
+`ACCEPTED` — 2026-08-11, by the operator. **PARTIALLY SUPERSEDED by ADR-006 — 2026-08-24.**
+
+**The auth clause is struck.** "Authentication stays on Better Auth, unchanged. Supabase Auth is not
+adopted." is no longer true: ADR-006 removes Better Auth and adopts Supabase Auth. The paragraph
+headed *"Why not Supabase Auth, the obvious alternative"* under Rationale is kept verbatim rather
+than deleted — it is the argument that lost, and an ADR that erases the losing argument stops being a
+record of a decision and becomes an advertisement for one.
+
+**Everything else stands.** Postgres is hosted on Supabase; Prisma is the only database client; Row
+Level Security is off; the pooled/direct connection split is unchanged. In particular the RLS clause
+is *not* superseded — ADR-006's OQ-1 exists to keep it true, and if OQ-1 is answered (b) then this
+ADR's revert condition fires and the RLS clause is reopened on its own terms.
 
 ## Context
 
