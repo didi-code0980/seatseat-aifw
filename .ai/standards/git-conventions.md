@@ -30,7 +30,7 @@ it through unchecked.
 | Kind | Pattern | Example | Cut from | Path guard |
 |---|---|---|---|---|
 | Feature ticket | `feat/<FEATURE-ID>` | `feat/SYS-01` | `origin/main` | **active** |
-| Bugfix on a shipped feature | `bugfix/BUG_<FEATURE-ID>_<NN>` | `bugfix/BUG_SYS-01_01` | `origin/main` | inactive — MD-20 |
+| Bugfix on a shipped feature | `bugfix/BUG_<FEATURE-ID>_<NN>` | `bugfix/BUG_SYS-01_01` | `origin/main` | inactive — MD-22 |
 | Chore, model, tooling | `ops/<slug>` | `ops/lane-handoff` | `origin/main` | inactive, correctly |
 | — | ~~`fix/`~~ | — | — | **retired** |
 
@@ -46,7 +46,7 @@ branch names with nothing in common.
 **`bugfix/` runs with the path guard disabled, and that is a defect rather than a decision.** Both
 resolvers hard-code the string `feat/`. A bugfix branch therefore gets no `allowed_paths` enforcement
 at write time and no CI check on the diff — for work that touches shipped code, which is when it
-matters most. MD-20 carries it, and the fix is a change to two files, not a change to this convention.
+matters most. MD-22 carries it, and the fix is a change to two files, not a change to this convention.
 
 ### The branch check every ticket command runs
 

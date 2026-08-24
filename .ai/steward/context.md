@@ -612,7 +612,7 @@ which it had never held, and `guard-read-scope.mjs` — wired on `Read|Grep|Glob
 `ba` and `qa` any path under `src/**` — is walked around by `cat`. It is the only guard of the original
 set that both survived ADR-004 and names these roles. That was said, the operator's instruction stands,
 and the tool is granted. What mitigates it is not a mechanism: `.claude/agents/ba.md` now lists the
-seven git verbs `Bash` exists for and forbids shell reads of `src/**` by name. **MD-19 records that
+seven git verbs `Bash` exists for and forbids shell reads of `src/**` by name. **MD-21 records that
 this is a convention and not a control**, so nobody later mistakes it for one, and names the two
 signatures to watch for — an `inputs_read` citing `src/**`, or an AC carrying a field name the registry
 does not hold.
@@ -658,7 +658,7 @@ restating it.
 scheme, so two defects on one feature produced two names with nothing in common. `bugfix/` carries the
 parent feature inside the bug ID.
 
-**MD-20, found by writing the convention rather than by running it.** `bugfix/` branches run with
+**MD-22, found by writing the convention rather than by running it.** `bugfix/` branches run with
 RULE-03 unenforced — both resolvers hard-code `feat/`, so the guard exits 0 and the CI check prints
 *nothing to check*. That is the one class of work that edits code already in `main`, usually in a
 hurry. `ops/` being exempt is correct because chore work has no ticket; `bugfix/` is exempt by accident

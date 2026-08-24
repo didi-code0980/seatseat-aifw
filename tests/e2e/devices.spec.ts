@@ -365,6 +365,12 @@ test("AC-4: an existing device's attributes are changed, and its seat and design
   await page.getByTestId("device-edit-model").fill("QA model AC4 after");
   await page.getByTestId("device-edit-submit").click();
   await expect(page.getByTestId("device-edit-dialog")).toBeHidden();
+  // Retrying, and before the snapshot below. The dialog hides when the server action returns; the
+  // refreshed list arrives on a later paint. `rowState` reads five cells with bare `innerText()`
+  // calls, so without this the read races the refresh and loses whenever the server is busy —
+  // which is exactly what a fourth spec file taking concurrency from three workers to four does.
+  // MEM-01 F-7: the race has been latent since DEV-01 shipped, MEM-01 is what made it fire.
+  await expect(page.getByTestId(`devices-row-${tag}-model`)).toHaveText("QA model AC4 after");
 
   const after = await rowState(page, tag);
   expect(after.model, "the list shows that device with the new value").toBe("QA model AC4 after");

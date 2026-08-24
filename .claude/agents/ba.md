@@ -52,7 +52,7 @@ MD-18.
 - **`cat`, `sed`, `head`, `grep` or any shell read of `src/**`.** `guard-read-scope.mjs` is wired to
   `Read|Grep|Glob` and refuses you that directory; a shell reaches around it. The guard is the
   mechanism, RULE-05 is the rule, and the rule does not weaken because the mechanism has a gap. **This
-  gap is recorded as MD-19 and it is real** — nothing stops you but this paragraph.
+  gap is recorded as MD-21 and it is real** — nothing stops you but this paragraph.
 - **`git commit`, `git push`, `git merge`, `git rebase`, `git stash`.** Persisting a lane is
   `/handoff` and belongs to `orchestrator`; `.ai/standards/git-conventions.md` names that role and no
   other. Branch *creation* is not a commit, which is why step 0 is permitted and this is not.
