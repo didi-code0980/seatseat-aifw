@@ -36,8 +36,8 @@ Steps:
      step 0 this is normally only what step 3 just wrote: `ticket.yaml`, `backlog.md`, `metrics.md`.
    - **Everything else** — model, registry, standards, hooks, scripts, tooling, stray files.
 
-   Print both sets before touching git. A path you cannot classify goes in the second set; you do
-   not guess it into the ticket.
+   A path you cannot classify goes in the second set; you do not guess it into the ticket. **Do not
+   print the two sets** — the commit is the record. Print only the paths that made you stop.
 
    **`metrics.md` and `backlog.md` are yours and only yours.** No other command writes them — see
    *The one surface that still collides* in `.ai/standards/session-model.md`. They sit outside every
@@ -86,16 +86,14 @@ Steps:
 9. If `tracker.sync_enabled` is true, push `gate_state` and `pr_url`. If it is false, skip silently —
    that is the expected state for early tickets.
 
-10. **Print the next action and its session** — do not invoke it:
+10. **Sign off — and the pull request URL goes above the block.** The next command and its folder are
+    the *Tiếp theo* line of the block in `CLAUDE.md`; the PR link is the one thing a ship produces that
+    the operator cannot get anywhere else, so it goes in the prose above it. Everything else — the
+    gates you checked, the files you classified, the commands you ran — stays out. `git show --stat`
+    and the ticket folder hold all of it.
 
-```
-MEM-01 is DONE, PR #12 opened. Merging is yours.
-Once it is merged, run /implement SEA-01 in the aiw-implement folder — SEA-01's design handoff is already
-pushed and its branch is free.
-```
-
-Name the folder, not just the command. Three worktrees mean a correct command in the wrong folder
-writes to the wrong branch, and since ADR-004 nothing refuses it.
+    Name the folder, not just the command. Three worktrees mean a correct command in the wrong folder
+    writes to the wrong branch, and since ADR-004 nothing refuses it.
 
 11. **Park the lane on the latest `main`** — same three commands as `/handoff` step 6, same reasons:
 

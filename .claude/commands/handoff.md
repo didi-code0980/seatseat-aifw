@@ -64,8 +64,9 @@ lane that has not completed — a pushed branch is a claim that a lane is done.
 - **Ticket set** — matches `allowed_paths`, or sits under `.ai/board/tickets/$ARGUMENTS/`.
 - **Everything else** — model, registry, standards, hooks, scripts, tooling, stray files.
 
-Print both sets before touching git. A path you cannot classify goes in the second set; you do not
-guess it into the ticket.
+A path you cannot classify goes in the second set; you do not guess it into the ticket. **Do not print
+the two sets** — the commit you are about to make is the record, and `git show --stat` reads it back.
+Print only the paths that made you stop.
 
 **`.ai/board/metrics.md` and `.ai/board/backlog.md` are never in the ticket set, and never yours
 here.** They belong to `/ship` alone — see *The one surface that still collides* in
@@ -135,16 +136,19 @@ hold `main` — say so in one line and carry on. It is not a reason to stop a co
 that reports success while still holding `feat/$ARGUMENTS` is the one failure this command exists to
 prevent, and it fails in the *other* folder, minutes later, where it is hardest to read.
 
-## 7. Print the next command and its folder — do not invoke it
+## 7. Sign off, and let the sign-off be the reply
 
-```
-SEA-01 design lane complete and pushed. Branch released; this folder is parked on main.
-Run /implement SEA-01 in the aiw-implement folder.
-```
+The next command and its folder go in the *Tiếp theo* line of the block in `CLAUDE.md`. There is no
+separate report — if the hand-off did what it says, **four lines is the whole reply**. Do not narrate
+steps 0 to 6, do not tabulate what passed, do not restate what this file already says.
 
-**When the next move in this folder is `/spec`, the command is enough on its own.** `ba` holds `Bash`
-and `/spec` step 0 cuts `feat/<ID>` from `origin/main` itself (MD-18) — which is exactly the state
-step 6 left this folder in, so the next ticket starts from current `main` with nothing to remember.
+Prose above the block is for a stop, a finding, or something you did differently. A hand-off that
+found the lane already handed off, or a `state:` that disagrees with what is on the branch, is exactly
+that kind of finding: one or two sentences, then the block.
+
+When the next move in this folder is `/spec`, the command alone is enough — `ba` holds `Bash` and
+`/spec` step 0 cuts `feat/<ID>` from `origin/main` itself (MD-18), which is the state step 6 left this
+folder in.
 
 ## What this command never does
 

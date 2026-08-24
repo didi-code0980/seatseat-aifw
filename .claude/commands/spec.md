@@ -14,8 +14,9 @@ stage arriving at a missing branch stops and reports instead, because at that po
 means something upstream did not happen and manufacturing one hides which.
 
 **Run this first, every time, including a re-run.** You hold `Bash` for this and only this
-(`.claude/agents/ba.md`). Print each command and its output; a branch decision made silently is one
-nobody can audit later.
+(`.claude/agents/ba.md`). **Run them; do not report them.** The branch you ended on is one line of the
+sign-off and the story's `inputs_read` carries it into the artifact — that is the audit trail, and it
+outlives a chat transcript. Print only when a row below says stop.
 
 ```
 pwd

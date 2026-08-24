@@ -817,3 +817,41 @@ Stated in the table rather than left as an apparent contradiction.
 be reopened. Nothing was lost — both trees were clean — but a session cannot follow a rename.
 
 **Registry writes: none.**
+
+### 2026-08-24 — the sign-off is the reply, not a footer on one
+
+**Changed:** `CLAUDE.md` (the sign-off section becomes `## Replying`, with the length rule above the
+block), `.claude/commands/spec.md` `handoff.md` `ship.md`, this file.
+
+**Why:** the operator showed a `/handoff SEA-01` reply — a six-section report with a box-drawn table of
+five checks that all passed, a paragraph on what each numbered step did not do, and the useful content
+in the last four lines. Their instruction: reply like the sign-off block.
+
+**The cause was mine and it was recent.** `spec.md` said *"Print each command and its output; a branch
+decision made silently is one nobody can audit later"*, and `handoff.md` and `ship.md` both said
+*"Print both sets before touching git"*. All three were written this same afternoon, all three for
+auditability, and all three were wrong about where an audit trail lives. **Git, the artifacts and the
+gate front-matter are the record.** A transcript of them in chat is a second copy that is worse in
+every way: it is not diffable, it goes stale the moment anything changes, and nobody reads it twice.
+Printing the two sets was the clearest mistake — by the time the operator reads it the commit has
+already happened, so it invites review of something that cannot be reviewed.
+
+**The rule now reads: default to four lines; add prose only for a stop, a finding, or a deviation.**
+Explicitly banned: narrating steps, tabulating checks that passed, printing the classification, and
+restating what the command file says. The last one is worth naming because it feels like helpfulness —
+the operator can read the command file, and it stays true there.
+
+**Steps that print on a stop were left exactly as they were.** `Print the dirty paths`,
+`Print the folder git named` — that is the case where detail is the entire value, and the same rule
+that shortens a success is what makes a failure legible.
+
+**`/handoff` step 7 and `/ship` step 10 stopped being separate reports.** Both used to print a
+next-command block, which the sign-off's *Tiếp theo* line now carries. `/ship` keeps one thing in
+prose: the pull request URL, because it is the only output of a ship the operator cannot get from
+anywhere else.
+
+**Not changed, and worth stating:** none of the *checks* were removed. Every step still runs what it
+ran. This is a change to what reaches the operator, not to what the command verifies — a quieter
+command that checked less would be a worse trade than the verbosity it replaced.
+
+**Registry writes: none.**
