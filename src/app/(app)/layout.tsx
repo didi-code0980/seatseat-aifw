@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const NAV = [
   { href: "/rooms", label: "Rooms" },
   { href: "/seats", label: "Seats" },
