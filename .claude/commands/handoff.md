@@ -6,6 +6,12 @@ argument-hint: <TICKET-ID>
 Run in the **orchestrator session of whichever lane has just finished**
 (`.ai/standards/session-model.md`). Nothing is dispatched.
 
+**That means two orchestrator sessions, one per lane folder** — `aiw-work` runs hand-off 1 and 3,
+`aiw` runs hand-off 2. Not a choice: a session's folder is fixed at launch, and the files each
+hand-off commits sit in that folder's working tree. The commit exception in
+`.ai/standards/git-conventions.md` names `orchestrator` and no other role, and `ba` and
+`tech-lead-design` hold no `Bash` tool, so no lane can persist its own work.
+
 **This command exists because a lane cannot hand a ticket on by itself.** Every stage leaves its
 worktree dirty, the constructing roles have no `Bash` tool and cannot commit, and git refuses one
 branch in two worktrees. Without a step that persists the work and *releases the branch name*, the
