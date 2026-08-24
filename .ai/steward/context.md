@@ -306,3 +306,49 @@ directory and only one of them is what the charter means.
 still pass, so restoring them is one edit plus one list. `chat-guard.mjs`, `guard-read-scope.mjs` and
 `guard-tracker-scope.mjs` are untouched — none of them guards a file write. Nothing under `src/`,
 `prisma/`, `tests/`, or `.ai/board/tickets/DEV-01/`, which another session was holding mid-stage.
+
+### 2026-08-23 — three worktrees, and the steward moves out of the build lane
+
+**Changed:** `.ai/standards/session-model.md` (new section, `doc_version` 2), `.ai/board/model-debt.md`
+(MD-11, MD-12), `.gitignore`, this file. The two registry commits earlier the same day — INV-12 /
+ADR-005, and the SEA-01 row — are their own entries above.
+
+**Why:** MEM-01 and SEA-01 needed to be in flight together, and the operating model's parallel
+condition turned out to be unsatisfiable.
+
+**MD-11 is the finding that matters.** `.ai/01-operating-model.md` permits parallel dispatch only when
+`allowed_paths` are pairwise disjoint. `src/lib/data/types.ts` is in the list of ROO-01, DEV-01 **and**
+MEM-01 — every feature adds DTOs to one module, and SEA-01 will too. The condition can never be met by
+the tickets it was written to govern.
+
+The arrangement adopted **sidesteps it rather than satisfying it**, and that distinction is the whole
+of why it works: DESIGN only *declares* `allowed_paths`, IN_PROGRESS *writes* them, and only the build
+lane runs IN_PROGRESS. Overlapping lists are harmless while one writer exists. Hence the rule — a
+feature enters the build lane only when the previous one has **merged**.
+
+**MD-12** — `pnpm install` fails here. Prisma's `preinstall` rejects Node v23.6.0, the only Node on the
+machine, while `package.json` accepts it at `>=20.9.0`. Worked around by symlinking `node_modules`
+between worktrees; that holds only while the branches share a lockfile, and nothing checks that they do.
+
+**Lanes are stages, not roles.** An earlier draft in this same session assigned roles to folders and
+was wrong: `tech-lead-design` cannot hold two branches at once, and git refuses one branch in two
+worktrees. Recorded because the wrong version is the intuitive one and will be proposed again.
+
+| Folder | Lane | Branch |
+|---|---|---|
+| `aiw` | build — `/implement` `/review` `/qa` `/ship` | the ticket being built |
+| `aiw-work` | design — `/spec` `/next-ticket` `/design` | the ticket being specified |
+| `aiw-steward` | model — `/thuki` `/status` `/docs-audit` | always `ops/*` |
+
+**The steward now runs in `aiw-steward`, and did not while this entry was being written.** Every
+steward change on 2026-08-23 was made from a session rooted in `aiw`, reaching into the other
+worktrees — possible only because ADR-004 unwired `guard-project-root.mjs`. It worked, and it is not
+the arrangement this entry documents. The next steward session opens in `aiw-steward`.
+
+**`.gitignore` fixed:** the pattern was `node_modules/`, and a trailing slash matches only directories.
+The `node_modules` symlinks in the new worktrees are files, so they sat untracked and visible, one
+`git add -A` away from committing an absolute path specific to this machine.
+
+**Left for a human, unchanged and now three tickets old:** `prisma/schema.prisma` is still `DRAFT`, 38
+seam functions are still `notWired`, and no ticket carries that work. The blocker ADR-002 named was
+answered by ADR-003 eleven days ago.
