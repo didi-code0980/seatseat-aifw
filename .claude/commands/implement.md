@@ -3,7 +3,7 @@ description: Run the IN_PROGRESS stage — the Developer implements the design
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **Developer session in the `aiw` folder — the build lane** — on branch `feat/$ARGUMENTS`.
+Run in the **Developer session in the `aiw-implement` folder — the implement lane** — on branch `feat/$ARGUMENTS`.
 
 ## Step 0 — confirm the branch before writing anything
 

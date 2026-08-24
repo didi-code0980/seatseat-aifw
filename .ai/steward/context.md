@@ -765,3 +765,55 @@ worth carrying is smaller: **a branch open across someone else's merge should re
 appends to before it pushes**, not only when git complains.
 
 **Registry writes: none.**
+
+### 2026-08-24 — the folders are renamed for the stage they run
+
+**Changed on disk:** `aiw` → `aiw-implement`, `aiw-work` → `aiw-design`. `aiw-steward` unchanged.
+
+**Changed in the repository:** `.ai/standards/session-model.md` (lane table gains a Roles column, the
+rename is recorded in it), `.ai/standards/git-conventions.md`, `.claude/commands/spec.md`
+`design.md` `implement.md` `review.md` `qa.md` `handoff.md` `ship.md`,
+`.claude/agents/orchestrator.md` `ba.md`, `.claude/settings.json` (two absolute paths and an
+`additionalDirectories` entry), `.claude/settings.local.json` (untracked, this worktree only),
+`CLAUDE.md`, this file.
+
+**The lane label changed with the folder.** `build lane` reads as `implement lane` throughout. Leaving
+`aiw-implement | **build**` in the table would have been exactly the drift the model exists to catch,
+one line after being written.
+
+**How the rename was done, because it is not `mv` alone.** `aiw` was the **main** worktree — a real
+`.git` directory — while `aiw-design` and `aiw-steward` are linked worktrees whose `.git` is a file
+holding an absolute path into it. Renaming `aiw` therefore broke the git metadata of all three at
+once, including this session's. Both `mv`s and the repair ran in a single command so no step needed
+git in between:
+
+```
+mv aiw aiw-implement
+mv aiw-work aiw-design
+git -C .../aiw-implement worktree repair .../aiw-design .../aiw-steward
+```
+
+`worktree repair` reported all three broken links and fixed them; `git status` then answered from
+every folder. **Both renamed folders were clean beforehand** — checked first, and the reason this was
+safe to do without staging anything.
+
+**One thing broke and was fixed rather than re-pointed:** `aiw-steward/node_modules` was a symlink to
+`.../aiw/node_modules` and dangled. It was replaced with a real install rather than a new symlink,
+because the standard changed two commits earlier and re-pointing it would have contradicted the file
+that was being edited in the same session. `pnpm install --frozen-lockfile --ignore-scripts` finished
+in 4.8s — the first live confirmation that MD-19's repair works from a cold worktree.
+
+**What was deliberately left with the old names.** `.ai/board/tickets/MEM-01/**`,
+`.ai/board/model-debt.md`, and every earlier entry in this file. They are records of what was true when
+they were written, and a log that renames its own history is a log that can only agree with the
+present. The mapping is in this entry, so any old reference resolves.
+
+**`orchestrator` now appears in two rows of the lane table.** The operator's mapping put it in
+`aiw-design`, and that is where it does most of its work — but each lane needs one to run its own
+`/handoff`, because it is the only role permitted to commit and a session's folder is fixed at launch.
+Stated in the table rather than left as an apparent contradiction.
+
+**Any session still open in `aiw` or `aiw-work` is now rooted at a path that does not exist** and must
+be reopened. Nothing was lost — both trees were clean — but a session cannot follow a rename.
+
+**Registry writes: none.**

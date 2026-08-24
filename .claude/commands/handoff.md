@@ -6,8 +6,8 @@ argument-hint: <TICKET-ID>
 Run in the **orchestrator session of whichever lane has just finished**
 (`.ai/standards/session-model.md`). Nothing is dispatched.
 
-**That means two orchestrator sessions, one per lane folder** — `aiw-work` runs hand-off 1 and 3,
-`aiw` runs hand-off 2. Not a choice: a session's folder is fixed at launch, and the files each
+**That means two orchestrator sessions, one per lane folder** — `aiw-design` runs hand-off 1 and 3,
+`aiw-implement` runs hand-off 2. Not a choice: a session's folder is fixed at launch, and the files each
 hand-off commits sit in that folder's working tree. The commit exception in
 `.ai/standards/git-conventions.md` names `orchestrator` and no other role, and `ba` and
 `tech-lead-design` hold no `Bash` tool, so no lane can persist its own work.
@@ -49,8 +49,8 @@ Read the `gates` map. Do not infer it from which files exist.
 
 | Gates passed | Hand-off | Next lane |
 |---|---|---|
-| `spec` and `design` | **design → build** | `aiw` — `/implement` |
-| `review` and `qa` | **build → ship** | `aiw-work` — `/ship` |
+| `spec` and `design` | **design → build** | `aiw-implement` — `/implement` |
+| `review` and `qa` | **build → ship** | `aiw-design` — `/ship` |
 
 Anything else is not a hand-off. If `design` passed and `review` did not while you are in the build
 lane, the ticket is mid-lane: stop and say which stage is unfinished. This command never persists a
@@ -139,7 +139,7 @@ prevent, and it fails in the *other* folder, minutes later, where it is hardest 
 
 ```
 SEA-01 design lane complete and pushed. Branch released; this folder is parked on main.
-Run /implement SEA-01 in the aiw folder.
+Run /implement SEA-01 in the aiw-implement folder.
 ```
 
 **When the next move in this folder is `/spec`, the command is enough on its own.** `ba` holds `Bash`

@@ -3,7 +3,7 @@ description: Run the SPEC stage — the BA writes 01-story.md
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **BA session in the `aiw-work` folder — the design lane**. It is persistent and lives
+Run in the **BA session in the `aiw-design` folder — the design lane**. It is persistent and lives
 until the end of the run (`.ai/standards/session-model.md`). You are the BA; nothing is dispatched.
 
 ## Step 0 — put yourself on `feat/$ARGUMENTS` before writing anything
@@ -54,7 +54,7 @@ MD-18, in the form that produced this step. If the tree is dirty the previous la
 worktree holds the branch. Print the folder git named and stop. Never `git worktree` your way past
 it, and never `git -C` into the folder that holds it.
 
-**Confirm `pwd` is the design-lane folder.** SPEC belongs in `aiw-work`. Since ADR-004 unwired
+**Confirm `pwd` is the design-lane folder.** SPEC belongs in `aiw-design`. Since ADR-004 unwired
 `guard-project-root.mjs` nothing refuses a session in the wrong folder — it simply takes the build
 lane's worktree out from under the ticket being built.
 
