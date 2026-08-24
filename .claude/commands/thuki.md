@@ -36,17 +36,23 @@ preferences and they apply to this run whether or not the current message repeat
 **State which files you intend to change before changing them.** Not a summary of the change — the
 list of paths.
 
-**Stop for confirmation when any of these are touched:**
+**Announce and proceed, everywhere.** The standing instructions in `.ai/steward/context.md` revised
+this on 2026-08-23 — *decide and report, do not ask* — and that revision named these four paths
+specifically. Announcing intent is not asking permission: state the paths, then act in the same turn.
 
-| Path | Why |
+The four paths below still deserve more care than the rest, and the care is **in what you write, not
+in whether you stop**:
+
+| Path | What extra care means here |
 |---|---|
-| `.ai/registry/**` | RULE-01. Print the exact diff first — see the registry protocol in `.claude/agents/steward.md` |
-| `.ai/01-operating-model.md` | Every agent's lifecycle, gates, and routing |
-| `.ai/00-charter.md` | What the system refuses to do |
-| `.claude/hooks/**` | A weakened guard fails silently; that is the whole reason the hooks have tests |
+| `.ai/registry/**` | Feature rows, glossary and tracker fields: write them freely. `rules.md`, `invariants.md`, `decisions/`: write them only to record a decision the operator made in words you can point at. An ADR marked `ACCEPTED by the operator` that they did not accept is a forged signature, not initiative. `.github/CODEOWNERS` forces their review at merge time regardless |
+| `.ai/01-operating-model.md` | Every agent's lifecycle, gates and routing. Cite the line you are contradicting |
+| `.ai/00-charter.md` | What the system refuses to do. A change here changes what the product is |
+| `.claude/hooks/**` | A weakened guard fails silently. Run `pnpm hooks:test` in the same turn, and say the result |
 
-These four are stop-and-ask, not announce-and-proceed. Everything else under `.ai/**`, `.claude/**`
-and `scripts/**` is announce-and-proceed.
+*This table read "stop-and-ask" until 2026-08-24, the day after the instruction that replaced it. The
+command outlived its own policy, which no `/docs-audit` check can catch — none compares a command
+against the standing instructions.*
 
 ## Not this command's job
 

@@ -1,6 +1,6 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
+doc_version: 2
+last_updated: 2026-08-24
 governed_by: [RULE-03, RULE-09, RULE-10]
 ---
 
@@ -31,13 +31,30 @@ Other prefixes: `ops/` for chores, `fix/` for defects. Neither activates the pat
 
 ## Commits
 
-**Agents do not commit — with one exception: the `orchestrator`, inside `/ship`.** Every other
-stage leaves the working tree dirty and a human commits. That is deliberate: a commit is an assertion
-that a change is coherent, and that assertion is one of the things being validated.
+**Agents do not commit — with one exception: the `orchestrator`, inside `/handoff` and `/ship`.**
+Every other stage leaves the working tree dirty. That is deliberate: a commit is an assertion that a
+change is coherent, and that assertion is one of the things being validated.
 
-The exception exists because `/ship` could not complete itself. Its step 4 requires an open pull
-request; a pull request requires commits on a pushed branch; and this section forbade the only agent
-in that command from producing them, while no step asked a human to. MD-07.
+The exception was `/ship` alone until 2026-08-24, and it existed because `/ship` could not complete
+itself: its step 4 requires an open pull request, a pull request requires commits on a pushed branch,
+and this section forbade the only agent in that command from producing them while no step asked a
+human to. MD-07.
+
+**`/handoff` was added for the same reason one lane further up.** Under the three-worktree arrangement
+a ticket crosses folders twice, and the artifacts one lane produced are the input the next lane reads.
+An input that exists only as a dirty file in a folder the next lane cannot open is not an input, and
+the constructing roles that produce it — `ba`, `tech-lead-design` — hold no `Bash` tool and cannot
+persist it themselves. MD-15. Three commit points now, one per boundary:
+
+| Command | Lane | Commits |
+|---|---|---|
+| `/handoff` | `aiw-work`, after DESIGN | the story and the design |
+| `/handoff` | `aiw`, after QA | `src/**`, `tests/**`, artifacts 03–06 |
+| `/ship` | `aiw-work` | `state: DONE`, the board files, then the pull request |
+
+Every `/handoff` ends by releasing the branch name (`git switch --detach`), because git holds a branch
+exclusively across worktrees and the next lane's `git switch` fails outright without it. Details in
+`.ai/standards/session-model.md` and `.claude/commands/handoff.md`.
 
 **RULE-09 is unchanged and needed no ADR.** It names schema changes, ADRs, registry edits and PR
 merges. Committing was never among them — the prohibition lived here, in a standard, and it is this

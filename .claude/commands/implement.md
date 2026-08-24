@@ -3,7 +3,14 @@ description: Run the IN_PROGRESS stage — the Developer implements the design
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **Developer session** on branch `feat/$ARGUMENTS`. That session is ephemeral but
+Run in the **Developer session in the `aiw` folder — the build lane** — on branch `feat/$ARGUMENTS`.
+
+**Acquire the branch first: `git fetch && git switch feat/$ARGUMENTS && git pull`.** The story and
+the design arrive already committed, pushed by `/handoff` from the design lane. If the switch fails
+with `fatal: 'feat/$ARGUMENTS' is already checked out at ...`, the design lane has not handed off —
+print the folder git named and stop. Do not re-derive the design from an uncommitted file in another
+worktree, and do not start from `main`: `02-design.md` would be missing and `allowed_paths` with it.
+ That session is ephemeral but
 **survives REWORK** — keep it open until the ticket is DONE or ESCALATED, and re-run this command in
 the same session on a rework cycle. Restarting it every cycle would spend the RULE-06 budget
 re-deriving the design instead of fixing what the reviewer found

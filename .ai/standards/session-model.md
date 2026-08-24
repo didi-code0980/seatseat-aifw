@@ -1,5 +1,5 @@
 ---
-doc_version: 3
+doc_version: 4
 last_updated: 2026-08-24
 governed_by: [RULE-11, RULE-12, RULE-13, RULE-14, RULE-15, RULE-16]
 ---
@@ -113,26 +113,38 @@ one branch in two worktrees.
 
 | Folder | Lane | Stages | Branch it holds |
 |---|---|---|---|
-| `aiw` | **build** | `/implement` `/review` `/qa` `/ship` | the ticket being built |
-| `aiw-work` | **design** | `/spec` `/next-ticket` `/design` | the ticket being specified |
+| `aiw` | **build** | `/implement` `/review` `/qa` `/handoff` | the ticket being built |
+| `aiw-work` | **design** | `/spec` `/next-ticket` `/design` `/handoff` `/ship` | the ticket being specified, then the ticket being shipped |
 | `aiw-steward` | **model** | `/thuki` `/status` `/docs-audit` | always `ops/*`, never a ticket |
+
+**`/ship` runs in the design lane, not the build lane.** Changed 2026-08-24 on the operator's
+instruction. The reason is throughput: shipping is the orchestrator reading gates, opening a pull
+request and waiting on a human, and none of it needs the folder that writes `src/**`. Moving it frees
+the build lane the moment QA passes.
+
+**The branch a lane holds is not a lane's property. It travels.** One `feat/<TICKET-ID>` moves
+`aiw-work -> aiw -> aiw-work`, carried by `/handoff` at each boundary. This replaces the earlier
+arrangement in which each lane cut its own branch and the ticket's history was stitched together at
+ship time.
 
 ```mermaid
 flowchart LR
   subgraph W["aiw-work — design lane"]
     direction TB
     S["/spec"] --> D0{"DoR"} --> D["/design<br/>fills allowed_paths"]
+    SH["/ship<br/>PR opened"]
   end
   subgraph A["aiw — build lane"]
     direction TB
-    I["/implement"] --> R["/review"] --> Q["/qa"] --> SH["/ship"]
+    I["/implement"] --> R["/review"] --> Q["/qa"]
   end
   subgraph C["aiw-steward — model lane"]
     direction TB
     T["/thuki · /status<br/>ops/* only"]
   end
-  D -- "handoff:<br/>commit · push · switch main" --> I
-  SH -- "merged" --> S
+  D -- "/handoff<br/>commit · push · detach" --> I
+  Q -- "/handoff<br/>commit · push · detach" --> SH
+  SH -- "human merges" --> S
   C -.->|"never holds a ticket branch"| A
 ```
 
@@ -162,23 +174,67 @@ so a ticket that has finished this lane has already passed `READY`. Corrected 20
 SEA-01, which is the first ticket to actually occupy this position: both gates passed, nothing to do
 here, and the build lane full.
 
-**Handing the lane on is not free, and the model does not yet say who does it.** A ticket holding
-here leaves its gated artifacts uncommitted, because every stage leaves the tree dirty and
-`.ai/standards/git-conventions.md` permits a commit only from `orchestrator` inside `/ship` or on a
-direct operator instruction. Neither applies to a ticket that is merely parked. The next ticket
-cannot enter this worktree until they are dealt with, because a branch switch carries both the
-modified and the untracked files onto the new branch and `scripts/check-allowed-paths.mjs` diffs the
-whole branch. **MD-15** carries this.
+**Handing the lane on is `/handoff`, and it is the orchestrator's.** MD-15 recorded that the model
+mandated this position and gave nobody a way to leave it; the protocol below is the answer, adopted
+2026-08-24 on the operator's instruction. A parked ticket is now a *pushed* ticket, which is a
+stronger claim than a parked one and a cheaper state to resume from.
+
+### The handoff protocol
+
+Three commits per ticket, at three boundaries, all by `orchestrator` running `/handoff`. Full steps
+in `.claude/commands/handoff.md`; what belongs here is why it has the shape it does.
+
+| # | Where | After | What moves |
+|---|---|---|---|
+| 1 | `aiw-work` | `design` gate passes | `feat/<ID>` pushed carrying `01-story.md` and `02-design.md`; branch released |
+| 2 | `aiw` | `qa` gate passes | the same branch pushed carrying `src/**`, `tests/**` and artifacts 03–06; branch released |
+| 3 | `aiw-work` | `/ship` | `state: DONE`, board files, the pull request |
+
+The receiving lane opens with `git fetch && git switch feat/<ID> && git pull`.
+
+**Releasing the branch is not tidiness, it is the mechanism.** Git holds a branch name exclusively
+across worktrees, and the failure is not a warning:
+
+```
+fatal: 'feat/SEA-01' is already checked out at '/Users/mpa/Desktop/aiw-work'
+```
+
+Verified by attempt, 2026-08-24. So the last step of every `/handoff` is `git switch --detach` — the
+worktree keeps the same commit and the same files, and only the name is freed. A hand-off that
+reported success while still holding the branch would fail in the *other* folder, minutes later,
+which is the hardest place to read it.
+
+**Why three commits and not one.** Until 2026-08-24 the answer was one, at `/ship`, and it was
+coherent while every stage lived in one working tree: a commit is an assertion that a change is
+coherent, and deferring it kept the assertion honest. Two worktrees make that untenable — the
+artifacts a lane produced are the *input* the next lane needs, and an input that exists only as a
+dirty file in a folder the next lane cannot open is not an input. So the assertion is now made three
+times about three smaller things, which is a weaker claim per commit and a truer one.
+
+**What it costs.** The build lane no longer sees the design lane's uncommitted tree, so a defect in
+`02-design.md` is found after it is in history rather than before. That is the trade, and it is
+acceptable because a gated artifact has already been judged — `gate: PASS` in its front-matter is the
+assertion, and the commit only records it.
+
+**The one thing that must not be inferred from this.** A pushed branch is still not a merged branch.
+The rule above is unchanged: a feature enters the build lane only when the previous one has
+**merged**. `/handoff` moves a ticket between lanes; it never lets a second ticket into the build
+lane.
 
 ### The one surface that still collides
 
-`.ai/board/metrics.md` and `.ai/board/backlog.md`. Both lanes append to them, no `allowed_paths` covers
-them, and every ticket touches both. This has already produced one merge conflict, on 2026-08-23,
-between two `ops/` branches.
+`.ai/board/metrics.md` and `.ai/board/backlog.md`. Every ticket appends to both, no `allowed_paths`
+covers either, and two tickets in flight means two branches appending to the same lines. This has
+already produced one merge conflict, on 2026-08-23, between two `ops/` branches.
 
-**Write them from the build lane only.** The design lane reports its transitions and they are recorded
-at handoff. This costs a little timeliness in the board and removes the only recurring conflict that
-is not a real disagreement about content.
+**One writer: `/ship`.** Not one lane — one command. `/handoff` is explicitly forbidden to touch
+either file and puts them in its second set if a stage left them dirty. Since only one ticket is ever
+shipping, only one branch ever writes them, and the design lane's transitions are recorded when the
+ticket ships rather than when it moves.
+
+*Revised 2026-08-24.* The previous rule was **write them from the build lane only**, which was correct
+until `/ship` moved to the design lane and took the board writes with it. Naming the command instead
+of the folder is what survives the next time a stage changes lanes.
 
 ### Provisioning a worktree
 
