@@ -96,6 +96,76 @@ export interface Member {
   groupId: string | null;
 }
 
+/**
+ * Input to createMember. The three fields a person supplies; the rest of a Member is the seam's.
+ * `id` is minted and `groupId` is always null — group membership is out-of-scope item 5 and no form
+ * field collects it, so `NewMember` deliberately has no way to express one.
+ *
+ * `role` is required and has no default here, although `prisma/schema.prisma:165` declares
+ * `@default(USER)`. AC-3 refuses a creation with no role chosen, and a default would silently
+ * satisfy the very thing that criterion refuses.
+ */
+export interface NewMember {
+  fullName: string;
+  email: string;
+  role: Role;
+}
+
+/**
+ * Input to updateMember — the three editable fields (AC-5, AC-6, AC-7).
+ *
+ * One patch covers both AC-5 and AC-6 because they are the same operation with a different field
+ * varied: AC-5 changes an attribute and asserts the role is unchanged, AC-6 changes the role and
+ * asserts everything else is. AC-7 confirms this shape from the other side — it refuses an edit
+ * submitted "with no role selected", which is only reachable if the edit form carries the role.
+ *
+ * `groupId` is absent for the same reason it is absent from NewMember.
+ */
+export interface MemberPatch {
+  fullName: string;
+  email: string;
+  role: Role;
+}
+
+/** F-1: `Member.email` is `@unique`, so the seam refuses a duplicate rather than throwing. */
+export type CreateMemberOutcome =
+  | { created: true; member: Member }
+  | { created: false; reason: "DUPLICATE_EMAIL" };
+
+export type UpdateMemberOutcome =
+  | { updated: true; member: Member }
+  | { updated: false; reason: "NOT_FOUND" | "DUPLICATE_EMAIL" };
+
+/**
+ * INV-12's two blockers, read together rather than one at a time.
+ *
+ * ADR-005 requires the refusal to name what is blocking it, because "a bare 'cannot delete' sends
+ * the operator hunting". Reporting only the first blocker would send them hunting twice: release the
+ * seat, retry, discover the devices. Both halves are computed on every read and the message names
+ * whichever are non-empty.
+ *
+ * occupiedSeatCodes — seat *codes*, not ids, sorted ascending. AC-10 requires the refusal to name
+ *                     each seat, and a cuid names nothing to a person. Empty when they occupy none.
+ * ownedDeviceCount  — AC-11 requires a count and not a list. The story keeps device data off the
+ *                     member list on purpose (AC-1); this is the one place it reaches the surface.
+ */
+export interface MemberReferences {
+  occupiedSeatCodes: string[];
+  ownedDeviceCount: number;
+}
+
+/**
+ * INV-12: refused, not cascaded. `REFERENCED` carries what blocked it so AC-10 and AC-11 are
+ * assertable at the seam and not only through the rendered sentence.
+ *
+ * There is no `cascaded` branch and there never was one — ADR-005 rejected the cascade, and finding
+ * F-4 records the three *other* declared cascades this function deliberately does not perform.
+ */
+export type DeleteMemberOutcome =
+  | { deleted: true; memberId: string }
+  | { deleted: false; reason: "NOT_FOUND" }
+  | { deleted: false; reason: "REFERENCED"; references: MemberReferences };
+
 export interface Group {
   id: string;
   name: string;
