@@ -20,7 +20,7 @@ the repair it makes is the one nobody reviewed. Findings go to the operator.
 | D9 | Every **human-owned** doc has front-matter, and its `governed_by` cites rules whose version is at most its `doc_version` |
 | D10 | Every state in the `ticket.yaml` enum appears in the gate table, and the reverse |
 | D11 | Every `ADR-nnn` referenced has a file in `.ai/registry/decisions/` |
-| D12 | `no-restricted-imports` names no Supabase entry — ADR-002's revert signal |
+| D12 | Supabase is confined to the shape ADR-006 authorises — `@supabase/ssr` only, restricted in lint, imported nowhere under `src/` but `src/lib/auth/` |
 
 D8 is advisory and never fails the run; it is a prompt for human judgement, because a paraphrase can
 be a legitimate summary or a second source of truth and only a person can tell which.
@@ -58,10 +58,21 @@ must not be reported, and the same bytes under a human-owned path, which must be
 
 **D12 enforces a revert condition instead of trusting memory.** ADR-002 left Row Level Security off
 on the grounds that `src/lib/data/` is the single authorization point, and named the observable
-signal that the reasoning has expired: `no-restricted-imports` gaining a Supabase entry. Either
-direction counts — added to the restricted patterns, or added to the exception list — because both
-mean the SDK is in the tree. Comments are ignored, so writing down why Supabase is absent does not
-trip the check.
+signal that the reasoning has expired: direct client-to-database access.
+
+**Rewritten 2026-08-24 for ADR-006, and the strictness did not drop.** Until then it failed on any
+`@supabase/*` dependency and on any Supabase string in the lint config, which was right under ADR-002
+and would have made ADR-006 unimplementable rather than reviewable. ADR-006 adopted Supabase Auth
+*server-side only*, so the check now enforces that shape instead of forbidding the package: only
+`@supabase/ssr` may be a dependency; the lint restriction must be **present** rather than absent once
+it is; a `lib/data` path may not be exempted for Supabase; and no file under `src/` outside
+`src/lib/auth/` may import `@supabase/*` at all. Comments are ignored, so writing down why a rule
+exists does not trip it.
+
+**Its one known blind spot is written into the source rather than left to be discovered.** A widened
+lint exemption spelled `"src/lib/data/**"` names no vendor and is indistinguishable by a string
+scanner from the legitimate Prisma exemption beside it. The `src/**` branch covers the consequence:
+the guard can be loosened silently, the door cannot be opened silently.
 
 **D6 is phase-aware.** Before `package.json` exists there is no `src/`, so references to scaffold
 paths are reported as PENDING rather than as failures. Once the scaffold lands the check is strict.

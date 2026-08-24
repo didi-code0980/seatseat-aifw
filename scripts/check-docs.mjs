@@ -441,16 +441,45 @@ for (const file of adrScanned) {
 // grounds that `src/lib/data/` is the single authorization point. Its revert condition names an
 // observable signal: **the SDK entering the dependency tree by any route.**
 //
-// Two places to look, and package.json is the important one.
+// REWRITTEN 2026-08-24 for ADR-006. Until then this check failed on ANY `@supabase/*` dependency and
+// on any Supabase string in the lint config, which was exactly right under ADR-002 — and which would
+// have made ADR-006 unimplementable rather than merely reviewable.
 //
-//   package.json      an `@supabase/*` entry in dependencies, devDependencies or peerDependencies.
-//                     This is the dangerous ordering: dependency added, lint patterns untouched, so
-//                     the import is unrestricted and nothing else in the toolchain objects.
-//   eslint.config.mjs a Supabase string in the no-restricted-imports config, in either direction.
-//                     Added to the patterns means an SDK is in the tree. Added to the exception
-//                     list means it is in the tree AND has a route through the seam.
+// **What changed is the shape, not the strictness.** ADR-002's premise is untouched: `src/lib/data/`
+// is still the only path to data, RLS is still off, and that is still only true while no Supabase
+// client is constructed in the browser. ADR-006 adopted Supabase Auth *server-side only*, so the
+// check now enforces the narrow shape that decision authorises instead of forbidding the package
+// outright. Every way of widening it back out is still an error.
 //
-// The lint list is a symptom; the dependency is the fact. ADR-002 asks for a new ADR before either.
+// Three places to look:
+//
+//   package.json      `@supabase/ssr` is permitted — ADR-006 names it and only it. Any other
+//                     `@supabase/*` entry is a second door. `@supabase/supabase-js` is the one to
+//                     watch: it is the browser client, and it is what ADR-002's revert condition
+//                     was written about.
+//   eslint.config.mjs the restriction must be PRESENT, not absent. This is the inversion — under
+//                     ADR-002 a Supabase string here was the finding; under ADR-006 the absence of
+//                     one is, because the package is in the tree and something has to restrict it.
+//                     `src/lib/data/**` appearing as a Supabase exemption is always an error: the
+//                     data seam holding an auth client is the drift ADR-006 exists to prevent.
+//   src/**            no `@supabase/*` import outside `src/lib/auth/`. This is ADR-006's second
+//                     revert condition made machine-checkable. ESLint enforces it at build time;
+//                     this repeats it in the audit, because the two run at different moments and a
+//                     control nobody runs is not a control.
+//
+// The lint list is a symptom; the dependency is the fact; an import in a component is the breach.
+//
+// **The eslint branch is quieter than it looks, and this is deliberate rather than unnoticed.** It
+// catches a Supabase exemption written with a Supabase-flavoured path, because that literal contains
+// both halves it matches on. It does NOT catch `"src/lib/data/**"` being added to the auth exemption
+// block: that string names no vendor, and telling it apart from the legitimate Prisma exemption
+// beside it would mean parsing the config's structure rather than scanning its strings. Importing
+// `eslint.config.mjs` would give that structure exactly — and would couple this audit to a working
+// `node_modules`, which it does not otherwise need and cannot assume in early phases.
+//
+// The gap is covered by the third branch rather than left open. A widened lint exemption is only
+// dangerous once something uses it, and the `src/**` scan fails on the import itself no matter what
+// the lint config permits. The guard can be loosened silently; the door cannot be opened silently.
 //
 // Only string literals count. A comment explaining why Supabase is absent is not a second door, and
 // a check that fired on its own rationale would teach people to delete the rationale.
@@ -502,10 +531,18 @@ function stringLiterals(src) {
 }
 
 const SECOND_DOOR =
-  "the seam has grown a second door. ADR-002 requires a new ADR before this: its revert " +
-  "condition is that direct client-to-database access invalidates the decision to leave RLS off.";
+  "the seam has grown a second door. ADR-002's revert condition is that direct " +
+  "client-to-database access invalidates the decision to leave RLS off, and ADR-006 adopted " +
+  "Supabase Auth only on the condition that its client is constructed server-side.";
+
+// The single package ADR-006 authorises. Anything else under the scope is a second door.
+const ALLOWED_SUPABASE_PKG = "@supabase/ssr";
+
+// The one path permitted to name it. ADR-006 OQ-4.
+const SUPABASE_EXEMPT_DIR = "src/lib/auth/";
 
 // package.json — the SDK itself.
+let supabaseInTree = false;
 const pkgText = readIf(path.join(ROOT, "package.json"));
 if (pkgText) {
   let pkg = null;
@@ -515,30 +552,65 @@ if (pkgText) {
     err("D12", "package.json", "is not valid JSON, so its dependencies could not be checked");
   }
   if (pkg) {
-    // `@supabase/*` only. The bare `supabase` package is the CLI, not a client library, and ADR-002
-    // is about what can talk to the database from application code.
+    // `@supabase/*` only. The bare `supabase` package is the CLI, not a client library, and this
+    // check is about what can talk to the database from application code.
     for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
       for (const name of Object.keys(pkg[field] ?? {})) {
-        if (/^@supabase\//.test(name)) {
-          err("D12", "package.json", `${field} includes ${name} — ${SECOND_DOOR}`);
+        if (!/^@supabase\//.test(name)) continue;
+        if (name === ALLOWED_SUPABASE_PKG) {
+          supabaseInTree = true;
+          continue;
         }
+        err("D12", "package.json", `${field} includes ${name} — ${SECOND_DOOR}`);
       }
     }
   }
 }
 
-// eslint.config.mjs — the restriction, or the exception to it.
+// eslint.config.mjs — the restriction must exist, and must not exempt the data seam.
+//
+// Note the inversion against every other branch of this check: here the finding is an ABSENCE. The
+// package being in the tree with nothing restricting it is the dangerous ordering ADR-002 named,
+// and it is invisible to a scan that only looks for what is present.
 const eslintPath = path.join(ROOT, "eslint.config.mjs");
 const eslintText = readIf(eslintPath);
 
 if (eslintText) {
-  const hits = new Set(
-    stringLiterals(eslintText)
-      .filter((s) => /supabase/i.test(s))
-      .map((s) => JSON.stringify(s))
+  const literals = stringLiterals(eslintText);
+  const supabaseLiterals = literals.filter((v) => /supabase/i.test(v));
+  const restricts = supabaseLiterals.some((v) => v.startsWith("@supabase/"));
+
+  if (supabaseInTree && !restricts) {
+    err(
+      "D12",
+      "eslint.config.mjs",
+      `${ALLOWED_SUPABASE_PKG} is a dependency but no-restricted-imports does not name ` +
+        `\`@supabase/*\` — the import is unrestricted, which is ${SECOND_DOOR}`
+    );
+  }
+
+  // An exemption naming the data seam is always wrong, whichever ADR is cited for it.
+  const exemptsSeam = literals.some((v) => /lib\/data/.test(v) && /supabase/i.test(v));
+  if (exemptsSeam) {
+    err(
+      "D12",
+      "eslint.config.mjs",
+      "exempts a `lib/data` path for Supabase — ADR-006 exempts only `src/lib/auth/**`, and the " +
+        "data seam holding an auth client is the drift that decision exists to prevent"
+    );
+  }
+}
+
+// src/** — the breach itself. ADR-006's second revert condition, made machine-checkable.
+for (const file of walk(path.join(ROOT, "src"))) {
+  if (!/\.(ts|tsx|js|jsx|mjs)$/.test(file)) continue;
+  const r = rel(file);
+  if (r.startsWith(SUPABASE_EXEMPT_DIR)) continue;
+  const imported = stringLiterals(fs.readFileSync(file, "utf8")).filter((v) =>
+    /^@supabase\//.test(v)
   );
-  for (const hit of hits) {
-    err("D12", "eslint.config.mjs", `no-restricted-imports names ${hit.trim()} — ${SECOND_DOOR}`);
+  for (const name of new Set(imported)) {
+    err("D12", r, `names ${name} outside \`${SUPABASE_EXEMPT_DIR}**\` — ${SECOND_DOOR}`);
   }
 }
 
