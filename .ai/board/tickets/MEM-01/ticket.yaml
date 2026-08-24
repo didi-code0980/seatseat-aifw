@@ -227,6 +227,29 @@ group: MEM
 #
 # Written this stage: 06-test-report.md (pass 4 appended) and this file. Nothing under src/** was read
 # or written. chat_budget unchanged.
+# SHIPPED 2026-08-24T09:21:52Z by /ship in the design lane (aiw-work). `state` already read DONE
+# when /ship acquired the branch — the QA pass-4 session set it, which the operating model gives to
+# the orchestrator. Left as found rather than rewritten; the record of who set it is the qa gate note
+# above and this line.
+#
+# Re-verified by execution at ship time, not taken from a summary:
+#   pnpm verify            exit 0 — typecheck, lint, 79 unit tests, Turbopack production build
+#   pnpm test:e2e          exit 0 — 54 tests, 4 workers, no retry, no skip
+#   check-allowed-paths    PASS  — 20 changed files across origin/main...HEAD, all inside the list
+#
+# The merge-ordering item that 02-design.md section 0 left for a human is DISCHARGED, and by the
+# branch's own history rather than by a rebase. This branch is cut from 022f06a, which already
+# carries the ops merge that issues INV-12 and adds ADR-005, so `origin/main...HEAD` no longer
+# contains the registry commit or the DEV-01 ledger backfill. Nothing was rebased.
+#
+# ONE FINDING AT SHIP TIME, and it is the lane's and not this ticket's. `pnpm verify` and
+# `pnpm test:e2e` BOTH failed on first attempt here, identically: Turbopack panics with
+# "Symlink [project]/node_modules is invalid, it points out of the filesystem root". The symlinked
+# node_modules that session-model.md prescribes for a secondary worktree (MD-12) is unusable by
+# Turbopack, so the design lane — which is where /ship now lives — could neither build nor run e2e.
+# Repaired locally with `pnpm install --frozen-lockfile --ignore-scripts`, which is safe here because
+# nothing under src/** imports @prisma/client yet. node_modules is gitignored, so no tracked file
+# moved. Recorded as model debt; the fix belongs to the steward, not to this ticket.
 state: DONE
 owner: "orchestrator"
 # Created by tech-lead-design at DESIGN, at 55054cb — the commit that issues INV-12 and adds ADR-005.
