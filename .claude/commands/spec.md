@@ -6,30 +6,64 @@ argument-hint: <TICKET-ID>
 Run in the **BA session in the `aiw-work` folder — the design lane**. It is persistent and lives
 until the end of the run (`.ai/standards/session-model.md`). You are the BA; nothing is dispatched.
 
-## Before this command: the branch must already exist
+## Step 0 — put yourself on `feat/$ARGUMENTS` before writing anything
 
-**`feat/$ARGUMENTS` is cut before SPEC, not during it, and not by you.** `ba` holds no `Bash` tool —
-it cannot run git, cannot check which branch it is on, and will write `01-story.md` onto whatever
-happens to be checked out without noticing. The design lane's orchestrator session cuts it, in the
-`aiw-work` folder:
+**Mode: create. `/spec` is the only command permitted to bring a `feat/` branch into existence** —
+see *The branch check every ticket command runs* in `.ai/standards/git-conventions.md`. Every later
+stage arriving at a missing branch stops and reports instead, because at that point a missing branch
+means something upstream did not happen and manufacturing one hides which.
+
+**Run this first, every time, including a re-run.** You hold `Bash` for this and only this
+(`.claude/agents/ba.md`). Print each command and its output; a branch decision made silently is one
+nobody can audit later.
 
 ```
-git fetch && git switch -c feat/$ARGUMENTS origin/main
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
 ```
 
-From `origin/main`, not from the branch that is there. After `/handoff` the design lane sits on a
-**detached HEAD**, and a story written there lands on a commit no branch reaches.
+Then take exactly one of four paths:
 
-**What goes wrong when it is skipped**, because it is quiet in every direction. Writing SPEC while
-`feat/<PREVIOUS>` is checked out puts `.ai/board/tickets/$ARGUMENTS/**` on the previous ticket's
-branch. `/handoff <PREVIOUS>` then sorts it into the second set — one ticket's story pushed to an
-`ops/` branch — or, if it is misfiled into the ticket set, `scripts/check-allowed-paths.mjs` fails
-the whole branch and blocks a merge a human is waiting on. Nothing refuses the write at the time:
-`guard-allowed-paths.mjs` is unwired (ADR-004) and `ba` cannot read `.git/HEAD` to warn you. MD-18.
+| What you found | What you do |
+|---|---|
+| Already on `feat/$ARGUMENTS` | Nothing. Proceed to the story. |
+| On another branch, or detached, **and the tree is dirty** | **STOP.** Print the dirty paths and say which ticket they belong to. Do not switch. |
+| On another branch or detached, tree clean, `feat/$ARGUMENTS` **exists** | `git switch feat/$ARGUMENTS` — or `git switch -c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it exists only on the remote. |
+| On another branch or detached, tree clean, `feat/$ARGUMENTS` **does not exist** | `git switch -c feat/$ARGUMENTS origin/main` |
 
-**Say which branch you are writing against in the story's `inputs_read` front-matter** if you can
-determine it from files. You cannot run git, so this is best-effort and not a gate — it exists so a
-misfiled story is legible afterwards rather than only at handoff.
+**Existence is checked, not assumed:** `git show-ref --verify --quiet refs/heads/feat/$ARGUMENTS`,
+then `refs/remotes/origin/feat/$ARGUMENTS`. Two separate refs and they can disagree — a branch handed
+back by `/handoff` exists on the remote while this worktree sits detached.
+
+### Four things that will bite, each for a different reason
+
+**Cut from `origin/main`, never from local `main`.** Local `main` is routinely many commits behind —
+nothing in this loop updates it, because no lane ever checks it out. A branch cut from a stale local
+`main` looks correct and is missing whatever merged since, and the gap surfaces as a conflict at
+`/ship`. This is the one place the operator's instruction is realised rather than followed literally:
+"back to main" means the current `main`, which is `origin/main`.
+
+**A dirty tree is a stop, not a problem to route around.** `git switch` carries modified and untracked
+files onto the branch you arrive at. That is how one ticket's story lands on another ticket's branch —
+MD-18, in the form that produced this step. If the tree is dirty the previous lane did not finish;
+`/handoff` is the command that clears it, and it is not yours.
+
+**`fatal: '...' is already checked out at '<folder>'` is not an error to solve.** It means another
+worktree holds the branch. Print the folder git named and stop. Never `git worktree` your way past
+it, and never `git -C` into the folder that holds it.
+
+**Confirm `pwd` is the design-lane folder.** SPEC belongs in `aiw-work`. Since ADR-004 unwired
+`guard-project-root.mjs` nothing refuses a session in the wrong folder — it simply takes the build
+lane's worktree out from under the ticket being built.
+
+### What step 0 is not
+
+Not a commit, not a push, not a stash. Branch creation is not persistence:
+`.ai/standards/git-conventions.md` grants the commit exception to `orchestrator` alone and this step
+does not touch it. Record the branch you ended on in the story's `inputs_read` front-matter so the
+decision is legible from the artifact.
 
 **Artifacts in:** `.ai/board/tickets/$ARGUMENTS/ticket.yaml`, `.ai/registry/**`
 **Artifacts out:** `.ai/board/tickets/$ARGUMENTS/01-story.md`, plus `invariants_touched` and

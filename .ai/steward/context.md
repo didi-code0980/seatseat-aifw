@@ -594,3 +594,174 @@ stop-and-ask table for the registry, the operating model, the charter and the ho
 the standing instructions above replaced on 2026-08-23. The command outlived its own policy by a day,
 and this session followed the newer of the two. No audit check compares a command against these
 standing instructions, which is why it survived.
+
+### 2026-08-24 — the BA cuts its own branch, and gains `Bash` to do it
+
+**Changed:** `.claude/agents/ba.md` (`tools`, plus a scope section for the new tool),
+`.claude/commands/spec.md` (step 0 replaces the prose precondition written two hours earlier),
+`.claude/commands/handoff.md` (stops printing a branch-cut, and states that leaving the lane detached
+is correct), `.ai/board/model-debt.md` (MD-18 resolved, MD-19 new), this file.
+
+**Why:** the operator asked that `/spec` check the branch and switch or cut it itself. The first fix
+for MD-18 had been a prose precondition telling them to run `git switch -c` before dispatching the BA.
+They rejected it, and were right to: a documented manual step is a step that works until someone is in
+a hurry, and the whole of MD-18 is that nothing enforces the branch.
+
+**The disagreement, stated once and then dropped.** Doing this requires granting `ba` the `Bash` tool,
+which it had never held, and `guard-read-scope.mjs` — wired on `Read|Grep|Glob|NotebookEdit`, refusing
+`ba` and `qa` any path under `src/**` — is walked around by `cat`. It is the only guard of the original
+set that both survived ADR-004 and names these roles. That was said, the operator's instruction stands,
+and the tool is granted. What mitigates it is not a mechanism: `.claude/agents/ba.md` now lists the
+seven git verbs `Bash` exists for and forbids shell reads of `src/**` by name. **MD-21 records that
+this is a convention and not a control**, so nobody later mistakes it for one, and names the two
+signatures to watch for — an `inputs_read` citing `src/**`, or an AC carrying a field name the registry
+does not hold.
+
+**One place the instruction was realised rather than followed literally.** It said checkout `main` then
+cut the new branch; step 0 cuts from `origin/main`. Nothing in this loop updates local `main`, because
+no lane ever checks it out — it was eight commits behind when this was written. A branch cut from it
+looks correct and silently omits everything merged since, and the gap surfaces as a conflict at
+`/ship`. "Back to main" means the current main.
+
+**Step 0 is four paths, not one command**, because the interesting cases are the ones that are not a
+fresh cut: already correct (do nothing), dirty tree (stop — that is MD-18 in the form that produced
+this step), branch exists locally or only on the remote (switch), branch absent (cut). Existence is
+checked against `refs/heads` and `refs/remotes` separately, because a branch released by `/handoff`
+exists remotely while the worktree that produced it sits detached.
+
+**Three operator questions in a row each found a real gap** — who runs `/handoff` (two orchestrator
+sessions, unstated), what clears `gh auth` (MD-17, `/ship` step 7 had failed two out of two with no
+fallback), and whether `/spec` cuts its branch (MD-18). All three have one cause: the lane flow was
+written in terms of stages and folders without checking, per role, which tools that role actually holds.
+`ba` and `tech-lead-design` having no `Bash` is the fact that generated all three.
+
+**Registry writes: none.**
+
+### 2026-08-24 — branch naming, and the same check in every ticket command
+
+**Changed:** `.ai/standards/git-conventions.md` (§Branches rewritten — the four names, and the shared
+branch check), `.claude/commands/spec.md` `design.md` `implement.md` `review.md` `qa.md` `handoff.md`
+`ship.md` (step 0 in all seven), `.ai/board/model-debt.md` (MD-20), this file.
+
+**Why:** the operator's instruction — a naming convention including `bugfix/BUG_<FEATURE-ID>_<NN>`,
+the branch check in every workflow command, only `/spec` allowed to create a `feat/` branch, and
+`/handoff` returning the lane to the latest `main` after pushing.
+
+**Two modes, and the asymmetry is the whole design.** `/spec` is **create**; the other six are
+**stop**. A later stage arriving at a missing branch means SPEC never ran, a `/handoff` never pushed,
+or the ID is wrong — three different problems needing three different answers, and creating the branch
+there would manufacture something that looks like progress and hide which of the three it was. The
+protocol is written once in `git-conventions.md` and each command's step 0 names its mode rather than
+restating it.
+
+**`fix/` is retired.** It was in this document from the first day and never used once. It had no ID
+scheme, so two defects on one feature produced two names with nothing in common. `bugfix/` carries the
+parent feature inside the bug ID.
+
+**MD-22, found by writing the convention rather than by running it.** `bugfix/` branches run with
+RULE-03 unenforced — both resolvers hard-code `feat/`, so the guard exits 0 and the CI check prints
+*nothing to check*. That is the one class of work that edits code already in `main`, usually in a
+hurry. `ops/` being exempt is correct because chore work has no ticket; `bugfix/` is exempt by accident
+of string matching. Recorded rather than fixed, because the fix touches two guarded files with their
+own tests and is a change worth reviewing on its own. **No `bugfix/` branch exists yet, which makes now
+the cheapest moment.**
+
+**One instruction realised rather than followed, and it was verified rather than reasoned.** The
+operator asked that `/handoff` end with `checkout main` and `pull`. Git holds every branch name
+exclusively across worktrees and `main` is not special — tested with two throwaway worktrees in the
+scratchpad:
+
+```
+$ git -C wt2 switch main
+fatal: 'main' is already checked out at '.../wt1'
+```
+
+Both lanes run `/handoff`, so whichever ran second would fail outright. Step 6 is now
+`git switch --detach origin/main`, which delivers the intent exactly — the worktree shows the latest
+`main` — and collides with nothing, plus `git fetch origin main:main` to stop the local `main` ref
+drifting. That third line is a courtesy and explicitly not a reason to fail a completed hand-off:
+every branch here is cut from `origin/main`, so nothing reads local `main`. `/ship` step 11 parks the
+same way.
+
+**Also corrected in the same run:** the audit rejected `scripts/check-allowed-paths.mjs:85` as a path
+that does not exist — check D6 has no notion of a `:line` suffix. Two citations lost their line
+numbers. Worth noting because the habit of citing `file:line` is a standing instruction and D6 refuses
+it in documents; the two rules disagree and the audit wins by default.
+
+**Registry writes: none.**
+
+### 2026-08-24 — every reply ends with a sign-off
+
+**Changed:** `CLAUDE.md` (new `## Sign-off` section — the canonical block),
+`.ai/standards/session-model.md` (why it exists and the two failure modes it must not have),
+`.claude/agents/product.md` (the one agent that cannot fill two of the four lines), this file.
+
+**Why:** the operator's instruction. After any reply their real question is the same four things —
+who answered, whether it passed, where the repository is now, and what to type next — and before this
+each was somewhere different: the gate in an artifact's front-matter, the branch nowhere at all, the
+next command sometimes printed and sometimes not.
+
+**Defined in `CLAUDE.md` and nowhere else**, because it is the one file every session loads, including
+dispatched subagents. Nine agent files would have been nine copies to drift. `session-model.md` carries
+the reasoning and points at it; the block appears once.
+
+**The two ways this fails, both written into the standard rather than left to discipline:**
+
+- **A fabricated timestamp or branch.** `date` and `git branch --show-current` are one command each,
+  and both are precisely the sort of value a model supplies from context instead of from the machine.
+  A sign-off is a claim about a repository's state; an invented one is worse than none because it looks
+  measured.
+- **The block leaking into an artifact.** It is conversation with one reader. `01-story.md` and
+  `02-design.md` are read later by a reviewer, a QA session and a human, and their record is the
+  front-matter.
+
+**`product` is the only agent that cannot comply in full** — `tools: Read, Grep, Glob, Write, Edit,
+SendMessage`, no `Bash`. It writes `unavailable — no Bash tool` on both lines. That costs nothing real:
+`/idea` and `/triage` are board-plane work with no ticket branch. It is named explicitly in both
+`CLAUDE.md` and its own agent file, because "the agent will realise it cannot" is the assumption that
+produces a guess.
+
+**The sign-off does not replace the gate**, and the standard says so: it quotes the gate, and on any
+disagreement the artifact is right. A summary that can be believed over its source is a second source
+of truth.
+
+**Registry writes: none.**
+
+### 2026-08-24 — MEM-01 merged mid-branch; two MD numbers collided; the symlink is retired
+
+**Changed:** `.ai/board/model-debt.md` (conflict resolved, two entries renumbered),
+`.ai/standards/session-model.md` (provisioning — the symlink instruction replaced),
+`.claude/agents/ba.md`, `.ai/standards/git-conventions.md`, this file (cross-references).
+
+**What happened:** MEM-01 shipped and merged as PRs #17 and #18 while `ops/lane-handoff` was open.
+One conflict, in one file. Two sessions appended to `model-debt.md` on the same afternoon and both
+reached MD-19 and MD-20 — there is no allocator for these numbers and nothing noticed.
+
+**Resolved by renumbering this branch's two, not theirs.** `main` is the record and merged first;
+a branch that renumbers what is already merged forces every reader who saw the old numbers to
+re-check. MD-19 and MD-20 stay as MEM-01's ship recorded them; this branch's became MD-21 and MD-22,
+and both rows say so in their own text rather than only in this log. MD-18 was kept at this branch's
+version — the resolved second attempt — because `main` still carried the earlier *partly fixed* text.
+
+**Both of their findings were caused by this branch, and that is the part worth keeping.**
+
+- **MD-19** — `/ship` moved into the design lane on this branch, and the design lane's `node_modules`
+  is the symlink that `session-model.md` prescribes. Next 16's Turbopack refuses it outright:
+  `Symlink [project]/node_modules is invalid, it points out of the filesystem root`, a panic rather
+  than a warning. It had been invisible for three worktrees because `typecheck`, `lint` and `test` all
+  pass through a symlink and only a bundler does not. **Fixed here**, in the file that caused it: the
+  provisioning step is now `pnpm install --frozen-lockfile --ignore-scripts`, with the condition under
+  which `--ignore-scripts` stops being safe stated, and an explicit refusal of `turbopack.root` — a
+  tracked production setting is not the place to absorb a local worktree layout.
+- **MD-20** — `/ship` step 4 puts `backlog.md` and `metrics.md` in the ticket set, and the sentence it
+  quotes is one written on this branch. Step 6 then runs `check-allowed-paths.mjs`, which exempts only
+  `.ai/board/tickets/<ID>/**`, so it fails on exactly those two files. **Not fixed here** — the fix the
+  register recommends is a code change to `scripts/check-allowed-paths.mjs`, which has its own tests
+  and deserves review on its own rather than arriving inside a merge resolution.
+
+**The lesson is not "add an ID allocator".** Two collisions in one afternoon is thin evidence, and a
+register that needs a lock to be appended to is worse than one that occasionally needs a merge. What is
+worth carrying is smaller: **a branch open across someone else's merge should re-read the files it
+appends to before it pushes**, not only when git complains.
+
+**Registry writes: none.**

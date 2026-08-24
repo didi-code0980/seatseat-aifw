@@ -249,10 +249,27 @@ of the folder is what survives the next time a stage changes lanes.
 
 `git worktree add -b <branch> ../<folder> origin/main`, then two things the command does not do:
 
-- **`node_modules`.** `pnpm install` fails on this machine — Prisma's `preinstall` rejects Node
-  v23.6.0, which is the only Node present (MD-12). Symlink the first worktree's:
-  `ln -s /Users/mpa/Desktop/aiw/node_modules <folder>/node_modules`. Valid only while the branches
-  share a lockfile, and nothing checks that they do.
+- **`node_modules`. Install it; do not symlink it.**
+
+  ```
+  pnpm install --frozen-lockfile --ignore-scripts
+  ```
+
+  `--ignore-scripts` is what clears MD-12 — Prisma's `preinstall` rejects Node v23.6.0, the only Node
+  on this machine. It is safe **only while nothing under `src/**` imports `@prisma/client`**, which is
+  true today by decision and stated at `src/lib/data/prisma/client.ts`, and stops being true the moment
+  the schema is approved and the client is generated.
+
+  **The symlink this used to prescribe is retired.** `ln -s .../aiw/node_modules <folder>/node_modules`
+  worked for three worktrees' worth of typechecking and lint, and Next 16's Turbopack rejects it
+  outright — `Symlink [project]/node_modules is invalid, it points out of the filesystem root`, a
+  `TurbopackInternalError` panic rather than a warning. It stayed invisible because `pnpm typecheck`,
+  `pnpm lint` and `pnpm test` all pass through a symlink; only a command that needs a bundler does not.
+  `/ship` moved into this lane on 2026-08-24 and its two execution steps both died on it. MD-19.
+
+  Do **not** reach for `turbopack.root` in `next.config.ts`: that is a tracked file and a production
+  build setting, and bending prod config around a local worktree layout is the wrong trade. The durable
+  fix is still MD-12's — a Node LTS and a version manager, then no flag is needed.
 - **`.claude/settings.local.json`.** It is gitignored, so a new worktree starts without the granted
   permissions and re-prompts for all of them. Copy it. `settings.json` needs no copying — it is
   tracked, so every worktree already has the same bytes, and the deny list and hooks come with it.
@@ -267,6 +284,31 @@ the wrong branch.
 The cheap substitute is one line at the start of a session: confirm `pwd` and
 `git branch --show-current` before giving the first instruction. It catches the same error the guard
 caught, at the only moment it is still free to fix.
+
+## Every reply ends with a sign-off
+
+Adopted 2026-08-24 on the operator's instruction. The block itself is in `CLAUDE.md`, which is the one
+file every session loads, so it is defined once and reproduced nowhere.
+
+**What it is for.** Three worktrees, seven ticket commands and nine agents mean the operator's real
+question after any reply is the same four things: who answered, whether it passed, where the repository
+is now, and what to type next. Before this, each of the four was somewhere different — the gate in an
+artifact's front-matter, the branch nowhere at all, the next command sometimes printed and sometimes
+not. Putting them in a fixed place at a fixed time is worth more than any one of them.
+
+**Two failure modes it must not have**, and both are likelier than they look:
+
+- **A fabricated timestamp or branch.** Both are cheap to read — `date` and
+  `git branch --show-current` — and both are exactly the kind of value a language model will supply
+  from context rather than from the machine. A sign-off is a claim about the state of a repository. An
+  invented one is worse than none, because it looks like it was measured. An agent holding no `Bash`
+  tool writes `unavailable` and says why; `product` is the case that exists today.
+- **The block leaking into an artifact.** It is conversation, addressed to one reader. Artifacts carry
+  front-matter with `gate`, `produced_at` and `inputs_read`, and that is the record. A sign-off pasted
+  into `01-story.md` is noise in a document that a reviewer, a QA session and a human all read later.
+
+**It does not replace the gate.** The gate is in the artifact's front-matter and the sign-off quotes
+it. If the two ever disagree, the artifact is right — a sign-off is a summary and summaries drift.
 
 ## Phase 2 — Agent Teams
 

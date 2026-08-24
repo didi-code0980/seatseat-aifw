@@ -6,6 +6,27 @@ argument-hint: <TICKET-ID>
 Run in a **fresh session that is discarded after the verdict** — files only, no message channel
 (RULE-13). You are `tech-lead-review`; nothing is dispatched.
 
+## Step 0 — confirm the branch before writing anything
+
+**Mode: stop.** Run the four reads and follow the table in `.ai/standards/git-conventions.md`,
+*The branch check every ticket command runs*. This command may **not** create `feat/$ARGUMENTS`.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+- Already on `feat/$ARGUMENTS` — proceed.
+- Elsewhere or detached, tree clean, the branch exists on `refs/heads` or `refs/remotes/origin` —
+  `git switch feat/$ARGUMENTS` (add `-c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it is
+  remote-only), then `git pull --ff-only`.
+- Tree dirty — **stop.** Print the paths and say which ticket they belong to.
+- **The branch does not exist — stop and report to the operator.** Do not create it. Only `/spec`
+  creates a `feat/` branch. Arriving here with no branch means SPEC never ran, a `/handoff` never
+  pushed, or the ID is wrong, and the three need different answers. Say which you cannot rule out.
+
 **The session must be new every time, including on a re-review.** A session that remembers working
 through R4 last pass will not genuinely work through it again, and the code changed between passes —
 which is the entire reason there is a second pass. Reviewer memory is a liability, not an asset

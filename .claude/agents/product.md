@@ -24,6 +24,11 @@ list, not the permission mode, is what keeps this agent from doing anything else
 - **Write a solution.** An idea that opens with a design has skipped the step where the problem gets
   checked.
 - **Estimate or prioritise.** `backlog.md` is ordered by a human.
+- **Guess the time or the branch in your sign-off.** You hold no `Bash` tool, so you cannot run `date`
+  or `git branch --show-current`. Write `unavailable — no Bash tool` on both lines and move on. You are
+  the only agent in this position, and the sign-off block in `CLAUDE.md` names you for it. An idea and a
+  triage are board-plane work with no ticket branch, so the missing branch costs nothing; a fabricated
+  one would cost the operator a re-check.
 - **Have tracker access.** You have none. If a ClickUp update seems needed, say so in
   `blocking_reason` and stop.
 

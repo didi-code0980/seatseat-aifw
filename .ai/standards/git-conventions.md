@@ -20,14 +20,71 @@ test compares against, produces failures that reproduce on one machine and not a
 
 ## Branches
 
-One branch per ticket: `feat/<TICKET-ID>`.
+One branch per ticket. **The name is not decoration** —
+`.claude/hooks/guard-allowed-paths.mjs` and `scripts/check-allowed-paths.mjs` both resolve the
+active ticket by parsing it, and both treat anything that does not begin `feat/` as chore work and let
+it through unchecked.
 
-The branch name is not decoration — `.claude/hooks/guard-allowed-paths.mjs` and
-`scripts/check-allowed-paths.mjs` both resolve the active ticket by parsing it. A ticket worked on a
-branch named anything else runs with the path guard disabled, because a non-`feat/` branch is treated
-as bootstrap or chore work and is allowed through.
+### The four names
 
-Other prefixes: `ops/` for chores, `fix/` for defects. Neither activates the path guard.
+| Kind | Pattern | Example | Cut from | Path guard |
+|---|---|---|---|---|
+| Feature ticket | `feat/<FEATURE-ID>` | `feat/SYS-01` | `origin/main` | **active** |
+| Bugfix on a shipped feature | `bugfix/BUG_<FEATURE-ID>_<NN>` | `bugfix/BUG_SYS-01_01` | `origin/main` | inactive — MD-22 |
+| Chore, model, tooling | `ops/<slug>` | `ops/lane-handoff` | `origin/main` | inactive, correctly |
+| — | ~~`fix/`~~ | — | — | **retired** |
+
+`<FEATURE-ID>` is a row in `.ai/registry/features.md` and nothing else — RULE-17, and check D1 fails
+the audit on an ID that does not resolve. `<NN>` is two digits, sequential per feature, starting `01`.
+The bug ID carries its parent feature inside it on purpose: a bug branch that cannot be traced to a
+feature is a bug nobody can decide the priority of.
+
+**`fix/` is retired**, replaced by `bugfix/` with a structured ID. It was named in this document from
+the beginning and never used; it had no ID scheme, so two defects on the same feature produced two
+branch names with nothing in common.
+
+**`bugfix/` runs with the path guard disabled, and that is a defect rather than a decision.** Both
+resolvers hard-code the string `feat/`. A bugfix branch therefore gets no `allowed_paths` enforcement
+at write time and no CI check on the diff — for work that touches shipped code, which is when it
+matters most. MD-22 carries it, and the fix is a change to two files, not a change to this convention.
+
+### The branch check every ticket command runs
+
+Every command that takes a `<TICKET-ID>` opens with the same four reads, before it writes anything:
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+Then one of two modes. **Which mode a command is in is stated in that command's step 0 and is not the
+running agent's to choose.**
+
+| Mode | Commands | When the branch does not exist |
+|---|---|---|
+| **create** | `/spec` only | `git switch -c feat/<ID> origin/main` |
+| **stop** | every other ticket command | **Stop and report to the operator.** Do not create it. |
+
+**Only `/spec` may bring a `feat/` branch into existence.** Every later stage arriving at a missing
+branch means something upstream did not happen — SPEC was never run, or a `/handoff` never pushed, or
+the ID is wrong. Creating it there would manufacture an empty branch that looks like progress and
+hides which of the three it was.
+
+Common to both modes, in every command:
+
+- **A dirty tree is a stop.** `git switch` carries modified and untracked files onto the branch you
+  arrive at, which is how one ticket's artifacts land on another ticket's branch. Print the paths and
+  say which ticket they belong to.
+- **`fatal: '<branch>' is already checked out at '<folder>'` is a stop**, not a problem to route
+  around. Another worktree holds it. Print the folder git named. Never `git worktree` past it and
+  never `git -C` into it.
+- **Existence is two refs, not one.** Check `refs/heads/<branch>` and `refs/remotes/origin/<branch>`
+  separately — a branch released by `/handoff` exists on the remote while the worktree that produced
+  it does not hold it.
+- **Cut from `origin/main`, never local `main`.** No lane checks `main` out, so nothing updates it;
+  a branch cut from local `main` looks correct and silently omits everything merged since.
 
 ## Commits
 

@@ -68,6 +68,35 @@ canvas. Gilroy or Manrope for UI, IBM Plex Mono for codes and IDs. Details in
   ADR-004 nothing stops a session writing to the wrong folder's branch.
   [.ai/standards/session-model.md](.ai/standards/session-model.md).
 
+## Sign-off — every agent, every reply
+
+**End every reply to the operator with this block, whoever you are.** Four lines, this order, nothing
+else in it. Labels are in the conversation language per `.ai/steward/context.md`; this file shows the
+Vietnamese form because that is the conversation language today.
+
+```
+---
+**Tôi là `<agent>`.** Vừa <what you did> — <TICKET-ID>, gate <PASS | FAIL | BLOCKED | n/a>.
+**Xong lúc:** <output of `date '+%Y-%m-%d %H:%M %Z'`>
+**Branch:** <output of `git branch --show-current`, or `detached @ <sha>`>
+**Tiếp theo:** <command> — trong folder <aiw | aiw-work | aiw-steward>
+```
+
+- **Read the time and the branch. Never supply them from context.** `date` and
+  `git branch --show-current`, every time, even when you are confident. A sign-off is a claim about a
+  machine's state, and an invented one is worse than none because it looks measured.
+- **No `Bash` tool means `unavailable — no Bash tool`**, not a guess. `product` is the only agent in
+  this position today.
+- **Quote the gate from your artifact's front-matter.** If your reply completes no command, write
+  `gate n/a` and say what you are waiting on in the *Tiếp theo* line.
+- **Name the folder, not just the command.** Three worktrees make a correct command in the wrong
+  folder a silent write to the wrong branch.
+- **On a FAIL, *Tiếp theo* is the routed command**, per the routing table in
+  `.ai/01-operating-model.md` — not the next happy-path stage. On `ESCALATED`, it is a human decision
+  and there is no command; say so.
+- **Never put this block in an artifact.** It is conversation. Artifacts carry front-matter, and that
+  is the record.
+
 ## Commands
 
 **The loop**, which builds the product — `/idea` `/triage` `/next-ticket` `/spec` `/design`
