@@ -50,8 +50,24 @@ Steps:
    your last commit. A FAIL here means the ticket branch carries a file outside `allowed_paths`, and
    the fix is to move that file to the second set, never to widen the list.
 
-7. `gh pr create` against `main`, body linking `.ai/board/tickets/$ARGUMENTS/` and listing the four
-   gate timestamps.
+7. **Open the pull request against `main`**, body linking `.ai/board/tickets/$ARGUMENTS/` and listing
+   the four gate timestamps.
+
+   `gh pr create` when `gh auth status` reports a logged-in host. **When it does not, the fallback is
+   not an improvisation — it is this, and it counts as step 7 completed:** print a
+   `github.com/<owner>/<repo>/compare/main...feat/$ARGUMENTS?expand=1&title=…&body=…` URL with the
+   title and body already percent-encoded into it, so the operator lands on a filled form and presses
+   one button.
+
+   **Check `gh auth status` before composing either, and never run `gh auth login`.** It is an
+   interactive TUI: it waits on stdin for an account, a protocol, and a pasted device code, and from a
+   non-interactive session it hangs until it is killed. Authenticating is the operator's to do, once,
+   outside the loop.
+
+   This step has failed on both of the two ships that have reached it — `gh` absent at ROO-01, `gh`
+   unauthenticated at DEV-01 — and each time the outcome was a ticket that was DONE with an empty PR
+   column and a human left to guess the next move. MD-17. A branch name is not a request; it is
+   homework.
 
 8. **If the second set is non-empty, it gets its own branch and its own pull request.** `git switch
    -c ops/<slug> main`, commit it there in whatever grouping you judge coherent, push, `gh pr
