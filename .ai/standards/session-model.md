@@ -268,6 +268,31 @@ The cheap substitute is one line at the start of a session: confirm `pwd` and
 `git branch --show-current` before giving the first instruction. It catches the same error the guard
 caught, at the only moment it is still free to fix.
 
+## Every reply ends with a sign-off
+
+Adopted 2026-08-24 on the operator's instruction. The block itself is in `CLAUDE.md`, which is the one
+file every session loads, so it is defined once and reproduced nowhere.
+
+**What it is for.** Three worktrees, seven ticket commands and nine agents mean the operator's real
+question after any reply is the same four things: who answered, whether it passed, where the repository
+is now, and what to type next. Before this, each of the four was somewhere different — the gate in an
+artifact's front-matter, the branch nowhere at all, the next command sometimes printed and sometimes
+not. Putting them in a fixed place at a fixed time is worth more than any one of them.
+
+**Two failure modes it must not have**, and both are likelier than they look:
+
+- **A fabricated timestamp or branch.** Both are cheap to read — `date` and
+  `git branch --show-current` — and both are exactly the kind of value a language model will supply
+  from context rather than from the machine. A sign-off is a claim about the state of a repository. An
+  invented one is worse than none, because it looks like it was measured. An agent holding no `Bash`
+  tool writes `unavailable` and says why; `product` is the case that exists today.
+- **The block leaking into an artifact.** It is conversation, addressed to one reader. Artifacts carry
+  front-matter with `gate`, `produced_at` and `inputs_read`, and that is the record. A sign-off pasted
+  into `01-story.md` is noise in a document that a reviewer, a QA session and a human all read later.
+
+**It does not replace the gate.** The gate is in the artifact's front-matter and the sign-off quotes
+it. If the two ever disagree, the artifact is right — a sign-off is a summary and summaries drift.
+
 ## Phase 2 — Agent Teams
 
 The intended next step is to move SPEC, DESIGN and IN_PROGRESS onto Agent Teams, so the constructing

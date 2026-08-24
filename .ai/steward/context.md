@@ -689,3 +689,40 @@ numbers. Worth noting because the habit of citing `file:line` is a standing inst
 it in documents; the two rules disagree and the audit wins by default.
 
 **Registry writes: none.**
+
+### 2026-08-24 — every reply ends with a sign-off
+
+**Changed:** `CLAUDE.md` (new `## Sign-off` section — the canonical block),
+`.ai/standards/session-model.md` (why it exists and the two failure modes it must not have),
+`.claude/agents/product.md` (the one agent that cannot fill two of the four lines), this file.
+
+**Why:** the operator's instruction. After any reply their real question is the same four things —
+who answered, whether it passed, where the repository is now, and what to type next — and before this
+each was somewhere different: the gate in an artifact's front-matter, the branch nowhere at all, the
+next command sometimes printed and sometimes not.
+
+**Defined in `CLAUDE.md` and nowhere else**, because it is the one file every session loads, including
+dispatched subagents. Nine agent files would have been nine copies to drift. `session-model.md` carries
+the reasoning and points at it; the block appears once.
+
+**The two ways this fails, both written into the standard rather than left to discipline:**
+
+- **A fabricated timestamp or branch.** `date` and `git branch --show-current` are one command each,
+  and both are precisely the sort of value a model supplies from context instead of from the machine.
+  A sign-off is a claim about a repository's state; an invented one is worse than none because it looks
+  measured.
+- **The block leaking into an artifact.** It is conversation with one reader. `01-story.md` and
+  `02-design.md` are read later by a reviewer, a QA session and a human, and their record is the
+  front-matter.
+
+**`product` is the only agent that cannot comply in full** — `tools: Read, Grep, Glob, Write, Edit,
+SendMessage`, no `Bash`. It writes `unavailable — no Bash tool` on both lines. That costs nothing real:
+`/idea` and `/triage` are board-plane work with no ticket branch. It is named explicitly in both
+`CLAUDE.md` and its own agent file, because "the agent will realise it cannot" is the assumption that
+produces a guess.
+
+**The sign-off does not replace the gate**, and the standard says so: it quotes the gate, and on any
+disagreement the artifact is right. A summary that can be believed over its source is a second source
+of truth.
+
+**Registry writes: none.**
