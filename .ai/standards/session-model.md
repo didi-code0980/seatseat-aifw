@@ -1,6 +1,6 @@
 ---
-doc_version: 1
-last_updated: 2026-08-11
+doc_version: 2
+last_updated: 2026-08-23
 governed_by: [RULE-11, RULE-12, RULE-13, RULE-14, RULE-15, RULE-16]
 ---
 
@@ -95,6 +95,100 @@ channel makes the amendment a second, skippable step; a file makes it the only s
 It also means `consulted` in the artifact front-matter is checkable. `99-questions.md` is the record,
 so an artifact claiming no consultation while a question sits in the file is a detectable provenance
 failure rather than a matter of trust.
+
+## Three worktrees, two features at once
+
+Adopted 2026-08-23, when MEM-01 and SEA-01 first needed to be in flight together.
+
+**A folder is decided by where the session is launched.** There is no routing: the working directory
+is the session root, `$CLAUDE_PROJECT_DIR` resolves to it, and `guard-allowed-paths.mjs` reads that
+folder's `.git/HEAD` to decide which ticket an agent is judged against. Open the folder, then talk.
+
+### The three lanes
+
+Lanes are **pipeline stages, not roles.** An earlier draft assigned roles to folders — `ba` always in
+one, `developer` always in another — and it does not survive contact with parallelism: `tech-lead-design`
+would have to hold two branches at once the moment two tickets are live, and git refuses to check out
+one branch in two worktrees.
+
+| Folder | Lane | Stages | Branch it holds |
+|---|---|---|---|
+| `aiw` | **build** | `/implement` `/review` `/qa` `/ship` | the ticket being built |
+| `aiw-work` | **design** | `/spec` `/next-ticket` `/design` | the ticket being specified |
+| `aiw-steward` | **model** | `/thuki` `/status` `/docs-audit` | always `ops/*`, never a ticket |
+
+```mermaid
+flowchart LR
+  subgraph W["aiw-work — design lane"]
+    direction TB
+    S["/spec"] --> D0{"DoR"} --> D["/design<br/>fills allowed_paths"]
+  end
+  subgraph A["aiw — build lane"]
+    direction TB
+    I["/implement"] --> R["/review"] --> Q["/qa"] --> SH["/ship"]
+  end
+  subgraph C["aiw-steward — model lane"]
+    direction TB
+    T["/thuki · /status<br/>ops/* only"]
+  end
+  D -- "handoff:<br/>commit · push · switch main" --> I
+  SH -- "merged" --> S
+  C -.->|"never holds a ticket branch"| A
+```
+
+### Why the handoff is after DESIGN, and why that matters
+
+DESIGN is the last stage that writes only inside the ticket folder. It *declares* `allowed_paths`; it
+does not write `src/**`. IN_PROGRESS is the first stage that does.
+
+That single fact is what makes two features safe in parallel, and it is worth stating because
+**MD-11 says the operating model's own parallel condition cannot be met.** The condition requires
+`allowed_paths` to be pairwise disjoint, and `src/lib/data/types.ts` is in every feature ticket's
+list — ROO-01, DEV-01 and MEM-01 all carry it, because every feature adds DTOs to one shared file.
+
+The stagger sidesteps it rather than satisfying it. Only the build lane writes `src/**`, and only one
+ticket is ever in the build lane, so the overlapping `allowed_paths` never produce two concurrent
+writers. Two tickets whose lists both name `types.ts` are safe **so long as they are in different
+lanes**, and unsafe the moment both reach IN_PROGRESS.
+
+### The rule that keeps it honest
+
+**A feature may enter the build lane only when the previous one has merged.** Not shipped — merged.
+Until then it holds at READY in the design lane. The design lane may run as far ahead as the board
+allows; the build lane is strictly one at a time.
+
+### The one surface that still collides
+
+`.ai/board/metrics.md` and `.ai/board/backlog.md`. Both lanes append to them, no `allowed_paths` covers
+them, and every ticket touches both. This has already produced one merge conflict, on 2026-08-23,
+between two `ops/` branches.
+
+**Write them from the build lane only.** The design lane reports its transitions and they are recorded
+at handoff. This costs a little timeliness in the board and removes the only recurring conflict that
+is not a real disagreement about content.
+
+### Provisioning a worktree
+
+`git worktree add -b <branch> ../<folder> origin/main`, then two things the command does not do:
+
+- **`node_modules`.** `pnpm install` fails on this machine — Prisma's `preinstall` rejects Node
+  v23.6.0, which is the only Node present (MD-12). Symlink the first worktree's:
+  `ln -s /Users/mpa/Desktop/aiw/node_modules <folder>/node_modules`. Valid only while the branches
+  share a lockfile, and nothing checks that they do.
+- **`.claude/settings.local.json`.** It is gitignored, so a new worktree starts without the granted
+  permissions and re-prompts for all of them. Copy it. `settings.json` needs no copying — it is
+  tracked, so every worktree already has the same bytes, and the deny list and hooks come with it.
+
+### What no longer protects this
+
+Before ADR-004, `guard-project-root.mjs` refused any write outside the session's own folder. A session
+in one worktree physically could not touch another. That guard is unwired, so **lane separation is now
+a convention rather than a boundary** — an agent in the wrong folder is not stopped, it just writes to
+the wrong branch.
+
+The cheap substitute is one line at the start of a session: confirm `pwd` and
+`git branch --show-current` before giving the first instruction. It catches the same error the guard
+caught, at the only moment it is still free to fix.
 
 ## Phase 2 — Agent Teams
 
