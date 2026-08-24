@@ -23,11 +23,42 @@ id: SEA-01
 title: "Seat occupancy — assign and release"
 feature_ids: [SEA-01]
 group: SEA
-state: BACKLOG
+state: IN_PROGRESS
 owner: ""
 branch: ""
-size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
-size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md scope and its
+                      # Out-of-scope section, not from any implementation. Eleven ACs over one
+                      # surface: list seats with occupant and status, assign, release. Fewer
+                      # operations than DEV-01 (three against eight) and fewer ACs, but not S, for
+                      # two reasons that are about scope rather than code. First, this is the FIRST
+                      # seat-facing surface in the system — ROO-01 built rooms and excluded seats,
+                      # DEV-01 read a seat's occupant and wrote nothing on a seat — so the screen,
+                      # its controls and its write path are all new, and the S ceiling of 6 files
+                      # does not fit a new surface plus a new seam path. Second, the INV-06
+                      # downgrade makes this ticket write across TWO mock modules: occupancy in
+                      # mock/seats.ts and the primary-device designation in mock/devices.ts. That
+                      # second write is the whole reason DEV-01 had to land first and it is not
+                      # optional — AC-6 is INV-06.
+                      # Not estimated L or higher: thirteen out-of-scope items hold this to one
+                      # surface with no schema change (schema_delta stays `none`), placement is
+                      # excluded outright, and no existing seam signature has to change. If DESIGN
+                      # enumerates more than twelve allowed_paths, the gap routes back here rather
+                      # than splitting silently — .ai/01-operating-model.md, Sizing.
+size: "M"             # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting.
+                      # Counted from the eleven allowed_paths enumerated below, which is the M row of
+                      # the sizing table in .ai/01-operating-model.md (M is up to 12). Agrees with the
+                      # ba's size_estimate, so nothing routes back to SPEC.
+                      #
+                      # Not XL: none of the three triggers is met. schema_delta is `none`; no existing
+                      # src/lib/data/ signature changes (two functions are ADDED to seats, none
+                      # altered); and the types.ts change is two new outcome types with no existing
+                      # type modified, so no existing caller has to follow. The operating model's own
+                      # test is "whether existing callers must change, not whether the seam was
+                      # touched at all", and it calls adding seam functions ordinary feature work.
+                      #
+                      # Not L: eleven is inside the ceiling with one to spare, and the two candidates
+                      # for a twelfth are absent by decision rather than by luck — see 02-design.md
+                      # section 5 for mock/devices.ts (F-5) and fixtures.ts (F-3).
 # ROO-01 and DEV-01 are both DONE and merged. MEM-01 does not block this: the two are disjoint, and
 # nothing SEA-01 needs is produced by it.
 depends_on: []
@@ -46,12 +77,61 @@ depends_on: []
 # INV-06 is why this ticket writes mock/devices.ts. Releasing an occupant must auto-downgrade that
 # seat's primary device; that is a write, not a read, and it is the whole reason DEV-01 had to land
 # first.
-invariants_touched: [INV-01, INV-02, INV-03, INV-06]
+#
+# CONFIRMED AND EXTENDED by `ba` at SPEC on 2026-08-24, with per-ID reasoning in 01-story.md.
+#
+# THE SCOPE QUESTION IS SETTLED: NO. Placement is NOT in this ticket. INV-10 is not on the list,
+# the row stays in SEA, and the reasoning is the first section of 01-story.md. Grounds, in the
+# order they bind: the features.md row already excludes placement; data-model.md makes INV-10 the
+# defining marker of a LAY ticket, so carrying it would make this a LAY ticket wearing a SEA
+# prefix; and the two acts read and write disjoint fields — placement is where a seat IS, occupancy
+# is who SITS there.
+#
+# All four transcribed IDs survive. Three are ADDED, on the ledger's own instruction to follow
+# indirect chains: INV-05, because the ledger states INV-06 is what INV-05 forces to happen when
+# occupancy ends, so listing the consequence without its cause leaves R8 checking a mechanism
+# without checking what it is for; INV-04, one-directionally — release only ever REMOVES a primary
+# designation, so the risk is the assignment path promoting one, which AC-11 refuses; and INV-07,
+# because the release path decides what becomes of the seat's device associations and this story
+# chooses that they do not move, which is a choice INV-07 permits either way and therefore needs a
+# criterion rather than a silence.
+#
+# INV-08, INV-10, INV-11 and INV-12 were reasoned through and found not engaged, with the reasoning
+# in the story so R8 can check it. INV-12 is the interesting one: SEA-01's release path is the
+# mechanism INV-12's "the references are removed first" refers to, so the obligation is negative and
+# is discharged by AC-5 being the ticket's headline behaviour.
+invariants_touched: [INV-01, INV-02, INV-03, INV-04, INV-05, INV-06, INV-07]
 # [] is a control, not a placeholder — but note that guard-allowed-paths.mjs is unwired as of
 # ADR-004, so nothing refuses a write outside this list at write time. Review check R1 and
 # scripts/check-allowed-paths.mjs in CI are what remain, and MD-09 records that the CI check is
 # skipped entirely on any branch not named feat/SEA-01.
-allowed_paths: []
+# Enumerated by tech-lead-design at DESIGN, 2026-08-24. Reasoning in 02-design.md section 5.
+#
+# Two entries that look like scope creep and are not:
+#   src/app/(app)/seats/page.tsx is REWRITTEN, not created — it exists as a Phase B read-only
+#     scaffold with no occupant column and no controls (02-design.md F-6).
+#   tests/e2e/smoke.spec.ts is here because seat rows are re-keyed from `id` to `code`, which moves
+#     the `seats-status-<id>` selector that suite asserts on. Same reason it was in DEV-01's list.
+#
+# Four things deliberately ABSENT, each of which a Developer might reach for:
+#   src/lib/data/mock/devices.ts   — the INV-06 downgrade lives in mock/seats.ts and reaches the same
+#                                    array through ./store, exactly as deleteRoom does (F-5). This
+#                                    corrects the seeding comment at the top of this file.
+#   src/lib/data/mock/store.ts     — no new binding. MEM-01 may need one; SEA-01 must not.
+#   src/lib/data/fixtures.ts       — Q-4 is answered yes by the seed as it stands (F-3).
+#   src/lib/auth/permissions.ts    — this ticket implements no gate, so it adds no helper.
+allowed_paths:
+  - "src/app/(app)/seats/page.tsx"
+  - "src/app/(app)/seats/seats-manager.tsx"
+  - "src/actions/seats.ts"
+  - "src/lib/validation/seat.ts"
+  - "src/lib/data/types.ts"
+  - "src/lib/data/mock/seats.ts"
+  - "src/lib/data/prisma/seats.ts"
+  - "tests/unit/seats.test.ts"
+  - "tests/e2e/seats.spec.ts"
+  - "tests/e2e/smoke.spec.ts"
+  - ".ai/board/tickets/SEA-01/**"
 schema_delta: none
 requires_adr: false
 rework_count: 0
@@ -64,7 +144,65 @@ chat_budget:
   qa->tech-lead-design:        { used: 0, max: 6 }
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
-  spec:   { passed: false, at: null }
-  design: { passed: false, at: null }
+  spec:   { passed: true,  at: "2026-08-24T01:47:19Z" }
+  # PASS. All four gate items hold: eleven ACs in Given/When/Then, each with an ID (AC-1 to AC-11);
+  # `invariants_touched` populated with seven IDs, all twelve issued ledger invariants accounted for
+  # between engaged and reasoned-not-engaged; Out-of-scope has thirteen items, each naming where the
+  # work goes instead; `size_estimate` set to M.
+  #
+  # The scope question ticket.yaml required SPEC to settle is settled — placement is out, INV-10 is
+  # not engaged, the row stays in SEA. See the comment above `invariants_touched` and the first
+  # section of 01-story.md.
+  #
+  # Four questions raised and none blocks. Q-1: a seat's field set and what identifies a seat on the
+  # surface, which no registry or standards document names (RULE-05, the ROO-01 finding-B2 channel) —
+  # AC-1 becomes more specific when DESIGN answers it, not different. Q-2: whether the surface is
+  # room-scoped, which moves `size`. Q-3: a coordination note for MEM-01's DESIGN, restating the one
+  # decision ticket.yaml identifies as able to break the parallel dispatch — it asks nothing of this
+  # ticket. Q-4: whether any seeded seat holds two devices, one primary and one secondary, which AC-7
+  # needs and this story cannot check.
+  #
+  # One human item, H-1: .ai/registry/features.md still records this row as INV-01, INV-02, INV-03,
+  # INV-06 and omits INV-04, INV-05 and INV-07. Registry, RULE-01, not corrected here. Third
+  # consecutive ticket to find its registry row narrower than its story.
+  #
+  # State left at SPEC. DoR is the orchestrator's evaluation and this stage does not perform it.
+  design: { passed: true,  at: "2026-08-24T02:10:53Z" }
+  # PASS. All three gate items hold: seven sections complete in 02-design.md, `allowed_paths`
+  # enumerated with eleven entries and written back here, `size` set to M.
+  #
+  # schema_delta stays `none` and requires_adr stays `false`. This ticket writes two fields that
+  # already exist — Seat.occupantId and Device.rank — and adds no model, no column and no migration.
+  #
+  # Contract: two seam functions added to BOTH sides of the seam with the same names and arity —
+  # `assignSeatOccupant(seatId, memberId)` and `releaseSeatOccupant(seatId)` — plus two additive
+  # outcome types. The INV-06 downgrade is inside releaseSeatOccupant, synchronous with the occupancy
+  # clear, and returns `downgradedDeviceId` so AC-6 is assertable at the seam.
+  #
+  # Six findings raised against 01-story.md, none blocking, all in section 0:
+  #   F-1 answers Q-1 — the seat is identified by `code` (@unique); occupancy is `occupantId`, a
+  #       nullable column, and it is the ONLY seat field this ticket writes.
+  #   F-2 answers Q-2 — flat list confirmed, the room is a column and not a scope.
+  #   F-3 answers Q-4 — YES: seat-a-01 holds a primary and a secondary device, so A-5 holds and AC-7
+  #       needs no weakening. It recommends AC-6 stop naming `dev-01`: DEV-01 has shipped, so the
+  #       Given is now constructible from published selectors, and mutating seeded occupancy would
+  #       break tests/e2e/smoke.spec.ts for every later spec in the run.
+  #   F-4 — assigning a member the system does not hold has no criterion. Specified as
+  #       MEMBER_NOT_FOUND; the seam agrees with the FK rather than inventing a rule. Same shape as
+  #       DEV-01's F-1 and ROO-01's B3, both of which closed as a new AC.
+  #   F-5 — this ticket does NOT write mock/devices.ts, contradicting the seeding comment at the top
+  #       of this file. The parallel dispatch with MEM-01 is therefore safer than claimed, not less;
+  #       the one collision named there (a member-centric helper in mock/seats.ts) is unchanged.
+  #   F-6 — /seats already exists as a read-only Phase B scaffold, and re-keying its rows from `id`
+  #       to `code` moves a selector tests/e2e/smoke.spec.ts asserts on.
+  #
+  # F-1, F-3 and F-4 are RULE-14 amendments routed to `ba`. None changes a signature here.
+  #
+  # AC-3 and AC-8 have no route through this UI by design — AC-1 puts the assign control only on
+  # vacant seats and the release control only on occupied ones. Both are verified at the seam.
+  # 02-design.md section 6.2 is the only place that says so, and QA reads nothing else (RULE-05).
+  #
+  # H-1 is untouched: features.md still lists four invariants where the story reasons seven. Registry,
+  # RULE-01, a human's.
   review: { passed: false, at: null }
   qa:     { passed: false, at: null }
