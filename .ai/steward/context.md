@@ -352,3 +352,123 @@ The `node_modules` symlinks in the new worktrees are files, so they sat untracke
 **Left for a human, unchanged and now three tickets old:** `prisma/schema.prisma` is still `DRAFT`, 38
 seam functions are still `notWired`, and no ticket carries that work. The blocker ADR-002 named was
 answered by ADR-003 eleven days ago.
+
+### 2026-08-24 — Supabase Auth replaces Better Auth (ADR-006)
+
+**Changed:** `.ai/registry/decisions/ADR-006-supabase-auth-replaces-better-auth.md` (new),
+`.ai/registry/decisions/ADR-002-supabase-hosted-postgres.md` (Status, `doc_version` 2 -> 3),
+`.ai/registry/decisions/ADR-003-member-identity.md` (Status, `doc_version` 2 -> 3),
+`.ai/board/model-debt.md` (MD-13), this file.
+
+**Registry writes: three.** All three are recordings, not authorings — see below.
+
+**Why:** the operator asked to move onto a real database, was walked through the three decisions
+blocking `prisma/schema.prisma`, and then reversed a different one: *"Thay doi toi muon dap bo phan
+Auth hien co thay hoan toan bang Auth tren supabase."* Better Auth out, Supabase Auth in.
+
+**The steward disagreed once and complied.** The argument — ADR-002 had already considered and
+rejected this exact option, and Supabase Auth in the browser trips ADR-002's own revert condition by
+making the seam stop being the only path to data — is preserved inside ADR-006's Rationale rather
+than only in this log, because an ADR that records only the winning side is an advertisement.
+
+**The fact that changed the shape of the whole thing, found by reading rather than assumed:**
+`src/lib/auth/permissions.ts` imports exactly one symbol, `type Role` from the seam, and has **no
+Better Auth dependency at all**. `ROLE_RANK`, `can()` and the three role helpers do not move when the
+provider is torn out. ADR-002 spent a paragraph defending the permission model as a reason not to
+switch, and that paragraph was defending something that was never at risk. The real Better Auth
+surface is five files, one dependency and one test — and the test passes untouched.
+
+**Nothing is migrated, which is why this is cheap.** Schema still DRAFT, no migrations directory has
+ever existed, `DATA_SOURCE` defaults to `mock`, adapter never wired, zero user rows. The switch costs
+five files today and a credential migration after the first real user. Recorded in the ADR because
+the window closes quietly.
+
+**Why writing three registry files was recording and not authoring.** The standing instruction
+permits `decisions/` writes only where the operator's decision exists in pointable words. The words
+are quoted verbatim in ADR-006's Status. What the steward did **not** do is decide the four questions
+inside it — RLS and client exposure, what holds INV-08 once `disableSignUp` is gone, the shape of
+`Member.authUserId` against `auth.users`, and the lint allowlist. Those are OPEN QUESTIONS with a
+recommendation each, and OQ-1 is marked blocking because it decides whether RULE-02 survives.
+
+**MD-13** — `ADR-000-template.md` still says an agent sets `gate: BLOCKED` and stops while a human
+writes the ADR. ADR-004 and the standing instruction both say otherwise. Both statements are in force
+and they disagree about who types an ADR. ADR-006 was written under the standing instruction. Not
+fixed here: registry path, RULE-01, and the resolution is a decision rather than an edit.
+
+**The audit caught five real defects in the ADR as first written**, and they are listed because the
+check earned it: a reference to a `SYS` feature ID that has not been issued (D1) — the ID is not
+repeated here for the reason `backlog.md` gives, that writing it would recreate the finding from this
+file — three `path:line` citations in a plane whose
+convention is paths only (D6), and `doc_version: 1` on a document governed by RULE-01 at v2 (D9).
+`node scripts/check-docs.mjs` now exits 0 with no warnings; all 106 hook tests pass.
+
+**Not done, deliberately:** `.ai/standards/rbac-and-security.md`, `.ai/standards/integrations.md`,
+`.ai/registry/invariants.md` (INV-08's enforcement note only — the invariant text does not change),
+`scripts/check-docs.mjs` D12, and `eslint.config.mjs` are all named in ADR-006's Affected documents
+table and all left untouched. Every one of them depends on OQ-1's answer, and writing them twice is
+worse than writing them late. Check D9 stays failing on that table until it is worked through, which
+is the table doing its job. Nothing under `src/`, `prisma/`, `tests/`, or `.ai/board/tickets/`.
+
+**Left for a human, and the list did not shrink:** `prisma/schema.prisma` is still `DRAFT`, 37 seam
+functions are still `notWired`, `gh` is still unauthenticated so DEV-01's PR column is still blank,
+and MEM-01 is still mid-`/implement` in the build worktree.
+
+### 2026-08-24 — the four questions answered, and INV-08 loses its enforcement
+
+**Changed:** `.ai/registry/decisions/ADR-006-*.md` (`doc_version` 2 -> 3, four questions resolved into
+the Decision), `.ai/registry/invariants.md` (INV-08 enforcement note, 4 -> 5),
+`.ai/standards/rbac-and-security.md` (1 -> 2), `.ai/standards/integrations.md` (2 -> 3),
+`eslint.config.mjs`, `scripts/check-docs.mjs` (D12 rewritten), `.claude/commands/docs-audit.md`,
+`.ai/board/model-debt.md` (MD-14), this file.
+
+**Registry writes: two.** ADR-006 and `invariants.md`. Both record what the operator decided; neither
+invents. **INV-08's text is unchanged** — only the paragraph describing what holds it was added.
+
+**Three of four answers took the recommendation.** Server-side-only Supabase client (OQ-1), plain
+`String? @unique` for `Member.authUserId` with no FK (OQ-3), `@supabase/ssr` restricted everywhere
+and exempted for `src/lib/auth/**` alone (OQ-4).
+
+**OQ-2 did not, and this is the entry's reason for existing.** The operator chose to hold INV-08 with
+a configuration flag in `localStorage`. `localStorage` is browser storage — the check runs on the
+machine of the person being checked, and `localStorage.setItem(...)` in a console defeats it with no
+server-side trace. It is **weaker than the dashboard toggle it replaces**, which at least sits on the
+provider's side of the network. The objection was stated once, before implementing, and the
+instruction was carried out as given.
+
+**What "comply fully" meant here, because the case is worth having on record.** The decision was
+implemented exactly as stated *and* its consequence was written down accurately in three places:
+ADR-006's Consequences, the INV-08 note in `invariants.md`, and MD-14. Complying does not extend to
+writing into the registry a claim that an invariant is enforced when it verifiably is not — the
+instruction was about the mechanism, not about what the record says the mechanism achieves. The
+nearest thing that would actually hold is written out in MD-14 as a fix shape rather than built,
+because the operator answered OQ-2 and did not ask for an extra gate on their own decision.
+
+**D12 was rewritten rather than relaxed, and this was forced rather than optional.** The old check
+failed on *any* `@supabase/*` dependency and on any Supabase string in the lint config. That was
+exactly right under ADR-002 and it would have made ADR-006 unimplementable — the audit would have
+failed on the first commit of a decision the operator had accepted. It now enforces the narrow shape
+ADR-006 authorises: `@supabase/ssr` only; the lint restriction must be **present** once the package
+is in the tree, which is an inversion — the finding is an absence; no `lib/data` path exempted for
+Supabase; and no `@supabase/*` import anywhere under `src/` outside `src/lib/auth/`.
+
+**The rewrite was tested against six fixtures rather than trusted because the tree was green.** A
+check that passes on a clean repository has demonstrated nothing. Built in a scratch directory so
+the repository was never mutated: clean shape passes; `@supabase/supabase-js` fails; package present
+with the lint restriction deleted fails; a component importing `@supabase/ssr` fails; the same import
+under `src/lib/auth/` passes; a Supabase exemption naming a `lib/data` path fails.
+
+**Fixture six exposed a blind spot in the check being written, and it is documented rather than
+quietly left.** The eslint branch cannot tell `"src/lib/data/**"` added to the auth exemption from
+the legitimate Prisma exemption beside it — the string names no vendor. Closing it properly means
+importing `eslint.config.mjs` for its structure, which would couple the audit to a working
+`node_modules` it otherwise does not need. The `src/**` branch covers the consequence instead: the
+guard can be loosened silently, the door cannot be opened silently. Written into the source and into
+`docs-audit.md`, in the same style as the existing note that D5's matcher is quieter than it looks.
+
+**Not done, deliberately:** nothing under `src/`, `package.json`, or `prisma/`. Deleting
+`src/lib/auth/auth.ts`, removing the `better-auth` dependency and adding `Member.authUserId` are
+ticket work and schema work, and the schema half is RULE-09 human. `.ai/registry/features.md` has no
+new row: the `SYS` group is still empty and the ticket that implements ADR-006 has not been issued.
+
+**State when this entry was written:** `check-docs` 0 errors 0 warnings, 106/106 hook tests passing,
+MEM-01 still mid-`/implement` in the build worktree, `gh` still unauthenticated.
