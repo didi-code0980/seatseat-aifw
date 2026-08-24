@@ -1,0 +1,65 @@
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded from .ai/templates/ticket.yaml at 2026-08-24 by the steward, after ADR-006 was accepted by
+# the operator and merged as PR #12. The feature row was written in the same change; this ticket does
+# not predate its row, which is the ordering RULE-01 and check D1 both assume.
+#
+# THE FIRST SYS TICKET. Every ticket before this one built a surface a user opens. This one replaces
+# an authentication provider and touches no CRUD screen, so two of the loop's habits do not transfer:
+# there is no `data-testid` table to fill for a new grid, and the acceptance criteria are about what
+# is absent — no `better-auth` in the dependency tree, no Supabase client in a client component —
+# rather than about what renders. Absence is testable; it is just testable differently.
+#
+# SCOPE BOUNDARY, and it is the reason this ticket exists separately from wiring the database.
+# ADR-006 authorises removing Better Auth and adopting Supabase Auth server-side. It does NOT
+# authorise applying a migration: `prisma/schema.prisma` is still a DRAFT under RULE-09 and approving
+# it is permanently human. Keeping `schema_delta: none` is what lets this ticket run the full loop
+# without stopping mid-stage for a signature. The seam wiring, the first migration and
+# `Member.authUserId` are a separate ticket that has not been issued.
+#
+# invariants_touched is [INV-08] and that entry is a warning, not a reassurance. ADR-006 replaced
+# `disableSignUp: true` with a client-side flag in localStorage, which is browser storage and
+# enforces nothing against anyone who opens developer tools. `.ai/registry/invariants.md` now says so
+# at the invariant itself, and MD-14 carries the gap with a fix shape. QA should assert the flag
+# behaves as specified; QA should not report that INV-08 is enforced, because it is not.
+#
+# The four decisions this ticket implements are ADR-006 OQ-1 to OQ-4, answered by the operator on
+# 2026-08-24. Read them in the ADR rather than here — RULE-16, every artifact stands alone, and a
+# paraphrase of a decision is a second source of truth for it.
+id: SYS-01
+title: "Replace Better Auth with Supabase Auth"
+feature_ids: [SYS-01]
+group: SYS
+state: BACKLOG
+owner: ""
+branch: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+depends_on: []
+invariants_touched: [INV-08]
+allowed_paths: []
+schema_delta: none
+requires_adr: false
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
+
+# Notes on fields that are easy to get wrong:
+#
+# invariants_touched  [] means "considered, none engaged". Absent means nobody looked.
+#                     Definition of Ready requires it to be explicit.
+# allowed_paths       [] is a control, not a placeholder. guard-allowed-paths.mjs blocks every
+#                     write outside this ticket folder while it is empty. DESIGN fills it.
+# rework_count        Only Developer-caused failures increment it (RULE-08). Two failures
+#                     escalate (RULE-06).
+# chat_budget         Six messages per pair per ticket (RULE-15). chat-guard.mjs increments
+#                     `used` and blocks at `max`. Pairs absent from this map are not chattable.
+# sync_enabled        false by default (RULE-10). Turn on per ticket, after the loop is proven.

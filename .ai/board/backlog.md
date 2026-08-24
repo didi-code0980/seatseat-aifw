@@ -35,6 +35,7 @@ later state is in flight and appears here because this file has no in-flight sec
 |---|--------|-------|-------|------------|
 | 1 | MEM-01 | Member CRUD UI | BACKLOG | nothing — next for `/spec` |
 | 2 | SEA-01 | Seat occupancy — assign and release | BACKLOG | nothing — specced parallel to MEM-01's implementation |
+| 3 | SYS-01 | Replace Better Auth with Supabase Auth | BACKLOG | nothing — next for `/spec` in the design lane |
 
 `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
 rather than by Phase C, ran the full loop the same day, and is `DONE`.
@@ -46,6 +47,17 @@ disjoint and it parallelises; if it *cascades*, INV-06 fires, the delete writes
 `src/lib/data/mock/devices.ts`, and it has to run alone. Its `ticket.yaml` carries the question in
 full. That question was written while DEV-01 was still in flight; DEV-01 is now `DONE`, so nothing
 collides today — but the answer still decides whether MEM-01 can run beside whatever comes next.
+
+**This view is stale for rows 1 and 2, and it is left stale deliberately.** `ticket.yaml` is
+authoritative and both have moved on — MEM-01 is `IN_PROGRESS` in the build worktree and SEA-01 is
+`IN_PROGRESS` in the design worktree, its DESIGN gate passed `2026-08-24T02:10:53Z`. Neither state is
+committed anywhere yet, because every stage leaves its worktree dirty and only `/ship` commits.
+Repairing this table is the orchestrator's job and the steward does not do it — a status command that
+quietly reconciled the two would destroy the evidence that they had drifted.
+
+`SYS-01` is the first `SYS` ticket and the first that replaces infrastructure rather than adding a
+screen. It exists because ADR-006 was accepted on 2026-08-24; the feature row and this row were
+written in the same change as the seed, so no ticket ever existed without its registry row.
 
 `ROO-01` was first deliberately: it measured whether the loop closes, not how hard the domain is. It
 closed, on the second attempt at every judging gate. `DEV-01` then closed on the first attempt at
