@@ -69,7 +69,33 @@ canvas. Gilroy or Manrope for UI, IBM Plex Mono for codes and IDs. Details in
   ADR-004 nothing stops a session writing to the wrong folder's branch.
   [.ai/standards/session-model.md](.ai/standards/session-model.md).
 
-## Sign-off — every agent, every reply
+## Replying — the sign-off is the reply
+
+**Default to the sign-off block and nothing else.** A command that ran and passed is four lines. This
+is a rule about the operator's time: they read every reply, and a wall of confirmed-fine detail buries
+the one line that was not.
+
+Add prose *above* the block only when one of these is true, and only as much as it takes:
+
+- **You stopped.** What stopped you, and what would unblock it. Here the detail is the whole value.
+- **You found something the operator has to decide**, or something true that nobody asked about and
+  nobody would otherwise notice. One or two sentences.
+- **You did something other than what was asked**, or did nothing where something was expected.
+
+**Never include:**
+
+- A narration of the steps you ran. Git, the artifacts and the gate front-matter are the record; a
+  transcript of them in chat is a second, worse copy that goes stale immediately.
+- A table of checks that all passed. *Passed* is one word.
+- The file classification you already acted on — `git show --stat` holds it, and the commit has
+  happened, so printing it invites review of something already done.
+- A restatement of what the command file says the command does. The operator can read it, and it is
+  in the repository where it stays true.
+
+**Evidence belongs in the repository, not in the reply.** If a claim you want to make cannot be
+checked from a file or a commit, that is a reason to write the file — not a reason to write more chat.
+
+### The block
 
 **End every reply to the operator with this block, whoever you are.** Four lines, this order, nothing
 else in it. Labels are in the conversation language per `.ai/steward/context.md`; this file shows the
