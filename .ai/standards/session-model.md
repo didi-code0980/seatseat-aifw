@@ -23,6 +23,15 @@ lifecycle that deliver it. Nothing here restates a rule.
 | `product` | ephemeral | task done |
 | `devops` | ephemeral | task done |
 
+**One orchestrator per lane folder, not one per run.** The table reads `persistent` and it is written
+in the singular, from before there were three worktrees. Since 2026-08-24 the lead role runs in two
+folders — `aiw-work` for `/next-ticket`, `/handoff` after DESIGN, and `/ship`; `aiw` for `/handoff`
+after QA. It has to be two sessions rather than one, because a folder is decided by where a session is
+launched and a session cannot change folder, while the files each `/handoff` commits live in that
+folder's working tree. The build lane's orchestrator has exactly one job and is idle the rest of the
+time; that is cheaper than the alternative, which is one session reaching into another worktree with
+`git -C` — precisely what `guard-project-root.mjs` used to refuse before ADR-004 unwired it.
+
 **Roles that get asked stay alive; roles that pass judgement die after speaking.**
 
 The BA and the Tech Lead are the ones asked to explain what they meant, sometimes several tickets
