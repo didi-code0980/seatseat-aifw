@@ -249,10 +249,27 @@ of the folder is what survives the next time a stage changes lanes.
 
 `git worktree add -b <branch> ../<folder> origin/main`, then two things the command does not do:
 
-- **`node_modules`.** `pnpm install` fails on this machine — Prisma's `preinstall` rejects Node
-  v23.6.0, which is the only Node present (MD-12). Symlink the first worktree's:
-  `ln -s /Users/mpa/Desktop/aiw/node_modules <folder>/node_modules`. Valid only while the branches
-  share a lockfile, and nothing checks that they do.
+- **`node_modules`. Install it; do not symlink it.**
+
+  ```
+  pnpm install --frozen-lockfile --ignore-scripts
+  ```
+
+  `--ignore-scripts` is what clears MD-12 — Prisma's `preinstall` rejects Node v23.6.0, the only Node
+  on this machine. It is safe **only while nothing under `src/**` imports `@prisma/client`**, which is
+  true today by decision and stated at `src/lib/data/prisma/client.ts`, and stops being true the moment
+  the schema is approved and the client is generated.
+
+  **The symlink this used to prescribe is retired.** `ln -s .../aiw/node_modules <folder>/node_modules`
+  worked for three worktrees' worth of typechecking and lint, and Next 16's Turbopack rejects it
+  outright — `Symlink [project]/node_modules is invalid, it points out of the filesystem root`, a
+  `TurbopackInternalError` panic rather than a warning. It stayed invisible because `pnpm typecheck`,
+  `pnpm lint` and `pnpm test` all pass through a symlink; only a command that needs a bundler does not.
+  `/ship` moved into this lane on 2026-08-24 and its two execution steps both died on it. MD-19.
+
+  Do **not** reach for `turbopack.root` in `next.config.ts`: that is a tracked file and a production
+  build setting, and bending prod config around a local worktree layout is the wrong trade. The durable
+  fix is still MD-12's — a Node LTS and a version manager, then no flag is needed.
 - **`.claude/settings.local.json`.** It is gitignored, so a new worktree starts without the granted
   permissions and re-prompts for all of them. Copy it. `settings.json` needs no copying — it is
   tracked, so every worktree already has the same bytes, and the deny list and hooks come with it.

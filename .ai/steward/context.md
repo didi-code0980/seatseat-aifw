@@ -726,3 +726,42 @@ disagreement the artifact is right. A summary that can be believed over its sour
 of truth.
 
 **Registry writes: none.**
+
+### 2026-08-24 — MEM-01 merged mid-branch; two MD numbers collided; the symlink is retired
+
+**Changed:** `.ai/board/model-debt.md` (conflict resolved, two entries renumbered),
+`.ai/standards/session-model.md` (provisioning — the symlink instruction replaced),
+`.claude/agents/ba.md`, `.ai/standards/git-conventions.md`, this file (cross-references).
+
+**What happened:** MEM-01 shipped and merged as PRs #17 and #18 while `ops/lane-handoff` was open.
+One conflict, in one file. Two sessions appended to `model-debt.md` on the same afternoon and both
+reached MD-19 and MD-20 — there is no allocator for these numbers and nothing noticed.
+
+**Resolved by renumbering this branch's two, not theirs.** `main` is the record and merged first;
+a branch that renumbers what is already merged forces every reader who saw the old numbers to
+re-check. MD-19 and MD-20 stay as MEM-01's ship recorded them; this branch's became MD-21 and MD-22,
+and both rows say so in their own text rather than only in this log. MD-18 was kept at this branch's
+version — the resolved second attempt — because `main` still carried the earlier *partly fixed* text.
+
+**Both of their findings were caused by this branch, and that is the part worth keeping.**
+
+- **MD-19** — `/ship` moved into the design lane on this branch, and the design lane's `node_modules`
+  is the symlink that `session-model.md` prescribes. Next 16's Turbopack refuses it outright:
+  `Symlink [project]/node_modules is invalid, it points out of the filesystem root`, a panic rather
+  than a warning. It had been invisible for three worktrees because `typecheck`, `lint` and `test` all
+  pass through a symlink and only a bundler does not. **Fixed here**, in the file that caused it: the
+  provisioning step is now `pnpm install --frozen-lockfile --ignore-scripts`, with the condition under
+  which `--ignore-scripts` stops being safe stated, and an explicit refusal of `turbopack.root` — a
+  tracked production setting is not the place to absorb a local worktree layout.
+- **MD-20** — `/ship` step 4 puts `backlog.md` and `metrics.md` in the ticket set, and the sentence it
+  quotes is one written on this branch. Step 6 then runs `check-allowed-paths.mjs`, which exempts only
+  `.ai/board/tickets/<ID>/**`, so it fails on exactly those two files. **Not fixed here** — the fix the
+  register recommends is a code change to `scripts/check-allowed-paths.mjs`, which has its own tests
+  and deserves review on its own rather than arriving inside a merge resolution.
+
+**The lesson is not "add an ID allocator".** Two collisions in one afternoon is thin evidence, and a
+register that needs a lock to be appended to is worse than one that occasionally needs a merge. What is
+worth carrying is smaller: **a branch open across someone else's merge should re-read the files it
+appends to before it pushes**, not only when git complains.
+
+**Registry writes: none.**
