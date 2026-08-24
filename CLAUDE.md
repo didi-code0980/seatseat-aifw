@@ -62,8 +62,9 @@ canvas. Gilroy or Manrope for UI, IBM Plex Mono for codes and IDs. Details in
   take it; `/ship` adds the state transition and opens the pull requests. Both classify the tree and
   keep ticket work and chore work on separate branches. Merging is permanently human — RULE-09. Scope
   and limits in [.ai/standards/git-conventions.md](.ai/standards/git-conventions.md).
-- **Three worktrees, one travelling branch.** `aiw-work` designs and ships, `aiw` builds,
-  `aiw-steward` maintains the model. `feat/<ID>` moves `aiw-work -> aiw -> aiw-work` by `/handoff`.
+- **Three worktrees, one travelling branch.** `aiw-design` holds `orchestrator`, `tech-lead-design`
+  and `ba`; `aiw-implement` holds `developer`, `tech-lead-review` and `qa`; `aiw-steward` maintains
+  the model. `feat/<ID>` moves `aiw-design -> aiw-implement -> aiw-design` by `/handoff`.
   Confirm `pwd` and `git branch --show-current` before the first instruction of a session — since
   ADR-004 nothing stops a session writing to the wrong folder's branch.
   [.ai/standards/session-model.md](.ai/standards/session-model.md).
@@ -79,7 +80,7 @@ Vietnamese form because that is the conversation language today.
 **Tôi là `<agent>`.** Vừa <what you did> — <TICKET-ID>, gate <PASS | FAIL | BLOCKED | n/a>.
 **Xong lúc:** <output of `date '+%Y-%m-%d %H:%M %Z'`>
 **Branch:** <output of `git branch --show-current`, or `detached @ <sha>`>
-**Tiếp theo:** <command> — trong folder <aiw | aiw-work | aiw-steward>
+**Tiếp theo:** <command> — trong folder <aiw-design | aiw-implement | aiw-steward>
 ```
 
 - **Read the time and the branch. Never supply them from context.** `date` and

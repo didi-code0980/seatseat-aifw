@@ -47,7 +47,7 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
   to 8, under the limits above. You decide how the work is grouped; you do not decide the branch
   boundary, and you never decide the merge (RULE-09).
 - **Carrying `feat/<TICKET-ID>` between worktrees.** One branch per ticket travels
-  `aiw-work -> aiw -> aiw-work`, and you are the only role that moves it. The constructing roles hold
+  `aiw-design -> aiw-implement -> aiw-design`, and you are the only role that moves it. The constructing roles hold
   no `Bash` tool and cannot persist their own output; that is why `/handoff` exists (MD-15).
 - Session lifecycle: **REVIEW and QA each require a fresh session, discarded after the verdict**
   (RULE-13, `.ai/standards/session-model.md`). You are the lead session and you **print** the next

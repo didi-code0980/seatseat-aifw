@@ -3,8 +3,8 @@ description: Build, mark the ticket DONE, and open a pull request
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **orchestrator session in the `aiw-work` folder — the design lane**
-(`.ai/standards/session-model.md`). Nothing is dispatched. Moved out of the build lane 2026-08-24:
+Run in the **orchestrator session in the `aiw-design` folder — the design lane**
+(`.ai/standards/session-model.md`). Nothing is dispatched. Moved out of the implement lane 2026-08-24:
 shipping reads gates, opens a pull request and waits on a human, and none of that needs the folder
 that writes `src/**`.
 
@@ -17,13 +17,13 @@ Steps:
    check every ticket command runs*. `pwd`, `git branch --show-current`, `git fetch origin --quiet`,
    `git status --porcelain`, then `git switch feat/$ARGUMENTS && git pull --ff-only`.
 
-   If the switch fails with `fatal: 'feat/$ARGUMENTS' is already checked out at ...`, the build lane
+   If the switch fails with `fatal: 'feat/$ARGUMENTS' is already checked out at ...`, the implement lane
    has not run `/handoff` and this ticket is not ready to ship. Print the folder git named and stop —
    do not work around it, and never `git worktree` your way past it. **If the branch does not exist
    at all, stop and report**; this command never creates one.
 
    The implementation, the tests and artifacts 03–06 arrive already committed, by `/handoff`. Do not
-   expect a dirty tree full of `src/**`; if you find one, the build lane's hand-off did not complete
+   expect a dirty tree full of `src/**`; if you find one, the implement lane's hand-off did not complete
    and the QA gate you are trusting was never persisted.
 
 1. `pnpm verify` — typecheck, lint, unit, build. Any non-zero exit stops here.
@@ -90,7 +90,7 @@ Steps:
 
 ```
 MEM-01 is DONE, PR #12 opened. Merging is yours.
-Once it is merged, run /implement SEA-01 in the aiw folder — SEA-01's design handoff is already
+Once it is merged, run /implement SEA-01 in the aiw-implement folder — SEA-01's design handoff is already
 pushed and its branch is free.
 ```
 

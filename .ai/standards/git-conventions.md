@@ -105,9 +105,9 @@ persist it themselves. MD-15. Three commit points now, one per boundary:
 
 | Command | Lane | Commits |
 |---|---|---|
-| `/handoff` | `aiw-work`, after DESIGN | the story and the design |
-| `/handoff` | `aiw`, after QA | `src/**`, `tests/**`, artifacts 03–06 |
-| `/ship` | `aiw-work` | `state: DONE`, the board files, then the pull request |
+| `/handoff` | `aiw-design`, after DESIGN | the story and the design |
+| `/handoff` | `aiw-implement`, after QA | `src/**`, `tests/**`, artifacts 03–06 |
+| `/ship` | `aiw-design` | `state: DONE`, the board files, then the pull request |
 
 Every `/handoff` ends by releasing the branch name (`git switch --detach`), because git holds a branch
 exclusively across worktrees and the next lane's `git switch` fails outright without it. Details in
