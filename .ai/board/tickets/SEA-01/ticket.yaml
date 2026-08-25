@@ -23,9 +23,18 @@ id: SEA-01
 title: "Seat occupancy — assign and release"
 feature_ids: [SEA-01]
 group: SEA
-state: IN_PROGRESS
-owner: ""
-branch: ""
+# IN_PROGRESS -> REVIEW by `developer` at 2026-08-24T10:08:42Z. The stage gate passed: `pnpm
+# typecheck` and `pnpm lint` both exit 0, every contract item in 02-design.md section 1 is
+# implemented, and 03-impl-log.md lists every file touched with a one-line reason. The stage's own
+# record is that document's front matter `gate: PASS` — no fifth gate key was invented here, because
+# .ai/templates/ticket.yaml defines exactly four and /ship checks those four.
+state: DONE
+owner: "developer"
+# Transcribed, not chosen. The branch was cut before SPEC and this field was left empty through
+# DESIGN; guard-allowed-paths.mjs and scripts/check-allowed-paths.mjs both resolve the active ticket
+# from the branch NAME rather than from this field, so nothing depended on it — but an empty field
+# that has an obvious true value is a gap a later stage has to re-derive.
+branch: "feat/SEA-01"
 size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md scope and its
                       # Out-of-scope section, not from any implementation. Eleven ACs over one
                       # surface: list seats with occupant and status, assign, release. Fewer
@@ -204,5 +213,22 @@ gates:
   #
   # H-1 is untouched: features.md still lists four invariants where the story reasons seven. Registry,
   # RULE-01, a human's.
-  review: { passed: false, at: null }
-  qa:     { passed: false, at: null }
+  review: { passed: true,  at: "2026-08-24T10:15:00Z" }
+  # PASS. R1-R9 all pass, each citing file:line; 04-review.md carries the reasoning. No finding, so
+  # `rework_count` stays 0 and nothing routes. R8 in particular: INV-01, INV-02, INV-03, INV-04, INV-05,
+  # INV-06 and INV-07 were reasoned individually against every write in `src/`, not against the
+  # implementation's own account of them, and each is held by a seam refusal or by the shape of a write
+  # — never by a UI affordance. Nothing escalates under RULE-07.
+  #
+  # R1 was verified path-by-path rather than asserted. Nine paths changed/untracked, all within
+  # `allowed_paths`. `tests/` is clean in git and was left for QA per 02-design.md section 5.
+  #
+  # Three items carry into QA and none is a finding: F-1, F-3, F-4 still open against 01-story.md and
+  # routed to `ba` under RULE-14 (F-4 leaves `MEMBER_NOT_FOUND` with no AC, which QA may not invent);
+  # tests/e2e/smoke.spec.ts:50-51 broken by the seat code re-keying, repair assigned to QA by 02-design.md
+  # section 6.2; and 03-impl-log.md open questions 3 and 4.
+  #
+  qa:     { passed: true,  at: "2026-08-24T10:45:00Z" }
+  # PASS. All eleven ACs in 01-story.md map to named tests (7 e2e, 10 unit); all seven invariants
+  # in invariants_touched hold. `pnpm test` (74 passed) and `pnpm test:e2e` (45 passed) both exit 0.
+  # tests/e2e/smoke.spec.ts repaired to fixture-blind status assertion. State moves to DONE.
