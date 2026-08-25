@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
+import { SelfSignupNotice } from "./self-signup-notice";
+
 // Login authenticates. It does not register.
 //
 // INV-08: there is no self-signup, so there is no link to a signup page and no signup page to link
@@ -33,6 +35,8 @@ export default function LoginPage() {
         <p data-testid="login-no-signup" className="mt-6 text-xs text-muted">
           Accounts are created by a Manager or an Administrator. There is no self-registration.
         </p>
+
+        <SelfSignupNotice />
       </div>
     </main>
   );
