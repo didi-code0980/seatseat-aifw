@@ -1,0 +1,233 @@
+# RESOLVED 2026-08-25T05:56:12Z, AND THE COMMENT BLOCK BELOW IS KEPT AS WRITTEN RATHER THAN CORRECTED.
+# It records what was true and believed at 04:21Z, when this ticket had no feature row and two open
+# delete questions. Everything it calls open is now answered by the operator: the row exists in
+# `.ai/registry/features.md` in their own words, Q-1 is REFUSE, Q-2 is DETACH, Q-4 is SIBLING
+# uniqueness, Q-6 is ADMIN only. `invariants_touched` is [] rather than the [INV-12] the block below
+# argues for, and the block's own final paragraph predicted that narrowing. The gate record further
+# down carries the full account. A comment silently corrected is one that can only ever agree with the
+# present.
+#
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+#
+# SEEDED BY `ba` AT SPEC ON 2026-08-25, AND THAT IS THE WRONG WRITER FOR THIS FILE. Seeding a ticket
+# is the orchestrator's step and it did not run, because the operator invoked `/spec GRP-01` twice
+# against a ticket that did not exist. The file is here because a SPEC artifact needs a working
+# directory and `gates.spec` needs somewhere to be recorded. What it is NOT is a claim that GRP-01
+# has been admitted to the board.
+#
+# THIS TICKET PREDATES ITS FEATURE ROW, WHICH IS THE ORDERING RULE-01 AND CHECK D1 BOTH REFUSE.
+# `.ai/registry/features.md` line 78 holds `## GRP — Groups` with an EMPTY table — no GRP feature has
+# ever been specified. AUT-01's seed comment states the correct ordering in the opposite case: "The
+# ticket does not predate its row." This one does. `feature_ids: [GRP-01]` below therefore resolves to
+# nothing, and D1 is expected to fail on it until a human merges the row. That failure is the check
+# working, not a defect to route around.
+#
+# THE ROW TO ADD IS DRAFTED VERBATIM IN 01-story.md UNDER Q-0, ready to paste. It is not written into
+# `.ai/registry/features.md` by this run, because that file says at its own head: "Human-only, per
+# RULE-01. Agents read this file and cite IDs from it; an agent needing a change here stops with
+# `gate: BLOCKED` and states the change in `blocking_reason`." That is the mechanism the model defines
+# for exactly this situation and it is the mechanism used. The `ba` has no registry exemption; MEM-01
+# set the precedent by drafting an invariant ledger row inside its own story rather than writing
+# `invariants.md`, and the row below is drafted the same way.
+#
+# THE SCOPE OF GRP-01 IS AN ASSUMPTION AND IT IS THE FIRST THING TO CHECK. Nobody has said what the
+# first Groups feature is — there is no idea under `.ai/board/ideas/`, no triage, and no row. The
+# story reads it as **Group CRUD UI**, from two sources and one precedent: the glossary's Group entry
+# (`a grouping of people`, `groups nest`, `a Member belongs to a Group`), MEM-01's out-of-scope item 5,
+# which defers "assigning a member to a group, group nesting, and any group-scoped view of members" to
+# this group by name, and the shape of every other first-in-group ticket — ROO-01 Room CRUD UI, MEM-01
+# Member CRUD UI. If the operator meant something else, the row is wrong before the story is, and
+# correcting it costs one paste rather than a rewrite.
+#
+# TWO DELETE QUESTIONS ARE OPEN AND BOTH ARE HUMAN. Deleting a group that has CHILD GROUPS, and
+# deleting a group that has MEMBERS. No invariant in the ledger governs either. The two nearest
+# precedents point opposite ways for the third time in this project's history — INV-11 cascades a room
+# delete destructively behind a confirmation, INV-12 refuses a member delete outright — and ADR-005's
+# own reasoning ("a seat has no existence apart from its room, and a device does have existence apart
+# from its owner") puts a Member on the far side from a Seat: a person exists whether or not their
+# department does. That is an argument, not an answer, and the BA does not take it. Q-1 and Q-2 in
+# 01-story.md state both in full with their branches.
+#
+# invariants_touched IS [INV-12] AND IT IS THERE CONDITIONALLY. Nothing about a grouping of people
+# engages seats, devices, occupancy, placement, or accounts. INV-12 is on the list because one branch
+# of Q-2 — cascade the delete to the group's members — would violate it outright for any member who
+# occupies a seat or owns a device, and `.ai/registry/invariants.md` is explicit that the list records
+# what the change COULD affect and that choosing the safe behaviour first and declaring the invariant
+# unengaged afterwards is circular. It narrows to [] the moment Q-2 answers refuse or detach, exactly
+# as MEM-01's four narrowed to two when ADR-005 answered.
+id: GRP-01
+title: "Group CRUD UI"
+feature_ids: [GRP-01]  # RESOLVES as of 2026-08-25. The operator supplied the row in their own words
+                       # and it is transcribed into `.ai/registry/features.md` unchanged. Human approval
+                       # of the registry change is CODEOWNERS review on the pull request, which is how
+                       # RULE-01 is enforced — the row is written, not yet approved.
+group: GRP
+state: IN_PROGRESS   # ADVANCED FROM SPEC BY /design ON 2026-08-25T07:14:49Z, gate PASS. The two
+                     # comment paragraphs below are the record as it stood at SPEC and are kept as
+                     # written rather than corrected. What they say about DoR is still true and is
+                     # now moot: the orchestrator's evaluation was not performed, because the
+                     # operator invoked /design directly. The DESIGN gate is what this transition
+                     # rests on, and the four DoR items the story carried — feature_ids resolving,
+                     # invariants_touched explicit, out-of-scope non-empty, size_estimate set — all
+                     # held at 05:56Z and none of them has changed since.
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: SPEC. Seeded straight to SPEC rather than BACKLOG, because /spec ran. LEFT AT SPEC
+                     # NOW THAT THE GATE PASSES, for the opposite reason it was left here while the gate
+                     # was BLOCKED: DoR is the orchestrator's evaluation, and an agent that promotes its
+                     # own output past the gate that judges it has removed the gate.
+owner: ""
+branch: ""
+size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md's scope and its
+                      # Out-of-scope section, not from an implementation: one surface listing groups as
+                      # a tree, a create form, a rename, a reparent, and a delete whose outcome Q-1 and
+                      # Q-2 have not decided. M rather than S because nesting is not a list — the tree
+                      # render, the parent picker, and the cycle refusal are three things a flat CRUD
+                      # surface does not have. ROO-01, DEV-01, MEM-01 and SEA-01 all carried M for a
+                      # single flat surface, and this one is that plus a hierarchy. THE ESTIMATE
+                      # SURVIVES BOTH ANSWERS TO Q-1 AND Q-2: they move `allowed_paths` and scheduling,
+                      # not the size of the story. `size` stays the Tech Lead's at DESIGN.
+size: "M"             # VERDICT, 2026-08-25T07:14:49Z, counted from the ten paths enumerated below
+                      # against the sizing table in `.ai/01-operating-model.md` — M is up to 12.
+                      # IT AGREES WITH `size_estimate` AND NOTHING ROUTES BACK TO `ba`.
+                      #
+                      # NOT XL, and the row that would say otherwise is read with the paragraph under
+                      # it. The table's XL row names `types.ts`, which this ticket changes; the
+                      # paragraph fixes the test as "whether existing callers must change, not whether
+                      # the seam was touched at all". Every change is additive — `Group` itself does
+                      # not change, four seam functions are ADDED, no existing signature moves, and no
+                      # existing caller is affected. MEM-01 is the worked precedent: additive in the
+                      # same file, sized M. 02-design.md section 5 carries the count and the argument.
+depends_on: []        # Deliberately empty and worth one line: MEM-01 is DONE and it is the ticket that
+                      # deferred this work, but nothing here READS a member. Assigning a member to a
+                      # group is out-of-scope item 1 and belongs to the next GRP row.
+invariants_touched: []   # CONSIDERED, NONE ENGAGED. Written explicitly: invariants.md requires it,
+                      # because [] is a legitimate answer and absent is not. NARROWED from [INV-12]
+                      # by the operator's answer to Q-2 on 2026-08-25, not by this story changing
+                      # its mind. INV-12 sat here conditionally against the one branch of Q-2 that
+                      # would have cascaded a group delete to its members; the answer is DETACH, no
+                      # member is deleted, and the chain that would have run INV-11's full length
+                      # never starts. AC-9 asserts it. features.md carries [] on the GRP-01 row for
+                      # the same reason. This is MEM-01's narrowing repeated: four IDs to two when
+                      # ADR-005 answered its own delete question.
+allowed_paths:        # ENUMERATED AT DESIGN, 2026-08-25T07:14:49Z. Ten files. 02-design.md section 5
+                      # carries one line per path saying why it is in reach, and names four paths a
+                      # reader might expect and which are deliberately absent —
+                      # `tests/unit/seam-parity.test.ts` (groups is already in its PAIRS list),
+                      # `src/app/(app)/layout.tsx` (the nav link and force-dynamic are already there),
+                      # `src/lib/data/fixtures.ts` (the seed already holds what AC-12 and AC-13 need,
+                      # per finding F-3) and `prisma/schema.prisma` (RULE-09). A diff touching any of
+                      # the four is a review finding under R1.
+  - "src/app/(app)/groups/page.tsx"
+  - "src/app/(app)/groups/groups-manager.tsx"
+  - "src/actions/groups.ts"
+  - "src/lib/validation/group.ts"
+  - "src/lib/data/types.ts"
+  - "src/lib/data/mock/store.ts"
+  - "src/lib/data/mock/groups.ts"
+  - "src/lib/data/prisma/groups.ts"
+  - "tests/unit/groups.test.ts"
+  - "tests/e2e/groups.spec.ts"
+schema_delta: none    # What the draft schema holds for Group is unread — `.ai/standards/data-model.md`
+                      # states it contains no field names and RULE-05 keeps `src/**` out of the BA's
+                      # hands. Q-3 routes the field set to DESIGN. If Group turns out to carry no
+                      # parent reference, nesting is a schema change and this ticket stops rather than
+                      # acquiring one.
+requires_adr: false   # Flips to true if Q-1 or Q-2 resolves toward a new domain invariant, which is
+                      # what happened to MEM-01 — ADR-005 issued INV-12 out of exactly this question.
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: true,  at: "2026-08-25T05:56:12Z" }
+  # PASS, and it is the gate that this file previously recorded as BLOCKED, passing once the human
+  # answers arrived. The BLOCKED record is not deleted — it is reproduced at the bottom of this block,
+  # because a gate record that only ever agrees with the present is not a record.
+  #
+  # All four gate items hold: seventeen criteria in Given/When/Then, each with an ID (AC-1 to AC-13
+  # plus the lettered AC-4a, AC-4b, AC-5a, AC-6a); `invariants_touched` populated and explicit at [];
+  # Out-of-scope has thirteen items, each naming where the work goes instead; `size_estimate` set to M.
+  #
+  # FIVE QUESTIONS WERE ANSWERED BY THE OPERATOR ON 2026-08-25 and each became an artifact change
+  # rather than a chat answer (RULE-14). Q-0: scope approved as Group CRUD UI, member assignment split
+  # to GRP-02, feature row supplied verbatim. Q-1: deleting a group with child groups REFUSES — AC-12.
+  # Q-2: deleting a group with members DETACHES them, Member.groupId to null — AC-13, and the reason
+  # invariants_touched is []. Q-4: SIBLING uniqueness, so the same name is permitted under different
+  # parents — AC-4a, AC-4b, AC-5a, AC-6a. Q-6: the four write verbs are ADMIN only.
+  #
+  # THE ONE CRITERION THAT WAS NARROWED RATHER THAN ADDED IS AC-9. It said no member's attributes
+  # change; under DETACH that is false for the deleted group's members, and a criterion the
+  # implementation is required to contradict is one QA cannot write a passing test for. It now asserts
+  # no member is DELETED, which is INV-12's guarantee exactly, and hands the group-membership change to
+  # AC-13 where it is specified.
+  #
+  # THREE QUESTIONS REMAIN OPEN AND NONE BLOCKS. Q-3, the real field set of a Group and whether it
+  # carries a parent reference — DESIGN's, and out-of-scope item 11 stops it becoming a migration
+  # acquired mid-ticket. Q-5, whether the ancestor-cycle refusal should be a domain invariant — the
+  # operator's, through the steward. Q-7, NEW and opened by this amendment: AC-13's Given needs a
+  # member who belongs to a group, and this ticket builds no way to put one there, so DESIGN must say
+  # in section 6 how QA reaches that state. Q-3 and Q-7 both gate /qa and neither gates /design.
+  #
+  # No row was written to .ai/board/metrics.md. `.ai/standards/session-model.md` makes /ship the single
+  # writer of metrics.md and backlog.md; SYS-01 and SEA-01 both read it that way at SPEC and appended
+  # nothing. The gate record is here, where /ship reads it.
+  #
+  # ---- THE RECORD THIS REPLACES, KEPT ----
+  # BLOCKED, 2026-08-25T04:21:03Z, by `ba`. Two blocks. Q-0: GRP-01 was not a feature ID — the GRP
+  # table was empty and DoR item 1 requires every feature_id to resolve; the row was drafted verbatim
+  # in 01-story.md for a human, and not written, because features.md instructs an agent needing a
+  # change there to stop with gate BLOCKED and state the change in blocking_reason. Q-1 and Q-2: the
+  # two delete questions, unanswerable from .ai/registry/**, with INV-11 and INV-12 as precedents
+  # pointing opposite ways. AC-12 and AC-13 were reserved placeholders against them. Eleven criteria
+  # were live at that point and every one of them survived the answers unchanged except AC-9.
+  design: { passed: true,  at: "2026-08-25T07:14:49Z" }
+  # PASS, by `tech-lead-design`. All seven sections complete, `allowed_paths` enumerated at ten
+  # files, `size` set to M.
+  #
+  # THE TICKET DOES NOT STOP, AND THAT WAS THE FIRST THING CHECKED. Out-of-scope item 11 says GRP-01
+  # stops rather than acquiring a migration if the draft schema turns out to carry no parent
+  # reference. It carries one — `prisma/schema.prisma:152-154` — so `schema_delta` stays `none`,
+  # `requires_adr` stays `false`, and section 4 proposes no edit to that file.
+  #
+  # THE TWO QUESTIONS THE STORY ROUTED HERE ARE ANSWERED IN THE DESIGN, NOT IN CHAT (RULE-14).
+  # Q-3, the Group field set: three fields, `id`, `name`, `parentId`, and the DTO in
+  # `src/lib/data/types.ts` already matches the draft schema — finding F-1. Q-7, how QA reaches
+  # AC-13's Given: the seed already holds two groups and all three seeded members belong to one of
+  # them, so the Given needs nothing constructed — finding F-3, with the ordering constraint that
+  # follows in design section 6.2. Q-4's two residues, which the story left here without numbering,
+  # are finding F-2: comparison is exact and not case-folded, and sibling uniqueness is held in
+  # `src/lib/data/` rather than by an index — a `@@unique([parentId, name])` would not have refused
+  # two top-level groups with the same name, because Postgres treats NULL as distinct from NULL.
+  #
+  # Q-5 IS UNTOUCHED. Whether the ancestor-cycle refusal should be a domain invariant is the
+  # operator's through the steward, it gates nothing, and this design does not propose one (RULE-01).
+  #
+  # TWO FINDINGS ARE FOR A HUMAN AND NEITHER BLOCKS. F-5: `prisma/schema.prisma:153` declares
+  # `onDelete: SetNull` on `Group.parent`, which would silently reparent the children AC-12 refuses
+  # to strand — the reparent branch of Q-1, which the operator rejected, declared in the model. The
+  # refusal is the seam's on both sides; `onDelete: Restrict` would make the model agree, and
+  # changing it is RULE-09. F-3's second half: `.ai/standards/data-model.md:122-124` describes the
+  # seed and omits its two groups entirely, which is what the story read before concluding the seed
+  # had none. It is a human-only file and this stage did not edit it.
+  #
+  # NO CHAT. `chat_before_verdict: none` in the design front-matter, and `chat_budget` below is
+  # untouched — the `tech-lead-design`->`ba` pair is absent from that map and is therefore not
+  # chattable. Everything the design owed the story went into the artifact.
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
+
+# Notes on fields that are easy to get wrong:
+#
+# invariants_touched  [] means "considered, none engaged". Absent means nobody looked.
+#                     Definition of Ready requires it to be explicit.
+# allowed_paths       [] is a control, not a placeholder. guard-allowed-paths.mjs blocks every
+#                     write outside this ticket folder while it is empty. DESIGN fills it.
+# rework_count        Only Developer-caused failures increment it (RULE-08). Two failures
+#                     escalate (RULE-06).
+# chat_budget         Six messages per pair per ticket (RULE-15). chat-guard.mjs increments
+#                     `used` and blocks at `max`. Pairs absent from this map are not chattable.
+# sync_enabled        false by default (RULE-10). Turn on per ticket, after the loop is proven.
