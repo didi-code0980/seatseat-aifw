@@ -1,5 +1,5 @@
 ---
-doc_version: 3
+doc_version: 4
 last_updated: 2026-08-25
 governed_by: [RULE-01, RULE-17]
 ---
@@ -50,7 +50,6 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| AUT-01 | Sign in and sign out with Supabase Auth | AUT | PLANNED | INV-08 | Implements ADR-006 for the runtime path SYS-01 leaves out. SYS-01 removes Better Auth and constructs the `@supabase/ssr` server-side client; this row builds what uses it — a sign-in server action, session cookie handling, sign-out, and route protection, all server-side per OQ-1. **Depends on SYS-01 being DONE**, and on a Supabase project existing. `SUPABASE_URL` and `SUPABASE_ANON_KEY` are declared by SYS-01 in `.env.example` and are consumed here, not re-declared — ADR-006 records that nothing past `DATA_SOURCE=mock` is testable until they hold real values. INV-08 is on this row because a sign-in surface is where self-signup would appear if it appeared at all; **read MD-14 before assuming the `localStorage` flag enforces anything.** 🟡 Open at SPEC: how a Supabase identity maps to a `Member` for `Member.role` while `DATA_SOURCE=mock` and `Member.authUserId` does not exist — if the answer needs the column, `schema_delta` stops being `none` and RULE-09 puts a human gate mid-loop. |
 
 ## ROO — Rooms
 
