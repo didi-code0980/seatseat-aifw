@@ -1,5 +1,5 @@
 ---
-doc_version: 4
+doc_version: 5
 last_updated: 2026-08-25
 governed_by: [RULE-01, RULE-17]
 ---
@@ -99,4 +99,4 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| SYS-01 | Replace Better Auth with Supabase Auth | SYS | IN_PROGRESS | INV-08 | SPEC and DESIGN both passed on `feat/SYS-01` (2026-08-24); no implementation yet. Implements ADR-006. Removes the `better-auth` dependency, the server instance, the browser client and the catch-all route handler; adopts `@supabase/ssr` constructed **server-side only**, exempted in `no-restricted-imports` for `src/lib/auth/**` alone. `src/lib/auth/permissions.ts` is unchanged — it never depended on Better Auth. **`schema_delta` is expected to stay `none`**: `Member.authUserId` is not needed while `DATA_SOURCE=mock`, and pulling it in would put a RULE-09 human gate in the middle of the loop. If DESIGN concludes otherwise, that is a finding to raise, not a decision to take. INV-08 is on this row because self-signup moves from `disableSignUp: true` to the client-side flag ADR-006 records — **read MD-14 before assuming that flag enforces anything.** |
+| SYS-01 | Replace Better Auth with Supabase Auth | SYS | DONE | INV-08 | SPEC and DESIGN both passed on `feat/SYS-01` (2026-08-24); no implementation yet. Implements ADR-006. Removes the `better-auth` dependency, the server instance, the browser client and the catch-all route handler; adopts `@supabase/ssr` constructed **server-side only**, exempted in `no-restricted-imports` for `src/lib/auth/**` alone. `src/lib/auth/permissions.ts` is unchanged — it never depended on Better Auth. **`schema_delta` is expected to stay `none`**: `Member.authUserId` is not needed while `DATA_SOURCE=mock`, and pulling it in would put a RULE-09 human gate in the middle of the loop. If DESIGN concludes otherwise, that is a finding to raise, not a decision to take. INV-08 is on this row because self-signup moves from `disableSignUp: true` to the client-side flag ADR-006 records — **read MD-14 before assuming that flag enforces anything.** |

@@ -36,7 +36,6 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
-| 1 | SYS-01 | Replace Better Auth with Supabase Auth | IN_PROGRESS | nothing — SPEC and DESIGN passed, `feat/SYS-01` pushed and free |
 
 `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
 rather than by Phase C, ran the full loop the same day, and is `DONE`.
@@ -56,19 +55,25 @@ uncommitted; it stopped holding the moment a ship ran, which is the one command 
 file. MEM-01 has moved to ARCHIVE, and the two remaining rows now carry their real state instead of
 the seeded `BACKLOG`.
 
-**Repaired 2026-08-25 by `/ship SEA-01`.** SEA-01 has moved to ARCHIVE; the row that remains is
-SYS-01, and it is `IN_PROGRESS`, which this table still has no column to explain. It is not waiting on
-`/spec`: SYS-01 passed SPEC `2026-08-24T07:12:03Z` and DESIGN `2026-08-24T08:47:49Z`, and
-`feat/SYS-01` is pushed and held by no worktree. It is queued for `/implement` in the implement lane —
-`.ai/standards/session-model.md` lets a second feature into that lane only after the previous one has
-**merged**, so SEA-01's pull request now gates it, exactly as MEM-01's gated SEA-01.
+**Emptied 2026-08-25 by `/ship SYS-01`.** Both rows this paragraph used to explain have moved to
+ARCHIVE. **The table above is now empty, and that is a real state rather than a gap:** every ticket
+that has ever been issued is `DONE`, and nothing can enter `## BACKLOG` until a feature row exists to
+seed against. Five of the ten group tables are still bare — AUT, GRP, LAY, REG and DSH — and AUT
+returned to that list on 2026-08-25 when its one row was withdrawn for a product discussion.
 
-**Read MD-16 before `/implement SYS-01`.** `pnpm hooks:test` is red on `main` — ten D12 tests in
-`scripts/tests/check-docs.test.mjs` still assert pre-ADR-006 semantics, verified by execution on
-2026-08-25 at 69 tests / 59 pass / 10 fail. `node scripts/check-docs.mjs` itself exits 0; the check
-works and its tests describe a different check. It belongs to whoever landed ADR-006, which is this
-ticket's lane, and a `/review` that opens on a red suite has to separate red-because-of-me from
-red-already.
+**The loop is idle, and this is the first time it has been idle with nothing queued.** WIP is 0
+against a limit of 1. Both other worktrees are parked. What runs next is a decision rather than a
+dispatch: either the AUT question goes to product, or a human orders one of the four remaining bare
+groups.
+
+**MD-16 outlived SYS-01 and is still open.** `pnpm hooks:test` is red on `main` — ten D12 tests in
+`scripts/tests/check-docs.test.mjs` assert pre-ADR-006 semantics, re-verified by execution at this
+ship: 69 tests / 59 pass / 10 fail, unchanged. `node scripts/check-docs.mjs` itself exits 0; the check
+works and its tests describe a different check. It was recorded as belonging to whoever landed
+ADR-006, and SYS-01 is that ticket — it shipped without touching them, so the debt has now outlived
+its owner and needs re-assigning rather than waiting. It gates no gate: the Definition of Done names
+typecheck, lint, unit and e2e, and `hooks:test` is none of those, which is exactly why it survived
+four ships unnoticed.
 
 `SYS-01` is the first `SYS` ticket and the first that replaces infrastructure rather than adding a
 screen. It exists because ADR-006 was accepted on 2026-08-24; the feature row and this row were
@@ -169,10 +174,34 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
+| SYS-01 | 2026-08-25T03:14:52Z | *pending — opened at ship; see the note below* | 0 |
 | SEA-01 | 2026-08-25T01:52:41Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | MEM-01 | 2026-08-24T09:21:52Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | DEV-01 | 2026-08-23T08:35:53Z | *pending — see the note below* | 0 |
 | ROO-01 | 2026-08-23T05:29:36Z | [#1](https://github.com/didi-code0980/seatseat-aifw/pull/1) — merged 2026-08-23 | 0 |
+
+**SYS-01 shipped on the first attempt, and it is the first ticket to replace infrastructure rather
+than add a screen.** Better Auth is gone from the dependency tree; `@supabase/ssr` is constructed
+server-side only, exempted in `no-restricted-imports` for `src/lib/auth/**` alone. `schema_delta`
+held at `none` the whole way, which is what let it run the loop without stopping mid-stage for a
+RULE-09 signature.
+
+**Its QA gate was measured 56 commits behind `main` — the widest stale base yet, and MD-29(a)'s second
+occurrence out of two opportunities.** `06-test-report.md:23` records 76 unit and 42 e2e against a tree
+carrying neither `members.spec.ts` nor `seats.spec.ts`, and still reading `fullyParallel: true`, so it
+never saw the `workers: 1` fix that made the suite deterministic. Merging `origin/main` at ship and
+re-running gave **107 unit and 65 e2e, both exit 0** — this one survived its stale base where SEA-01
+did not. That is luck about which files collide, not a control, and the base was wider here.
+
+**`pnpm verify` failed at first for a reason that was not the ticket's.** `@supabase/ssr` is in
+`package.json` and in the lockfile and was absent from this worktree's `node_modules`, because the
+merge changed dependencies and the design lane had never installed them. Repaired with
+`pnpm install --frozen-lockfile --ignore-scripts` — the MD-19 route, still safe because nothing under
+`src/**` imports `@prisma/client`, verified rather than assumed. It ends the moment the schema is
+approved.
+
+**MD-30 recurred.** `state: DONE` was written by the QA handoff commit `2202965`, not by `/ship`
+step 3, and `owner` was left empty so nothing named the stage owner. Second occurrence out of two.
 
 **SEA-01 took three `/ship` attempts, and the first two stopping is the result worth keeping.**
 Attempt 1 found `feat/SEA-01` twenty-five commits behind `origin/main` — cut before MEM-01 merged, so
