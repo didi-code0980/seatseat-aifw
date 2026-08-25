@@ -28,7 +28,17 @@ Steps:
 
 1. `pnpm verify` — typecheck, lint, unit, build. Any non-zero exit stops here.
 2. Confirm the full Definition of Done in `.ai/01-operating-model.md`, item by item.
-3. Set `state: DONE`, move the row to `## ARCHIVE` in `backlog.md`, append to `metrics.md`.
+3. Set `state: DONE`, move the row to `## ARCHIVE` in `backlog.md`, append to `metrics.md`, **and set
+   this feature's `Status` to `DONE` in `.ai/registry/features.md`.**
+
+   The registry line is new as of 2026-08-25 and it is the reason MD-29 exists: for two tickets that
+   column had no writer at all. `Status` means **merged**, not gated — so you are writing the value
+   the pull request you are about to open will make true, and a human merging it is what makes it so.
+
+   `features.md` is registry plane. It goes in the **second set** at step 4 and ships on the `ops/`
+   branch at step 8, never on `feat/$ARGUMENTS` — `scripts/check-allowed-paths.mjs` fails the ticket
+   branch on any path outside `allowed_paths`, and no ticket's list contains the registry. Say so in
+   that pull request's body, per step 8's CODEOWNERS clause.
 4. **Classify the working tree.** `git status --porcelain`, and sort every dirty path into two sets
    against `allowed_paths` in `ticket.yaml`:
 
