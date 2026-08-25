@@ -3,19 +3,30 @@ description: Commit and push a ticket's finished lane work, then release the bra
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **orchestrator session of whichever lane has just finished**
-(`.ai/standards/session-model.md`). Nothing is dispatched.
+Run in **the session of the role that produced the lane's last gate** — not a separate orchestrator
+session. Changed 2026-08-25 on the operator's instruction. Nothing is dispatched.
 
-**That means two orchestrator sessions, one per lane folder** — `aiw-design` runs hand-off 1 and 3,
-`aiw-implement` runs hand-off 2. Not a choice: a session's folder is fixed at launch, and the files each
-hand-off commits sit in that folder's working tree. The commit exception in
-`.ai/standards/git-conventions.md` names `orchestrator` and no other role, and `ba` and
-`tech-lead-design` hold no `Bash` tool, so no lane can persist its own work.
+| Folder | Who runs `/handoff` | Because it just closed |
+|---|---|---|
+| `aiw-design` | `tech-lead-design` | the `design` gate |
+| `aiw-implement` | `qa` | the `qa` gate |
+
+**The lane that finished the work now persists it.** The previous arrangement routed both hand-offs
+through `orchestrator`, on the stated grounds that it was the only role permitted to commit and that
+the constructing roles held no `Bash` tool. The first half was a rule and has been amended; **the
+second half was simply false** — every agent definition under `.claude/agents/` grants `Bash`, `ba`
+included. Three documents asserted a capability limit that the frontmatter never imposed. MD-27.
+
+The consequence worth noticing: **the implement lane no longer needs an `orchestrator` session at
+all.** `/implement`, `/review`, `/qa` and `/handoff` each have an owner there, and `orchestrator`
+remains only in `aiw-design`, for `/next-ticket` and `/ship`.
+
+A session's folder is still fixed at launch, so the role running this command is the one whose
+working tree holds the files being committed. That has not changed and is not negotiable by argument.
 
 **This command exists because a lane cannot hand a ticket on by itself.** Every stage leaves its
-worktree dirty, the constructing roles have no `Bash` tool and cannot commit, and git refuses one
-branch in two worktrees. Without a step that persists the work and *releases the branch name*, the
-next lane's `git switch` fails with:
+worktree dirty, and git refuses one branch in two worktrees. Without a step that persists the work and
+*releases the branch name*, the next lane's `git switch` fails with:
 
 ```
 fatal: 'feat/<TICKET-ID>' is already checked out at '/Users/mpa/Desktop/<folder>'
@@ -47,10 +58,14 @@ A hand-off run from the wrong folder pushes the wrong lane's work, and since ADR
 
 Read the `gates` map. Do not infer it from which files exist.
 
-| Gates passed | Hand-off | Next lane |
-|---|---|---|
-| `spec` and `design` | **design → build** | `aiw-implement` — `/implement` |
-| `review` and `qa` | **build → ship** | `aiw-design` — `/ship` |
+| Gates passed | You are | Hand-off | Next lane |
+|---|---|---|---|
+| `spec` and `design` | `tech-lead-design` | **design → implement** | `aiw-implement` — `/implement` |
+| `review` and `qa` | `qa` | **implement → ship** | `aiw-design` — `/ship` |
+
+**If the gates say one thing and your own role says the other, stop.** A `qa` session reading a tree
+whose `design` gate has just passed is in the wrong folder — the two hand-offs are not
+interchangeable and neither is the working tree each one commits.
 
 Anything else is not a hand-off. If `design` passed and `review` did not while you are in the build
 lane, the ticket is mid-lane: stop and say which stage is unfinished. This command never persists a
@@ -103,6 +118,12 @@ finished.
 If that set touches a CODEOWNERS path — `.ai/registry/`, `.ai/standards/`, `prisma/`, `.claude/`,
 `.github/`, `.mcp.json` — say so explicitly, file by file, in the output. You are recording a human's
 change so it can be reviewed, not authoring one.
+
+**This step is the widest thing either hand-off role does, and for `qa` it is wider than the rest of
+that role.** RULE-13 discards `qa` after every verdict and `guard-read-scope.mjs` refuses it `src/**`,
+yet here it commits registry and standards files. Recording is not authoring and the `ops/` branch
+still faces CODEOWNERS review, so nothing is decided by the commit — but if this set is ever large or
+surprising, say so and stop rather than grouping it into something coherent-looking. MD-28.
 
 ## 6. Park the lane on the latest `main`. This step is the whole point
 
