@@ -1,6 +1,6 @@
 ---
-doc_version: 3
-last_updated: 2026-08-24
+doc_version: 4
+last_updated: 2026-08-25
 governed_by: [RULE-01, RULE-09]
 ---
 
@@ -30,6 +30,12 @@ chose Supabase as hosted Postgres and stated: *"Authentication stays on Better A
 Supabase Auth is not adopted."* That clause is what this ADR reverses. ADR-002's other clauses —
 Postgres on Supabase, Prisma as the only database client, the two-connection-string split — are
 untouched and remain in force.
+
+> **The Prisma half of that sentence stopped being true on 2026-08-25.** ADR-007 strikes ADR-002's
+> *"Prisma is the only database client"* clause and replaces the adapter behind `src/lib/data/` with
+> `@supabase/supabase-js`. Postgres on Supabase and the two-connection-string split are still
+> untouched. Nothing else in this ADR changes: see the note at the end of §Affected documents on why
+> ADR-007 does **not** widen this ADR's single lint exemption.
 
 **What exists today, verified by reading rather than recalled.** The Better Auth surface is six
 files and one test:
@@ -240,18 +246,66 @@ the narrower shape — `@supabase/ssr` and nothing else, restricted in lint, exe
 never imported from `src/` outside `src/lib/auth/`.
 ## Affected documents
 
-Check D9 fails until this list is worked through. **Nothing below has been changed yet except the two
-ADR status lines**, because every remaining row depends on OQ-1's answer and writing them twice is
-worse than writing them late.
+**Reconciled against the files on 2026-08-25.** The paragraph that stood here said *"Nothing below has
+been changed yet except the two ADR status lines"*, and it had been false for a day: the three
+document rows were worked the same afternoon this ADR was accepted, and the table was never ticked.
+The idea `.ai/board/ideas/2026-08-25-supabase-consolidation-scope-unsettled.md` raised the discrepancy
+as its OQ-2 — the documents were at the exact target versions the table asked for while the table
+claimed none of them had moved. **The documents were right and the table was stale.** It is corrected
+below rather than rewritten, and the false sentence is quoted rather than deleted, because a table
+that silently agrees with the present is not a record of what was planned.
+
+Check D9 passed throughout, which is worth stating plainly: **D9 verifies that a document's
+`doc_version` is at least as high as the rules it cites. It has no opinion about this table.** Nothing
+in the audit was ever going to catch an affected-documents list that lies, and that is the general
+form of the defect — recorded as MD-32.
 
 | File | Change | doc_version |
 |---|---|---|
 | `.ai/registry/decisions/ADR-002-supabase-hosted-postgres.md` | Status marked partially superseded; the auth clause struck, the Postgres and Prisma clauses affirmed | 2 → 3 ✅ done |
 | `.ai/registry/decisions/ADR-003-member-identity.md` | Status note: substance stands, referent moves to `auth.users` | 2 → 3 ✅ done |
-| `.ai/standards/rbac-and-security.md` | §"Auth implementation" rewritten; §"No self-signup" gains whatever OQ-2 decides | 1 → 2 |
-| `.ai/standards/integrations.md` | The Supabase feature table's "Supabase Auth — **Out of scope**" row reverses; §"Two connection strings" unchanged | 2 → 3 |
-| `.ai/registry/invariants.md` | INV-08's enforcement note only — **the invariant text itself does not change** | 4 → 5 |
-| `scripts/check-docs.mjs` | D12 taught about ADR-006 and extended to the revert conditions above | — |
-| `eslint.config.mjs` | `no-restricted-imports` exemption per OQ-4 | — |
-| `prisma/schema.prisma` | `Member.authUserId` per OQ-3; no Better Auth tables. **RULE-09 — human** | — |
-| `src/lib/auth/`, `src/app/api/auth/`, `src/app/(auth)/login/page.tsx`, `package.json` | The implementation itself. Belongs to a ticket, not to this ADR | — |
+| `.ai/standards/rbac-and-security.md` | §"Auth implementation" rewritten; §"No self-signup" gains whatever OQ-2 decides | 1 → 2 ✅ done 2026-08-24 |
+| `.ai/standards/integrations.md` | The Supabase feature table's "Supabase Auth — **Out of scope**" row reverses; §"Two connection strings" unchanged | 2 → 3 ✅ done 2026-08-24 |
+| `.ai/registry/invariants.md` | INV-08's enforcement note only — **the invariant text itself does not change** | 4 → 5 ✅ done 2026-08-24 |
+| `eslint.config.mjs` | `no-restricted-imports` exemption per OQ-4 | — ✅ done 2026-08-24 |
+| `scripts/check-docs.mjs` | D12 taught about ADR-006 and extended to the revert conditions above | — ⚠️ **half done** |
+| `prisma/schema.prisma` | `Member.authUserId` per OQ-3; no Better Auth tables. **RULE-09 — human** | — ⏸ **deferred by decision** |
+| `src/lib/auth/`, `src/app/api/auth/`, `src/app/(auth)/login/page.tsx`, `package.json` | The implementation itself. Belongs to a ticket, not to this ADR | — ✅ done — `SYS-01`, merged PR #32/#33 |
+
+**The three rows that are not ✅, each with why, because a status word on its own is the thing that
+went stale last time.**
+
+- **`scripts/check-docs.mjs` — half done.** D12 *was* rewritten for this ADR: it permits
+  `@supabase/ssr` and only it, requires the lint restriction to be present rather than absent, and
+  fails on any Supabase import under `src/` outside `src/lib/auth/`. What was not done is the second
+  half of the row — *"extended to the revert conditions above"*. Revert condition 1 is a row in
+  `auth.users` that no check can see from the repository, so it was never mechanisable here; revert
+  condition 2 is the import, and that half is covered. **Neither D12 nor anything else looks for a
+  Supabase key in a `NEXT_PUBLIC_*` variable or for a client constructed in a `"use client"` file** —
+  the key is the half a lint rule does not see. ADR-007 §Revert condition names the same gap and
+  authorises the extension, so the work now belongs to that ADR's ticket rather than to this one.
+- **`prisma/schema.prisma` — deferred by decision, not forgotten.** `SYS-01`'s row in
+  `.ai/registry/features.md` states it: *"`schema_delta` is expected to stay `none` — `Member.authUserId`
+  is not needed while `DATA_SOURCE=mock`, and pulling it in would put a RULE-09 human gate in the
+  middle of the loop."* **ADR-007 changes the premise this rests on.** `DATA_SOURCE` will no longer
+  default to `mock`, so the reason to defer expires with the cutover, and the column arrives with the
+  first migration under ADR-007 §6 rather than as a Prisma schema edit. OQ-3's answer — a plain
+  `String? @unique` with no foreign key — is unaffected by the change of tool.
+- **The implementation — done, and this row was written "not started" a few hours before it was
+  checked properly.** `SYS-01` is `DONE`, merged as PR #32 and #33 on 2026-08-25. `better-auth` is out
+  of `package.json`, `@supabase/ssr` 0.12.5 is in, `src/app/api/auth/` and both Better Auth modules are
+  deleted, and `src/lib/auth/` now holds `permissions.ts`, `supabase.ts` and `self-signup.ts` — the
+  last being clause 7's `localStorage` flag, whose limits are MD-14 and are unchanged by it existing.
+  **The first version of this bullet said the opposite**, read from a local `main` eight commits behind
+  `origin/main`; it is corrected in place rather than deleted because MD-39 is about exactly that, and
+  a table that only ever agreed with the present is what MD-32 is about. **What is still off the board
+  is the user-facing sign-in** — withdrawn on 2026-08-24 and its registry row removed in commit
+  `1148108`, pending the product discussion that
+  `.ai/board/ideas/2026-08-25-supabase-consolidation-scope-unsettled.md` is. `SYS-01` swapped the
+  provider underneath; nobody can yet sign in through a page.
+
+**One thing ADR-007 does not change about this ADR, stated because it would be easy to assume
+otherwise.** ADR-007 adds a second Supabase package and a second exempted directory. It does **not**
+widen this ADR's exemption: `src/lib/auth/**` may name `@supabase/ssr` and nothing else, and the data
+adapter may name `@supabase/supabase-js` and nothing else. §6's sentence — *"`src/lib/data/` is not
+exempted; the data seam has no reason to hold an auth client"* — remains exactly true.

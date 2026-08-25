@@ -254,6 +254,27 @@ for (const file of aiFiles) {
   // NEXT stage creates, so "does not exist on disk" is the expected state at the moment it is
   // written — the finding would be raised against an agent for correctly describing future work.
   if (!isGovernedDoc(r)) continue;
+
+  // ADRs are exempt. MD-38, decided 2026-08-25.
+  //
+  // A decision record is a historical claim about what was true when the decision was taken, and a
+  // large share of decisions authorise a deletion. ADR-006 removed `src/lib/auth/auth.ts`,
+  // `src/lib/auth/client.ts` and `src/app/api/auth/[...all]/route.ts`; SYS-01 carried it out; and
+  // from that merge onward D6 failed on ADR-002 and ADR-006 forever, for correctly describing files
+  // the repository had agreed to delete. **The false-positive rate here is structurally 100% for any
+  // ADR that authorises a deletion**, and the pressure it creates is to edit an accepted decision so
+  // a checker passes, which is forging the record rather than repairing it.
+  //
+  // The narrower alternative was a `removed_paths:` list in an ADR's front matter, skipped by name.
+  // Rejected: it keeps D6's coverage against a typo, but it costs every future ADR author a field
+  // they must remember, and forgetting it reproduces exactly this failure — a guard whose correct
+  // operation depends on being told about each exception is a guard that goes red and stays red.
+  //
+  // What is given up, stated rather than glossed: a mistyped path inside an ADR is no longer caught
+  // by anything. D11 still resolves every `ADR-nnn` reference to a file, so the citation graph
+  // between decisions is still checked; it is only paths into `src/` that lose coverage, in the one
+  // document class where a missing file is expected rather than suspicious.
+  if (r.startsWith(".ai/registry/decisions/")) continue;
   for (const cand of pathCandidates(fs.readFileSync(file, "utf8"))) {
     // A glob is a statement about a set, not a claim that one file exists.
     const concrete = cand.replace(/\/?\*\*.*$/, "").replace(/\*.*$/, "");
