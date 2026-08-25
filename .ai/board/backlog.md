@@ -85,6 +85,16 @@ its owner and needs re-assigning rather than waiting. It gates no gate: the Defi
 typecheck, lint, unit and e2e, and `hooks:test` is none of those, which is exactly why it survived
 four ships unnoticed.
 
+**Corrected 2026-08-25 — "it gates no gate" is true of the Definition of Done and false of CI, and it
+is the CI half that blocks a merge.** `verify` runs `docs-audit` and then `hook guards` as sequential
+steps of one job. `docs-audit` had been red on `main` since SYS-01 merged, so **`hook guards` never
+ran, and neither did anything after it** — `pnpm verify` shows `skipped` on those runs, meaning
+typecheck, lint, unit and e2e were not executed in CI at all for at least three commits, PRs #32 and
+#33 among them. Repairing D6 (MD-38, MD-40) turned `docs-audit` green on PR #37 and the failure moved
+straight to MD-16: 179 tests, 169 pass, 10 fail. It is not fixed there deliberately — ADR-007 §8
+rewrites D12 a second time, so pinning those ten tests to ADR-006's semantics now is work that gets
+undone.
+
 `SYS-01` is the first `SYS` ticket and the first that replaces infrastructure rather than adding a
 screen. It exists because ADR-006 was accepted on 2026-08-24; the feature row and this row were
 written in the same change as the seed, so no ticket ever existed without its registry row.

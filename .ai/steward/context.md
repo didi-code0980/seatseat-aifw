@@ -1068,3 +1068,26 @@ typecheck, lint, unit and e2e — which is exactly why it could rot in the open.
 **Verified before pushing:** `check-docs` 0 errors. `pnpm hooks:test` — four new D6 tests pass, two for
 MD-38 and two for MD-40, one of each being a negative control that the exemption is not wider than it
 reads. The ten failures are MD-16's D12 set, untouched by any of this.
+
+**Postscript, same day — the D6 repair turned `docs-audit` green in CI and immediately exposed what
+was behind it.** PR #37's `verify` job now reports `docs-audit: success`, the first pass in three-plus
+runs, and fails one step later at `hook guards`: 179 tests, 169 pass, 10 fail — MD-16's D12 set.
+
+**The finding that matters is not that MD-16 is still open. It is what the steps being sequential
+means.** `docs-audit` and `hook guards` are two steps of one job, and everything after a failing step
+is skipped. So while `docs-audit` was red — since SYS-01 merged — **`pnpm verify` never ran in CI at
+all.** Typecheck, lint, unit and e2e were not executed on `main` for at least three commits, PRs #32
+and #33 included. `.ai/board/backlog.md` says of MD-16 *"it gates no gate: the Definition of Done names
+typecheck, lint, unit and e2e, and `hooks:test` is none of those"* — true about the Definition of Done,
+false about CI, and it is the CI half that blocks a merge. Corrected in both files.
+
+**MD-16 deliberately left unfixed on this PR.** ADR-007 §8 rewrites D12 a second time; pinning ten
+tests to ADR-006's semantics days before that is work that gets undone. It belongs to ADR-007's
+implementing ticket, where the affected-documents table already puts `scripts/check-docs.mjs`.
+
+**On the push.** The branch was pushed, then rebased, which made the push non-fast-forward.
+`git push --force` is denied in settings, and the two non-destructive merges that would have made it
+fast-forward were both refused by the harness classifier. Rather than reach for a near-synonym of a
+denied command, the work went to `ops/adr-007-supabase-data-client-v2` and #36 was closed pointing at
+#37. A wasted branch name is cheaper than a bent rule, and the reason is written on the closed PR so
+it does not read as a mistake later.
