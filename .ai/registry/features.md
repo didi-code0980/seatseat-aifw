@@ -1,5 +1,5 @@
 ---
-doc_version: 6
+doc_version: 7
 last_updated: 2026-08-25
 governed_by: [RULE-01, RULE-17]
 ---
@@ -79,7 +79,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| GRP-01 | Group CRUD UI | GRP | PLANNED | — | Fifth CRUD slice, and the first with **no invariant engaged at all** — `invariants.md` mentions Group nowhere, so `invariants_touched` is expected to be `[]`, meaning considered and none found. Mock-backed; `schema_delta` expected to stay `none` (the `Group` model is already drafted at `prisma/schema.prisma:145`). The seam is **read-only today**: `src/lib/data/mock/groups.ts` has `listGroups`, `getGroup` and `listChildGroups` and no writer, so this ticket adds create, rename, re-parent and delete. **Deletion needs no decision and that is the difference from MEM-01.** The draft schema already answers it in both directions — `Member.groupId` is `String?` with `onDelete: SetNull` and `Group.parentId` likewise, so deleting a group orphans its members and promotes its children to root rather than refusing. SPEC should transcribe that, not re-litigate it. 🟡 Open at SPEC, and it is a scope boundary rather than a blocker: **whether this ticket assigns Members to Groups, or only manages the Groups themselves.** `createMember` sets `groupId` to null unconditionally and MEM-01 put group membership in out-of-scope item 5, so nothing anywhere can put a person in a group today. If assignment is pulled in, this ticket writes `src/lib/data/mock/members.ts` and stops being disjoint from MEM's surface. Two questions the registry already holds open and SPEC must **not** invent an answer to: maximum nesting depth (`glossary.md:83`), and whether a Member may belong to more than one Group (`schema.prisma:150` models one, the narrower reading). |
+| GRP-01 | Group CRUD UI | GRP | PLANNED | [] | The first GRP row. Creates, lists as a tree, renames, moves parent, and deletes groups. Member assignment deferred to GRP-02. Q-1 resolved to Refuse, Q-2 resolved to Detach (INV-12 unengaged). |
 
 ## LAY — Layout Designer
 
