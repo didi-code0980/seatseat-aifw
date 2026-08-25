@@ -30,6 +30,14 @@ title: "Replace Better Auth with Supabase Auth"
 feature_ids: [SYS-01]
 group: SYS
 state: DONE
+# The transition below was written by `qa`, not by /ship step 3, which is the only place the model
+# takes it. Second occurrence out of two opportunities — SEA-01's f37236a did the same. Recorded as
+# MD-30 rather than repaired silently, and left as it stands because it is now true: all four gates
+# pass and the Definition of Done holds as of 2026-08-25T03:14Z.
+#
+# Its counts are also stale, and that is MD-29(a). 76 unit and 42 e2e were measured on a branch 56
+# commits behind origin/main, carrying neither members.spec.ts nor seats.spec.ts and still reading
+# `fullyParallel: true`. Re-run at ship time against the merged base: 107 unit, 65 e2e, both exit 0.
 # QA -> DONE by qa, 2026-08-25T09:47:30Z. The QA gate is met: 76 unit tests and 42 e2e tests pass;
 # `pnpm verify` exits 0; every AC from AC-1 to AC-12 is verified and mapped. INV-08 is held structurally
 # by absence of sign-up routes/controls; localStorage flag is client-side configuration per AC-12.
@@ -62,8 +70,10 @@ state: DONE
 #
 # BACKLOG -> SPEC by ba, 2026-08-24T07:12:03Z. It stops here. DoR is evaluated after SPEC, not before
 # it (two of its six items are produced by this stage), and the READY transition is the orchestrator's.
-owner: ""
-branch: ""
+owner: "orchestrator"    # taken at /ship, per MEM-01 and SEA-01. Was "" — `qa` wrote the state
+                        # transition above but left this field, so nothing named the stage owner.
+branch: "feat/SYS-01"    # transcribed at ship. Was "" from seed through QA; nothing depended on
+                         # it, because both guards resolve the ticket from the branch NAME.
 size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md's scope and
                       # its Out-of-scope section, not from any implementation — `size` is the Tech
                       # Lead's at DESIGN and is a different judgement.
