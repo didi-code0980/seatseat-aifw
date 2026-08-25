@@ -855,3 +855,55 @@ ran. This is a change to what reaches the operator, not to what the command veri
 command that checked less would be a worse trade than the verbosity it replaced.
 
 **Registry writes: none.**
+
+### 2026-08-25 — `/handoff` goes to the role that closed the gate, and a justification turns out to be false
+
+**Changed:** `.claude/commands/handoff.md`, `.ai/standards/git-conventions.md` (`doc_version` 2 -> 3),
+`.ai/standards/session-model.md` (4 -> 5), `.ai/board/model-debt.md` (MD-27, MD-28), the published
+`Three Worktrees` artifact, this file.
+
+**Registry writes: none.**
+
+**The instruction:** `/handoff` in `aiw-design` is `tech-lead-design`'s; `/handoff` in
+`aiw-implement` is `qa`'s. Both previously ran as separate `orchestrator` sessions.
+
+**MD-27 is the finding, and it was found by checking a claim rather than arguing with the
+instruction.** Before objecting on capability grounds, `grep '^tools:' .claude/agents/*.md` — every
+role has `Bash`. `ba` included. Yet `git-conventions.md`, `session-model.md` and `handoff.md` all
+stated that `ba` and `tech-lead-design` *hold no `Bash` tool and cannot commit*, and all three used it
+to justify routing the hand-offs through `orchestrator`. The rule rested on a mechanism nobody
+re-checked. **This is the second time in three days the same shape has appeared** — RULE-09 on
+2026-08-23 was the first, where every document citing the rule agreed with the others and disagreed
+with the ledger. Struck rather than deleted in all three, because the failure of the justification is
+the part worth keeping.
+
+**What has no fix: nothing checks that a claim about an agent's tools matches that agent's
+frontmatter.** The frontmatter is machine-readable and the assertions are greppable, so a D-series
+check could catch it. Recorded in MD-27 as a fix shape; not built, because it was not asked for and
+inventing an audit check beside an unrelated instruction is scope drift.
+
+**Disagreed once, on one clause, and complied.** `/handoff` step 5 sends everything outside
+`allowed_paths` — model, registry, standards, hooks, scripts — to an `ops/` branch. Giving that to
+`qa` widens the narrowest role in the model: RULE-13 discards it after every verdict and
+`guard-read-scope.mjs` refuses it `src/**`, yet it now commits `.ai/registry/**` when a stage has left
+it dirty. Nothing is *decided* by the commit — recording is not authoring, CODEOWNERS still reviews
+the branch — so it is a widening, not a hole. Implemented as instructed; MD-28 carries the residue
+with two fix shapes, neither taken. The command now tells that role to stop and report rather than
+group a large or surprising second set into something coherent-looking.
+
+**A consequence the instruction did not mention and is worth more than the change itself: the
+implement lane no longer needs an `orchestrator` session at all.** `/implement`, `/review`, `/qa` and
+`/handoff` each have an owner already sitting in that folder. `orchestrator` remains only in
+`aiw-design`, for `/next-ticket` and `/ship`. One fewer session to open, which is the cost the
+operator has named most often.
+
+**The constraint that survives and decided the pairing:** a session's folder is fixed at launch, so
+the role running a hand-off must be one whose working tree already holds the files being committed.
+That is why the two hand-offs are not interchangeable, and it is stated in the command as a stop.
+
+**Verified before publishing:** `check-docs` 0 errors, 2 advisory D8 warnings, both pre-existing on
+MEM-01 artifacts. `pnpm hooks:test` 175 tests, 165 pass, 10 fail — the same ten D12 tests MD-16
+records, untouched by this change.
+
+**Not done, deliberately:** `/ship` still runs as `orchestrator` in `aiw-design`; the instruction
+named the two hand-offs and not the ship. Nothing under `src/`, `prisma/`, or `.ai/registry/**`.

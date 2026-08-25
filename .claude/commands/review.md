@@ -44,14 +44,51 @@ You have no channel to the Developer and you did not talk to one. `chat_before_v
 On FAIL, route per the failure routing table in `.ai/01-operating-model.md`, which encodes RULE-08 in
 its third column. Read the column; do not decide the increment yourself.
 
-**An R8 failure does not enter REWORK.** It escalates to a human on first occurrence (RULE-07): set
-the ticket to `ESCALATED`, name the invariant, and halt it.
+**An R8 failure does not enter REWORK.** It escalates to a human on first occurrence (RULE-07): name
+the invariant, write `next_state: ESCALATED`, and halt.
 
-On PASS, set the ticket to `QA` and **print the next command and its session** — do not invoke it:
+## You do not touch `ticket.yaml`
+
+**Write the verdict into `04-review.md`'s front-matter and stop.** `gate`, `blocking_reason` and
+`next_state` are the whole of your output; the `orchestrator` reads them and moves the board
+(`.ai/01-operating-model.md`, stage ownership — the REVIEW row writes `04-review.md` and nothing
+else).
+
+This is not bookkeeping etiquette. **A verdict that advances the board it is judging has no separation
+left.** RULE-13 discards you after each verdict precisely so the next pass starts cold; a reviewer that
+can also mark a ticket QA is deciding and executing in one act, and nothing between the two is
+reviewable. If the front-matter and the board ever disagree, the artifact is the record and the board
+is a view.
+
+## Your reply is four lines
+
+Per `## Replying` in `CLAUDE.md`. **Do not tabulate R1 to R9 in chat.** `04-review.md` holds every
+check with its `file:line`, that is the artifact the gate is read from, and a summary of it in chat is
+a copy that cannot be cited. *All nine pass* is one sentence; a FAIL needs the failing check and why,
+and nothing about the eight that passed.
+
+Never cite `04-review.md`'s own line numbers as evidence for its own conclusions — R-checks cite the
+implementation, and quoting your own report back proves nothing.
+
+Name the ticket by its ID. Not `ticket.yaml`, not "the ticket" — `SEA-01`.
+
+Then end this session.
+
+---
+
+## Last step: sign off
+
+**End your reply with the block in `## Replying` (`CLAUDE.md`).** It is not a footer on the reply —
+for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
+answered, whether it passed, where the repository is, and what runs next.
+
+The *first* line quotes the `gate` from the front-matter you just wrote. *Tiếp theo* names the next
+stage command **and its folder** — `aiw-design`, `aiw-implement` or `aiw-steward`.
+Read the two values rather than recalling them:
 
 ```
-REVIEW passed. Run /qa ROO-01 in a FRESH session, discarded after the verdict.
+date '+%Y-%m-%d %H:%M %Z'
+git branch --show-current
 ```
 
-Then end this session. On FAIL, print the routed command instead — for example
-`Run /implement ROO-01 in the existing Developer session` — and still end this session.
+A remembered timestamp or branch is the one part of this block that can be wrong while looking right.
