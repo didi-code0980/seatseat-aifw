@@ -1,5 +1,5 @@
 ---
-doc_version: 5
+doc_version: 7
 last_updated: 2026-08-25
 governed_by: [RULE-01, RULE-17]
 ---
@@ -61,7 +61,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| SEA-01 | Seat occupancy — assign and release | SEA | IN_PROGRESS | INV-01, INV-02, INV-03, INV-06 | **All four gates passed on `feat/SEA-01` (2026-08-24) and the branch is pushed, but no pull request is open — so it is `IN_PROGRESS`, not `DONE`, per the Status clause above.** Fourth slice, specced parallel to MEM-01's implementation. **Placement is deliberately out of this row**: INV-10 governs grid overlap, and `types.ts:77` assigns it to every LAY ticket. SPEC must confirm the split before DESIGN — if placement is pulled in, INV-10 joins this list and the ticket becomes LAY's problem instead. INV-06 is the reason this ticket writes `mock/devices.ts`: releasing an occupant auto-downgrades that seat's primary device. |
+| SEA-01 | Seat occupancy — assign and release | SEA | DONE | INV-01, INV-02, INV-03, INV-06 | **Corrected 2026-08-25.** The row read `IN_PROGRESS` with a note saying the branch was pushed and no pull request was open. Both stopped being true when `feat/SEA-01` merged, and nothing updated it: `/ship` step 3 only gained the registry `Status` write on 2026-08-25, *after* SEA-01 shipped, so this is the one row the new step will never reach on its own. MD-29's column, one ticket wide. Fourth slice, specced parallel to MEM-01's implementation. **Placement is deliberately out of this row**: INV-10 governs grid overlap, and `types.ts:77` assigns it to every LAY ticket. SPEC must confirm the split before DESIGN — if placement is pulled in, INV-10 joins this list and the ticket becomes LAY's problem instead. INV-06 is the reason this ticket writes `mock/devices.ts`: releasing an occupant auto-downgrades that seat's primary device. |
 
 ## DEV — Devices
 
@@ -79,6 +79,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
+| GRP-01 | Group CRUD UI | GRP | PLANNED | [] | The first GRP row. Creates, lists as a tree, renames, moves parent, and deletes groups. Member assignment deferred to GRP-02. Q-1 resolved to Refuse, Q-2 resolved to Detach (INV-12 unengaged). |
 
 ## LAY — Layout Designer
 

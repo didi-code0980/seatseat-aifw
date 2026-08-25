@@ -231,3 +231,61 @@ gates:
 # chat_budget         Six messages per pair per ticket (RULE-15). chat-guard.mjs increments
 #                     `used` and blocks at `max`. Pairs absent from this map are not chattable.
 # sync_enabled        false by default (RULE-10). Turn on per ticket, after the loop is proven.
+
+# ============================================================================
+# THE ORCHESTRATOR'S SEED, KEPT — transcribed at the origin/main merge, unedited
+# ============================================================================
+#
+# `origin/main` carries its own `ticket.yaml` for GRP-01, written by the orchestrator in the same
+# change as the feature row (PR #34). Merging origin/main into this branch produced an add/add
+# conflict against the file above, which `ba` had already seeded at SPEC and `/design` had advanced.
+# Every FIELD was resolved to this branch's value, because every one of them is strictly further
+# along — state IN_PROGRESS over BACKLOG, both gates passed, `size` and `size_estimate` at M, and
+# `allowed_paths` enumerated at ten files where the seed still had the `[]` that disables the path
+# guard. No field in the seed held anything this file lacked, so only its comments are reproduced.
+#
+# ONE PART OF THEM IS OVERTAKEN, and is left standing rather than corrected: the second bullet under
+# WHY IT IS LOW RISK reads the draft schema's `onDelete: SetNull` as having already settled the
+# delete semantics — "deleting a group orphans its members and promotes its children to root. SPEC
+# transcribes that." SPEC did not. The operator answered Q-1 REFUSE and Q-2 DETACH on 2026-08-25, so
+# children are not promoted, and design finding F-5 records that `prisma/schema.prisma:153` now
+# disagrees with AC-12. The seed was written before those answers existed.
+#
+# ---- BEGIN SEED COMMENTS, VERBATIM ----
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded from .ai/templates/ticket.yaml at 2026-08-25 by the orchestrator, in the same change as its
+# feature row, so the ticket does not predate the row — the ordering RULE-01 and check D1 assume.
+#
+# THE FIRST GRP TICKET, and the first slice chosen rather than inherited. Every previous ticket came
+# from Phase C's seeding or from an ADR. This one was picked after the board ran dry: five of the ten
+# group tables were bare, and of those, GRP, LAY and DSH need no notion of who is signed in, while
+# every deseeded AUT and REG item does. That is the whole reason it is startable today.
+#
+# WHY IT IS LOW RISK, stated so a later reader does not mistake the choice for arbitrary:
+#   - No invariant engages. `.ai/registry/invariants.md` mentions Group nowhere. `invariants_touched`
+#     is expected to be [] at SPEC, which means considered and none found — NOT absent.
+#   - No decision is owed. The deletion semantics that took MEM-01 to an escalation and produced
+#     ADR-005 and INV-12 are already settled here by the draft schema: `Member.groupId` is `String?`
+#     with `onDelete: SetNull` (prisma/schema.prisma:167) and `Group.parentId` the same (:153). So
+#     deleting a group orphans its members and promotes its children to root. SPEC transcribes that.
+#   - `schema_delta` is `none`. The `Group` model is already drafted at prisma/schema.prisma:145 and
+#     this ticket is mock-backed, so nothing needs a RULE-09 signature mid-loop.
+#   - No dependency. Nothing in the system writes a Group today, so nothing can collide.
+#
+# THE SEAM IS READ-ONLY AND THAT IS THE WORK. `src/lib/data/mock/groups.ts` has `listGroups`,
+# `getGroup` and `listChildGroups` and no writer at all. This ticket adds create, rename, re-parent
+# and delete on both sides of the seam. `src/app/(app)/groups/page.tsx` is 23 lines and already
+# renders the list, so the surface starts from something rather than from nothing.
+#
+# THE ONE OPEN QUESTION IS A SCOPE BOUNDARY, NOT A BLOCKER — the 🟡 on the feature row. Does this
+# ticket ASSIGN MEMBERS TO GROUPS, or only manage the groups themselves? Nothing anywhere can put a
+# person in a group today: `createMember` sets `groupId` to null unconditionally and MEM-01 placed
+# group membership in its out-of-scope item 5. The answer decides disjointness — pull assignment in
+# and this ticket writes `src/lib/data/mock/members.ts`, which is MEM's surface. SPEC settles it the
+# way SEA-01 settled INV-10 placement: by confirming the split before DESIGN.
+#
+# TWO THINGS SPEC MUST NOT INVENT. Both are open in the registry and neither is this ticket's to
+# close: maximum nesting depth (.ai/registry/glossary.md:83) and whether a Member may belong to more
+# than one Group (prisma/schema.prisma:150 models one, and says so as the narrower reading). If the
+# story needs either answered, it goes under OPEN QUESTIONS and routes to a human — it is not chosen.
+# ---- END SEED COMMENTS, VERBATIM ----

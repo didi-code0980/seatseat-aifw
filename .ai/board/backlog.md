@@ -36,6 +36,7 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
+| 1 | GRP-01 | Group CRUD UI | BACKLOG | nothing — next for `/spec` |
 
 `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
 rather than by Phase C, ran the full loop the same day, and is `DONE`.
@@ -55,16 +56,25 @@ uncommitted; it stopped holding the moment a ship ran, which is the one command 
 file. MEM-01 has moved to ARCHIVE, and the two remaining rows now carry their real state instead of
 the seeded `BACKLOG`.
 
-**Emptied 2026-08-25 by `/ship SYS-01`.** Both rows this paragraph used to explain have moved to
-ARCHIVE. **The table above is now empty, and that is a real state rather than a gap:** every ticket
-that has ever been issued is `DONE`, and nothing can enter `## BACKLOG` until a feature row exists to
-seed against. Five of the ten group tables are still bare — AUT, GRP, LAY, REG and DSH — and AUT
-returned to that list on 2026-08-25 when its one row was withdrawn for a product discussion.
+**Emptied 2026-08-25 by `/ship SYS-01`, and refilled the same day by GRP-01.** Both rows that
+paragraph used to explain moved to ARCHIVE, leaving the table empty for the first time — every ticket
+ever issued was `DONE`, WIP was 0 against a limit of 1, and all three worktrees were parked. Nothing
+could enter until a feature row existed to seed against.
 
-**The loop is idle, and this is the first time it has been idle with nothing queued.** WIP is 0
-against a limit of 1. Both other worktrees are parked. What runs next is a decision rather than a
-dispatch: either the AUT question goes to product, or a human orders one of the four remaining bare
-groups.
+**GRP-01 is the first slice chosen rather than inherited.** Every earlier ticket came from Phase C's
+seeding or from an ADR. This one was picked by reading what was actually startable: of the five bare
+group tables — AUT, GRP, LAY, REG, DSH — the three deseeded AUT and REG items all need to know who is
+signed in, and nothing in this system does. `PermissionGate` exists and is deliberately called from
+nowhere, because *"a control wrapped in a gate fed a hard-coded role renders a surface that looks
+guarded and is not"* (`members-manager.tsx:10`). That is the same Q-1 that withdrew the AUT sign-in
+row, so those three wait on a product decision rather than on a registry write. GRP, LAY and DSH need
+no such notion, and GRP is the closest in shape to the four CRUD slices already proven.
+
+**LAY remains the heavier choice, and it is still open.** It carries INV-10 — no two seats overlapping
+a grid cell — which is the only invariant in the ledger that has never been implemented; SEA-01 pushed
+placement out of its own scope and assigned it here. `layout-designer/page.tsx` says dnd-kit is
+installed and deliberately unwired, *"because a half-built interaction is harder to replace than an
+empty frame."*
 
 **MD-16 outlived SYS-01 and is still open.** `pnpm hooks:test` is red on `main` — ten D12 tests in
 `scripts/tests/check-docs.test.mjs` assert pre-ADR-006 semantics, re-verified by execution at this
