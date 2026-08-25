@@ -3,8 +3,68 @@ description: Run the SPEC stage — the BA writes 01-story.md
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **BA session**, which is persistent and lives until the end of the run
-(`.ai/standards/session-model.md`). You are the BA; nothing is dispatched.
+Run in the **BA session in the `aiw-design` folder — the design lane**. It is persistent and lives
+until the end of the run (`.ai/standards/session-model.md`). You are the BA; nothing is dispatched.
+
+## Step 0 — put yourself on `feat/$ARGUMENTS` before writing anything
+
+**Mode: create. `/spec` is the only command permitted to bring a `feat/` branch into existence** —
+see *The branch check every ticket command runs* in `.ai/standards/git-conventions.md`. Every later
+stage arriving at a missing branch stops and reports instead, because at that point a missing branch
+means something upstream did not happen and manufacturing one hides which.
+
+**Run this first, every time, including a re-run.** You hold `Bash` for this and only this
+(`.claude/agents/ba.md`). **Run them; do not report them.** The branch you ended on is one line of the
+sign-off and the story's `inputs_read` carries it into the artifact — that is the audit trail, and it
+outlives a chat transcript. Print only when a row below says stop.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+Then take exactly one of four paths:
+
+| What you found | What you do |
+|---|---|
+| Already on `feat/$ARGUMENTS` | Nothing. Proceed to the story. |
+| On another branch, or detached, **and the tree is dirty** | **STOP.** Print the dirty paths and say which ticket they belong to. Do not switch. |
+| On another branch or detached, tree clean, `feat/$ARGUMENTS` **exists** | `git switch feat/$ARGUMENTS` — or `git switch -c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it exists only on the remote. |
+| On another branch or detached, tree clean, `feat/$ARGUMENTS` **does not exist** | `git switch -c feat/$ARGUMENTS origin/main` |
+
+**Existence is checked, not assumed:** `git show-ref --verify --quiet refs/heads/feat/$ARGUMENTS`,
+then `refs/remotes/origin/feat/$ARGUMENTS`. Two separate refs and they can disagree — a branch handed
+back by `/handoff` exists on the remote while this worktree sits detached.
+
+### Four things that will bite, each for a different reason
+
+**Cut from `origin/main`, never from local `main`.** Local `main` is routinely many commits behind —
+nothing in this loop updates it, because no lane ever checks it out. A branch cut from a stale local
+`main` looks correct and is missing whatever merged since, and the gap surfaces as a conflict at
+`/ship`. This is the one place the operator's instruction is realised rather than followed literally:
+"back to main" means the current `main`, which is `origin/main`.
+
+**A dirty tree is a stop, not a problem to route around.** `git switch` carries modified and untracked
+files onto the branch you arrive at. That is how one ticket's story lands on another ticket's branch —
+MD-18, in the form that produced this step. If the tree is dirty the previous lane did not finish;
+`/handoff` is the command that clears it, and it is not yours.
+
+**`fatal: '...' is already checked out at '<folder>'` is not an error to solve.** It means another
+worktree holds the branch. Print the folder git named and stop. Never `git worktree` your way past
+it, and never `git -C` into the folder that holds it.
+
+**Confirm `pwd` is the design-lane folder.** SPEC belongs in `aiw-design`. Since ADR-004 unwired
+`guard-project-root.mjs` nothing refuses a session in the wrong folder — it simply takes the build
+lane's worktree out from under the ticket being built.
+
+### What step 0 is not
+
+Not a commit, not a push, not a stash. Branch creation is not persistence:
+`.ai/standards/git-conventions.md` grants the commit exception to `orchestrator` alone and this step
+does not touch it. Record the branch you ended on in the story's `inputs_read` front-matter so the
+decision is legible from the artifact.
 
 **Artifacts in:** `.ai/board/tickets/$ARGUMENTS/ticket.yaml`, `.ai/registry/**`
 **Artifacts out:** `.ai/board/tickets/$ARGUMENTS/01-story.md`, plus `invariants_touched` and
@@ -39,3 +99,22 @@ On FAIL or BLOCKED, record the reason, print nothing to run next, and stop.
 
 The BA does not read `src/**` and does not take a story from a ClickUp description (RULE-05,
 RULE-17). Policy is in `.ai/01-operating-model.md`.
+
+---
+
+## Last step: sign off
+
+**End your reply with the block in `## Replying` (`CLAUDE.md`).** It is not a footer on the reply —
+for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
+answered, whether it passed, where the repository is, and what runs next.
+
+The *first* line quotes the `gate` from the front-matter you just wrote. *Tiếp theo* names the next
+stage command **and its folder** — `aiw-design`, `aiw-implement` or `aiw-steward`.
+Read the two values rather than recalling them:
+
+```
+date '+%Y-%m-%d %H:%M %Z'
+git branch --show-current
+```
+
+A remembered timestamp or branch is the one part of this block that can be wrong while looking right.

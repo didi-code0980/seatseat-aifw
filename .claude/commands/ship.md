@@ -3,8 +3,8 @@ description: Build, mark the ticket DONE, and open a pull request
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **orchestrator session in the `aiw-work` folder — the design lane**
-(`.ai/standards/session-model.md`). Nothing is dispatched. Moved out of the build lane 2026-08-24:
+Run in the **orchestrator session in the `aiw-design` folder — the design lane**
+(`.ai/standards/session-model.md`). Nothing is dispatched. Moved out of the implement lane 2026-08-24:
 shipping reads gates, opens a pull request and waits on a human, and none of that needs the folder
 that writes `src/**`.
 
@@ -13,19 +13,32 @@ against a summary.
 
 Steps:
 
-0. **Acquire the branch.** `git fetch && git switch feat/$ARGUMENTS && git pull`.
+0. **Confirm the branch. Mode: stop** — the table in `.ai/standards/git-conventions.md`, *The branch
+   check every ticket command runs*. `pwd`, `git branch --show-current`, `git fetch origin --quiet`,
+   `git status --porcelain`, then `git switch feat/$ARGUMENTS && git pull --ff-only`.
 
-   If the switch fails with `fatal: 'feat/$ARGUMENTS' is already checked out at ...`, the build lane
+   If the switch fails with `fatal: 'feat/$ARGUMENTS' is already checked out at ...`, the implement lane
    has not run `/handoff` and this ticket is not ready to ship. Print the folder git named and stop —
-   do not work around it, and never `git worktree` your way past it.
+   do not work around it, and never `git worktree` your way past it. **If the branch does not exist
+   at all, stop and report**; this command never creates one.
 
    The implementation, the tests and artifacts 03–06 arrive already committed, by `/handoff`. Do not
-   expect a dirty tree full of `src/**`; if you find one, the build lane's hand-off did not complete
+   expect a dirty tree full of `src/**`; if you find one, the implement lane's hand-off did not complete
    and the QA gate you are trusting was never persisted.
 
 1. `pnpm verify` — typecheck, lint, unit, build. Any non-zero exit stops here.
 2. Confirm the full Definition of Done in `.ai/01-operating-model.md`, item by item.
-3. Set `state: DONE`, move the row to `## ARCHIVE` in `backlog.md`, append to `metrics.md`.
+3. Set `state: DONE`, move the row to `## ARCHIVE` in `backlog.md`, append to `metrics.md`, **and set
+   this feature's `Status` to `DONE` in `.ai/registry/features.md`.**
+
+   The registry line is new as of 2026-08-25 and it is the reason MD-29 exists: for two tickets that
+   column had no writer at all. `Status` means **merged**, not gated — so you are writing the value
+   the pull request you are about to open will make true, and a human merging it is what makes it so.
+
+   `features.md` is registry plane. It goes in the **second set** at step 4 and ships on the `ops/`
+   branch at step 8, never on `feat/$ARGUMENTS` — `scripts/check-allowed-paths.mjs` fails the ticket
+   branch on any path outside `allowed_paths`, and no ticket's list contains the registry. Say so in
+   that pull request's body, per step 8's CODEOWNERS clause.
 4. **Classify the working tree.** `git status --porcelain`, and sort every dirty path into two sets
    against `allowed_paths` in `ticket.yaml`:
 
@@ -33,8 +46,8 @@ Steps:
      step 0 this is normally only what step 3 just wrote: `ticket.yaml`, `backlog.md`, `metrics.md`.
    - **Everything else** — model, registry, standards, hooks, scripts, tooling, stray files.
 
-   Print both sets before touching git. A path you cannot classify goes in the second set; you do
-   not guess it into the ticket.
+   A path you cannot classify goes in the second set; you do not guess it into the ticket. **Do not
+   print the two sets** — the commit is the record. Print only the paths that made you stop.
 
    **`metrics.md` and `backlog.md` are yours and only yours.** No other command writes them — see
    *The one surface that still collides* in `.ai/standards/session-model.md`. They sit outside every
@@ -50,8 +63,24 @@ Steps:
    your last commit. A FAIL here means the ticket branch carries a file outside `allowed_paths`, and
    the fix is to move that file to the second set, never to widen the list.
 
-7. `gh pr create` against `main`, body linking `.ai/board/tickets/$ARGUMENTS/` and listing the four
-   gate timestamps.
+7. **Open the pull request against `main`**, body linking `.ai/board/tickets/$ARGUMENTS/` and listing
+   the four gate timestamps.
+
+   `gh pr create` when `gh auth status` reports a logged-in host. **When it does not, the fallback is
+   not an improvisation — it is this, and it counts as step 7 completed:** print a
+   `github.com/<owner>/<repo>/compare/main...feat/$ARGUMENTS?expand=1&title=…&body=…` URL with the
+   title and body already percent-encoded into it, so the operator lands on a filled form and presses
+   one button.
+
+   **Check `gh auth status` before composing either, and never run `gh auth login`.** It is an
+   interactive TUI: it waits on stdin for an account, a protocol, and a pasted device code, and from a
+   non-interactive session it hangs until it is killed. Authenticating is the operator's to do, once,
+   outside the loop.
+
+   This step has failed on both of the two ships that have reached it — `gh` absent at ROO-01, `gh`
+   unauthenticated at DEV-01 — and each time the outcome was a ticket that was DONE with an empty PR
+   column and a human left to guess the next move. MD-17. A branch name is not a request; it is
+   homework.
 
 8. **If the second set is non-empty, it gets its own branch and its own pull request.** `git switch
    -c ops/<slug> main`, commit it there in whatever grouping you judge coherent, push, `gh pr
@@ -67,21 +96,25 @@ Steps:
 9. If `tracker.sync_enabled` is true, push `gate_state` and `pr_url`. If it is false, skip silently —
    that is the expected state for early tickets.
 
-10. **Print the next action and its session** — do not invoke it:
+10. **Sign off — and the pull request URL goes above the block.** The next command and its folder are
+    the *Tiếp theo* line of the block in `CLAUDE.md`; the PR link is the one thing a ship produces that
+    the operator cannot get anywhere else, so it goes in the prose above it. Everything else — the
+    gates you checked, the files you classified, the commands you ran — stays out. `git show --stat`
+    and the ticket folder hold all of it.
 
-```
-MEM-01 is DONE, PR #12 opened. Merging is yours.
-Once it is merged, run /implement SEA-01 in the aiw folder — SEA-01's design handoff is already
-pushed and its branch is free.
-```
+    Name the folder, not just the command. Three worktrees mean a correct command in the wrong folder
+    writes to the wrong branch, and since ADR-004 nothing refuses it.
 
-Name the folder, not just the command. Three worktrees mean a correct command in the wrong folder
-writes to the wrong branch, and since ADR-004 nothing refuses it.
+11. **Park the lane on the latest `main`** — same three commands as `/handoff` step 6, same reasons:
 
-11. **Release `feat/$ARGUMENTS` before you finish.** `git switch --detach` if step 8 has not already
-    moved you off it. The pull request is open and the branch now belongs to whoever merges it; this
-    folder's next job is `/spec` on a different ticket, and it cannot cut a branch while holding this
-    one. Same mechanism as `/handoff` step 6, same reason.
+    ```
+    git fetch origin --quiet
+    git switch --detach origin/main
+    git fetch origin main:main --quiet
+    ```
+
+    The pull request is open and the branch belongs to whoever merges it. This folder's next job is
+    `/spec` on a different ticket, and it cannot cut one while holding this.
 
 **The output is an open pull request. Never a merge.** RULE-09 makes merging permanently human, and
 `gh pr merge` is denied in settings.

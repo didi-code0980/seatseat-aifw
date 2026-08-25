@@ -1,6 +1,6 @@
 ---
-doc_version: 4
-last_updated: 2026-08-24
+doc_version: 5
+last_updated: 2026-08-25
 governed_by: [RULE-11, RULE-12, RULE-13, RULE-14, RULE-15, RULE-16]
 ---
 
@@ -22,6 +22,15 @@ lifecycle that deliver it. Nothing here restates a rule.
 | `qa` | ephemeral | after **each** verdict |
 | `product` | ephemeral | task done |
 | `devops` | ephemeral | task done |
+
+**One orchestrator per lane folder, not one per run.** The table reads `persistent` and it is written
+in the singular, from before there were three worktrees. Since 2026-08-24 the lead role runs in two
+folders — `aiw-design` for `/next-ticket`, `/handoff` after DESIGN, and `/ship`; `aiw-implement` for `/handoff`
+after QA. It has to be two sessions rather than one, because a folder is decided by where a session is
+launched and a session cannot change folder, while the files each `/handoff` commits live in that
+folder's working tree. The implement lane's orchestrator has exactly one job and is idle the rest of the
+time; that is cheaper than the alternative, which is one session reaching into another worktree with
+`git -C` — precisely what `guard-project-root.mjs` used to refuse before ADR-004 unwired it.
 
 **Roles that get asked stay alive; roles that pass judgement die after speaking.**
 
@@ -106,35 +115,58 @@ folder's `.git/HEAD` to decide which ticket an agent is judged against. Open the
 
 ### The three lanes
 
-Lanes are **pipeline stages, not roles.** An earlier draft assigned roles to folders — `ba` always in
-one, `developer` always in another — and it does not survive contact with parallelism: `tech-lead-design`
-would have to hold two branches at once the moment two tickets are live, and git refuses to check out
-one branch in two worktrees.
+**Folders are named for the stage, and the roles follow from it.** Renamed 2026-08-24 on the
+operator's instruction: `aiw` → `aiw-implement`, `aiw-work` → `aiw-design`, `aiw-steward` unchanged.
+The old names said where a session happened to start; the new ones say what happens there.
 
-| Folder | Lane | Stages | Branch it holds |
-|---|---|---|---|
-| `aiw` | **build** | `/implement` `/review` `/qa` `/handoff` | the ticket being built |
-| `aiw-work` | **design** | `/spec` `/next-ticket` `/design` `/handoff` `/ship` | the ticket being specified, then the ticket being shipped |
-| `aiw-steward` | **model** | `/thuki` `/status` `/docs-audit` | always `ops/*`, never a ticket |
+| Folder | Lane | Roles | Stages | Branch it holds |
+|---|---|---|---|---|
+| `aiw-design` | **design** | `ba`, `tech-lead-design`, `orchestrator` | `/spec` `/next-ticket` `/design` `/handoff` `/ship` | the ticket being specified, then the ticket being shipped |
+| `aiw-implement` | **implement** | `developer`, `tech-lead-review`, `qa` | `/implement` `/review` `/qa` `/handoff` | the ticket being implemented |
+| `aiw-steward` | **model** | `steward` | `/thuki` `/status` `/docs-audit` | always `ops/*`, never a ticket |
 
-**`/ship` runs in the design lane, not the build lane.** Changed 2026-08-24 on the operator's
+**`orchestrator` is in one row now, and the implement lane needs none.** Changed 2026-08-25 on the
+operator's instruction: `/handoff` is run by the role that produced the lane's last gate —
+`tech-lead-design` in `aiw-design`, `qa` in `aiw-implement`. Every command in the implement lane
+therefore has an owner already sitting in that folder, and the second `orchestrator` session the
+previous arrangement required is gone.
+
+**The reason that arrangement gave was false, which is why it is recorded rather than replaced.** It
+read: `orchestrator` *is the only role permitted to commit, so each lane needs one*. The permission
+half was a rule and has been amended. The capability half — repeated in
+`.ai/standards/git-conventions.md` and twice in `.claude/commands/handoff.md`, that `ba` and
+`tech-lead-design` hold no `Bash` tool — was never true of any agent definition in this repository.
+MD-27.
+
+A session's folder is still fixed at launch, so the role running `/handoff` is the one whose working
+tree holds the files being committed. That constraint is unchanged and is what makes the pairing above
+the only workable one.
+
+**Naming the roles does not make lanes role-shaped, and the distinction still earns its keep.** An
+early draft assigned roles to folders as the *organising principle* — `ba` always here, `developer`
+always there — and it does not survive parallelism: `tech-lead-design` would have to hold two branches
+the moment two tickets are live, and git refuses one branch in two worktrees. What decides a folder is
+still the stage. The roles in the table above are a consequence of which stages live where, and they
+are listed because a reader opening a folder wants to know who works there.
+
+**`/ship` runs in the design lane, not the implement lane.** Changed 2026-08-24 on the operator's
 instruction. The reason is throughput: shipping is the orchestrator reading gates, opening a pull
 request and waiting on a human, and none of it needs the folder that writes `src/**`. Moving it frees
-the build lane the moment QA passes.
+the implement lane the moment QA passes.
 
 **The branch a lane holds is not a lane's property. It travels.** One `feat/<TICKET-ID>` moves
-`aiw-work -> aiw -> aiw-work`, carried by `/handoff` at each boundary. This replaces the earlier
+`aiw-design -> aiw-implement -> aiw-design`, carried by `/handoff` at each boundary. This replaces the earlier
 arrangement in which each lane cut its own branch and the ticket's history was stitched together at
 ship time.
 
 ```mermaid
 flowchart LR
-  subgraph W["aiw-work — design lane"]
+  subgraph W["aiw-design — design lane"]
     direction TB
     S["/spec"] --> D0{"DoR"} --> D["/design<br/>fills allowed_paths"]
     SH["/ship<br/>PR opened"]
   end
-  subgraph A["aiw — build lane"]
+  subgraph A["aiw-implement — implement lane"]
     direction TB
     I["/implement"] --> R["/review"] --> Q["/qa"]
   end
@@ -158,21 +190,21 @@ That single fact is what makes two features safe in parallel, and it is worth st
 `allowed_paths` to be pairwise disjoint, and `src/lib/data/types.ts` is in every feature ticket's
 list — ROO-01, DEV-01 and MEM-01 all carry it, because every feature adds DTOs to one shared file.
 
-The stagger sidesteps it rather than satisfying it. Only the build lane writes `src/**`, and only one
-ticket is ever in the build lane, so the overlapping `allowed_paths` never produce two concurrent
+The stagger sidesteps it rather than satisfying it. Only the implement lane writes `src/**`, and only one
+ticket is ever in the implement lane, so the overlapping `allowed_paths` never produce two concurrent
 writers. Two tickets whose lists both name `types.ts` are safe **so long as they are in different
 lanes**, and unsafe the moment both reach IN_PROGRESS.
 
 ### The rule that keeps it honest
 
-**A feature may enter the build lane only when the previous one has merged.** Not shipped — merged.
-The design lane may run as far ahead as the board allows; the build lane is strictly one at a time.
+**A feature may enter the implement lane only when the previous one has merged.** Not shipped — merged.
+The design lane may run as far ahead as the board allows; the implement lane is strictly one at a time.
 
 **Where it holds while it waits: at `IN_PROGRESS`, in the design lane.** An earlier wording said
 `READY` and was wrong — the design lane's last stage is DESIGN, whose `next_state` is `IN_PROGRESS`,
 so a ticket that has finished this lane has already passed `READY`. Corrected 2026-08-24 against
 SEA-01, which is the first ticket to actually occupy this position: both gates passed, nothing to do
-here, and the build lane full.
+here, and the implement lane full.
 
 **Handing the lane on is `/handoff`, and it is the orchestrator's.** MD-15 recorded that the model
 mandated this position and gave nobody a way to leave it; the protocol below is the answer, adopted
@@ -181,14 +213,18 @@ stronger claim than a parked one and a cheaper state to resume from.
 
 ### The handoff protocol
 
-Three commits per ticket, at three boundaries, all by `orchestrator` running `/handoff`. Full steps
-in `.claude/commands/handoff.md`; what belongs here is why it has the shape it does.
+Three commits per ticket, at three boundaries. Full steps in `.claude/commands/handoff.md`; what
+belongs here is why it has the shape it does.
 
-| # | Where | After | What moves |
-|---|---|---|---|
-| 1 | `aiw-work` | `design` gate passes | `feat/<ID>` pushed carrying `01-story.md` and `02-design.md`; branch released |
-| 2 | `aiw` | `qa` gate passes | the same branch pushed carrying `src/**`, `tests/**` and artifacts 03–06; branch released |
-| 3 | `aiw-work` | `/ship` | `state: DONE`, board files, the pull request |
+| # | Where | Run by | After | What moves |
+|---|---|---|---|---|
+| 1 | `aiw-design` | `tech-lead-design` | `design` gate passes | `feat/<ID>` pushed carrying `01-story.md` and `02-design.md`; branch released |
+| 2 | `aiw-implement` | `qa` | `qa` gate passes | the same branch pushed carrying `src/**`, `tests/**` and artifacts 03–06; branch released |
+| 3 | `aiw-design` | `orchestrator` | Definition of Done confirmed | `state: DONE`, board files, the pull request |
+
+**Each hand-off is run by the role that closed the gate it hands on.** That is the whole of the
+pairing rule, and it is why the two are not interchangeable: a role can only commit the working tree
+of the folder its session was launched in.
 
 The receiving lane opens with `git fetch && git switch feat/<ID> && git pull`.
 
@@ -196,7 +232,7 @@ The receiving lane opens with `git fetch && git switch feat/<ID> && git pull`.
 across worktrees, and the failure is not a warning:
 
 ```
-fatal: 'feat/SEA-01' is already checked out at '/Users/mpa/Desktop/aiw-work'
+fatal: 'feat/SEA-01' is already checked out at '/Users/mpa/Desktop/aiw-design'
 ```
 
 Verified by attempt, 2026-08-24. So the last step of every `/handoff` is `git switch --detach` — the
@@ -211,13 +247,13 @@ artifacts a lane produced are the *input* the next lane needs, and an input that
 dirty file in a folder the next lane cannot open is not an input. So the assertion is now made three
 times about three smaller things, which is a weaker claim per commit and a truer one.
 
-**What it costs.** The build lane no longer sees the design lane's uncommitted tree, so a defect in
+**What it costs.** The implement lane no longer sees the design lane's uncommitted tree, so a defect in
 `02-design.md` is found after it is in history rather than before. That is the trade, and it is
 acceptable because a gated artifact has already been judged — `gate: PASS` in its front-matter is the
 assertion, and the commit only records it.
 
 **The one thing that must not be inferred from this.** A pushed branch is still not a merged branch.
-The rule above is unchanged: a feature enters the build lane only when the previous one has
+The rule above is unchanged: a feature enters the implement lane only when the previous one has
 **merged**. `/handoff` moves a ticket between lanes; it never lets a second ticket into the build
 lane.
 
@@ -232,7 +268,7 @@ either file and puts them in its second set if a stage left them dirty. Since on
 shipping, only one branch ever writes them, and the design lane's transitions are recorded when the
 ticket ships rather than when it moves.
 
-*Revised 2026-08-24.* The previous rule was **write them from the build lane only**, which was correct
+*Revised 2026-08-24.* The previous rule was **write them from the implement lane only**, which was correct
 until `/ship` moved to the design lane and took the board writes with it. Naming the command instead
 of the folder is what survives the next time a stage changes lanes.
 
@@ -240,10 +276,27 @@ of the folder is what survives the next time a stage changes lanes.
 
 `git worktree add -b <branch> ../<folder> origin/main`, then two things the command does not do:
 
-- **`node_modules`.** `pnpm install` fails on this machine — Prisma's `preinstall` rejects Node
-  v23.6.0, which is the only Node present (MD-12). Symlink the first worktree's:
-  `ln -s /Users/mpa/Desktop/aiw/node_modules <folder>/node_modules`. Valid only while the branches
-  share a lockfile, and nothing checks that they do.
+- **`node_modules`. Install it; do not symlink it.**
+
+  ```
+  pnpm install --frozen-lockfile --ignore-scripts
+  ```
+
+  `--ignore-scripts` is what clears MD-12 — Prisma's `preinstall` rejects Node v23.6.0, the only Node
+  on this machine. It is safe **only while nothing under `src/**` imports `@prisma/client`**, which is
+  true today by decision and stated at `src/lib/data/prisma/client.ts`, and stops being true the moment
+  the schema is approved and the client is generated.
+
+  **The symlink this used to prescribe is retired.** `ln -s .../aiw-implement/node_modules <folder>/node_modules`
+  worked for three worktrees' worth of typechecking and lint, and Next 16's Turbopack rejects it
+  outright — `Symlink [project]/node_modules is invalid, it points out of the filesystem root`, a
+  `TurbopackInternalError` panic rather than a warning. It stayed invisible because `pnpm typecheck`,
+  `pnpm lint` and `pnpm test` all pass through a symlink; only a command that needs a bundler does not.
+  `/ship` moved into this lane on 2026-08-24 and its two execution steps both died on it. MD-19.
+
+  Do **not** reach for `turbopack.root` in `next.config.ts`: that is a tracked file and a production
+  build setting, and bending prod config around a local worktree layout is the wrong trade. The durable
+  fix is still MD-12's — a Node LTS and a version manager, then no flag is needed.
 - **`.claude/settings.local.json`.** It is gitignored, so a new worktree starts without the granted
   permissions and re-prompts for all of them. Copy it. `settings.json` needs no copying — it is
   tracked, so every worktree already has the same bytes, and the deny list and hooks come with it.
@@ -258,6 +311,31 @@ the wrong branch.
 The cheap substitute is one line at the start of a session: confirm `pwd` and
 `git branch --show-current` before giving the first instruction. It catches the same error the guard
 caught, at the only moment it is still free to fix.
+
+## Every reply ends with a sign-off
+
+Adopted 2026-08-24 on the operator's instruction. The block itself is in `CLAUDE.md`, which is the one
+file every session loads, so it is defined once and reproduced nowhere.
+
+**What it is for.** Three worktrees, seven ticket commands and nine agents mean the operator's real
+question after any reply is the same four things: who answered, whether it passed, where the repository
+is now, and what to type next. Before this, each of the four was somewhere different — the gate in an
+artifact's front-matter, the branch nowhere at all, the next command sometimes printed and sometimes
+not. Putting them in a fixed place at a fixed time is worth more than any one of them.
+
+**Two failure modes it must not have**, and both are likelier than they look:
+
+- **A fabricated timestamp or branch.** Both are cheap to read — `date` and
+  `git branch --show-current` — and both are exactly the kind of value a language model will supply
+  from context rather than from the machine. A sign-off is a claim about the state of a repository. An
+  invented one is worse than none, because it looks like it was measured. An agent holding no `Bash`
+  tool writes `unavailable` and says why; `product` is the case that exists today.
+- **The block leaking into an artifact.** It is conversation, addressed to one reader. Artifacts carry
+  front-matter with `gate`, `produced_at` and `inputs_read`, and that is the record. A sign-off pasted
+  into `01-story.md` is noise in a document that a reviewer, a QA session and a human all read later.
+
+**It does not replace the gate.** The gate is in the artifact's front-matter and the sign-off quotes
+it. If the two ever disagree, the artifact is right — a sign-off is a summary and summaries drift.
 
 ## Phase 2 — Agent Teams
 

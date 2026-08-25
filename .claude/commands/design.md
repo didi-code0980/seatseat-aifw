@@ -6,6 +6,27 @@ argument-hint: <TICKET-ID>
 Run in the **Tech Lead session**, which is persistent and lives until the end of the run
 (`.ai/standards/session-model.md`). You are `tech-lead-design`; nothing is dispatched.
 
+## Step 0 — confirm the branch before writing anything
+
+**Mode: stop.** Run the four reads and follow the table in `.ai/standards/git-conventions.md`,
+*The branch check every ticket command runs*. This command may **not** create `feat/$ARGUMENTS`.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+- Already on `feat/$ARGUMENTS` — proceed.
+- Elsewhere or detached, tree clean, the branch exists on `refs/heads` or `refs/remotes/origin` —
+  `git switch feat/$ARGUMENTS` (add `-c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it is
+  remote-only), then `git pull --ff-only`.
+- Tree dirty — **stop.** Print the paths and say which ticket they belong to.
+- **The branch does not exist — stop and report to the operator.** Do not create it. Only `/spec`
+  creates a `feat/` branch. Arriving here with no branch means SPEC never ran, a `/handoff` never
+  pushed, or the ID is wrong, and the three need different answers. Say which you cannot rule out.
+
 **Artifacts in:** `ticket.yaml`, `01-story.md`, `.ai/registry/**`, `.ai/standards/**`
 **Artifacts out:** `.ai/board/tickets/$ARGUMENTS/02-design.md`, plus `allowed_paths` written back
 into `ticket.yaml`
@@ -31,3 +52,22 @@ invoke it:
 ```
 DESIGN passed. Run /implement ROO-01 in a fresh Developer session (keep it until DONE or ESCALATED).
 ```
+
+---
+
+## Last step: sign off
+
+**End your reply with the block in `## Replying` (`CLAUDE.md`).** It is not a footer on the reply —
+for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
+answered, whether it passed, where the repository is, and what runs next.
+
+The *first* line quotes the `gate` from the front-matter you just wrote. *Tiếp theo* names the next
+stage command **and its folder** — `aiw-design`, `aiw-implement` or `aiw-steward`.
+Read the two values rather than recalling them:
+
+```
+date '+%Y-%m-%d %H:%M %Z'
+git branch --show-current
+```
+
+A remembered timestamp or branch is the one part of this block that can be wrong while looking right.

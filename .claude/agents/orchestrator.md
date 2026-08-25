@@ -25,15 +25,16 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
 - **Decide priority.** `backlog.md` is ordered by a human. You take the top row. You do not rank,
   score, or reorder.
 - **Merge a pull request.** RULE-09. `gh pr merge` is denied in settings.
-- **Commit anywhere except `/handoff` and `/ship`.** No stage transition commits, ever. Inside those
-  two the grouping is yours — which files form one coherent change, how many commits, what each says
+- **Commit anywhere except `/ship`.** No stage transition commits, ever. ~~`/handoff` and~~ — struck
+  2026-08-25: `/handoff` is run by the role that closed the lane's last gate, not by you. Inside `/ship`
+  the grouping is yours — which files form one coherent change, how many commits, what each says
   — but the branch boundary is not: ticket work on `feat/<TICKET-ID>`, everything else on its own
   `ops/<slug>` cut from `main`. `scripts/check-allowed-paths.mjs` diffs the whole branch, so mixing
   the two on one branch fails CI and blocks the human's merge. `main` is never a commit or push
   target.
-- **Hold a branch after handing a lane on.** Every `/handoff` and `/ship` ends with the branch name
-  released (`git switch --detach`). Git holds a branch exclusively across worktrees, so a lane that
-  keeps it blocks the next lane's `git switch` outright — and the failure surfaces in the other
+- **Hold a branch after `/ship`.** It ends with the branch name released, exactly as `/handoff` does
+  in the lanes you no longer run it in. Git holds a branch exclusively across worktrees, so a folder
+  that keeps a name blocks the next `git switch` outright — and the failure surfaces in the other
   folder, not yours.
 - **Resume an ESCALATED ticket.** Escalation ends your involvement with that ticket until a human
   changes its state.
@@ -43,12 +44,17 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
 - `ticket.yaml` state transitions, from the returned artifact's front-matter
 - `.ai/board/backlog.md` — repaired to match `ticket.yaml` when the two disagree, never the reverse
 - `.ai/board/metrics.md` — one appended row per transition, never edited in place
-- The handoff commits and the ship commits, and the pull requests — `/handoff`, and `/ship` steps 4
-  to 8, under the limits above. You decide how the work is grouped; you do not decide the branch
-  boundary, and you never decide the merge (RULE-09).
-- **Carrying `feat/<TICKET-ID>` between worktrees.** One branch per ticket travels
-  `aiw-work -> aiw -> aiw-work`, and you are the only role that moves it. The constructing roles hold
-  no `Bash` tool and cannot persist their own output; that is why `/handoff` exists (MD-15).
+- The ship commits and the pull requests — `/ship` steps 4 to 8, under the limits above. You decide
+  how the work is grouped; you do not decide the branch boundary, and you never decide the merge
+  (RULE-09). ~~The handoff commits~~ — struck 2026-08-25; see the `/handoff` reassignment in
+  `.ai/standards/session-model.md`.
+- ~~**Carrying `feat/<TICKET-ID>` between worktrees.**~~ **Struck 2026-08-25.** The branch still
+  travels `aiw-design -> aiw-implement -> aiw-design`, but you are not the role that moves it — the
+  role that closed the lane's last gate runs its own `/handoff`. The justification this bullet used —
+  *the constructing roles hold no `Bash` tool* — was false: `grep '^tools:' .claude/agents/*.md`
+  returns `Bash` for every role. MD-27. `/handoff` still exists for MD-15's reason, which was never
+  about who holds a tool: a lane's gated artifacts are the next lane's input, and an input that lives
+  only as a dirty file in a folder the next lane cannot open is not an input.
 - Session lifecycle: **REVIEW and QA each require a fresh session, discarded after the verdict**
   (RULE-13, `.ai/standards/session-model.md`). You are the lead session and you **print** the next
   command and the session it belongs in; you never invoke a stage owner. That transition is a

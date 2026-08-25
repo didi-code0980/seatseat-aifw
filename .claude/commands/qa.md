@@ -7,6 +7,27 @@ Run in a **fresh session that is discarded after the verdict** — files only, n
 (RULE-13). You are `qa`; nothing is dispatched. A re-run after rework opens another new session, for
 the same reason the reviewer does (`.ai/standards/session-model.md`).
 
+## Step 0 — confirm the branch before writing anything
+
+**Mode: stop.** Run the four reads and follow the table in `.ai/standards/git-conventions.md`,
+*The branch check every ticket command runs*. This command may **not** create `feat/$ARGUMENTS`.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+- Already on `feat/$ARGUMENTS` — proceed.
+- Elsewhere or detached, tree clean, the branch exists on `refs/heads` or `refs/remotes/origin` —
+  `git switch feat/$ARGUMENTS` (add `-c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it is
+  remote-only), then `git pull --ff-only`.
+- Tree dirty — **stop.** Print the paths and say which ticket they belong to.
+- **The branch does not exist — stop and report to the operator.** Do not create it. Only `/spec`
+  creates a `feat/` branch. Arriving here with no branch means SPEC never ran, a `/handoff` never
+  pushed, or the ID is wrong, and the three need different answers. Say which you cannot rule out.
+
 **Artifacts in:** `01-story.md` and **section 6 of `02-design.md` only**. Do not pass the whole
 ticket folder — a QA agent that can see `04-review.md` is testing the reviewer's conclusions instead
 of the story.
@@ -26,10 +47,47 @@ their verdicts exist; `chat-guard.mjs` blocks that write (RULE-12).
 Behaviour that is wrong routes to `developer` and increments `rework_count`. An ambiguous or
 untestable AC routes to `ba` and does not (RULE-08). An invariant violation escalates (RULE-07).
 
-On PASS, set the ticket to `DONE` and **print the next command and its session** — do not invoke it:
+## You do not touch `ticket.yaml`, and you never mark a ticket DONE
+
+**Write the verdict into `06-test-report.md`'s front-matter and stop.** The QA row of the stage
+ownership table in `.ai/01-operating-model.md` writes `tests/**`, `05-` and `06-` — not `ticket.yaml`.
+`DONE` belongs to `orchestrator` at `/ship`, after the full Definition of Done and the pull request. A
+QA session that marked a ticket DONE would skip both, and the board would claim a ship that never
+happened.
+
+Same reason as the reviewer's: RULE-13 discards you after each verdict so the next pass starts cold,
+and a verdict that advances its own board is deciding and executing in one act.
+
+## Your reply is four lines
+
+Per `## Replying` in `CLAUDE.md`. Do not tabulate the ACs or restate the test counts — `05-test-plan.md`
+and `06-test-report.md` hold them, and they are what the gate is read from. On PASS, say so. On FAIL,
+give the failing criterion and where it routes.
+
+On PASS the next command and its session go in the sign-off's *Tiếp theo* line, not in a block of
+their own. For reference, it reads:
 
 ```
 QA passed. Run /ship ROO-01 in the orchestrator session.
 ```
 
 Then end this session. On FAIL, print the routed command instead and still end this session.
+
+---
+
+## Last step: sign off
+
+**End your reply with the block in `## Replying` (`CLAUDE.md`).** It is not a footer on the reply —
+for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
+answered, whether it passed, where the repository is, and what runs next.
+
+The *first* line quotes the `gate` from the front-matter you just wrote. *Tiếp theo* names the next
+stage command **and its folder** — `aiw-design`, `aiw-implement` or `aiw-steward`.
+Read the two values rather than recalling them:
+
+```
+date '+%Y-%m-%d %H:%M %Z'
+git branch --show-current
+```
+
+A remembered timestamp or branch is the one part of this block that can be wrong while looking right.
