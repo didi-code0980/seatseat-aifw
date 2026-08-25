@@ -43,13 +43,32 @@ id: AUT-01
 title: "Sign in and sign out with Supabase Auth"
 feature_ids: [AUT-01]
 group: AUT
-state: BACKLOG
+state: SPEC          # BACKLOG -> SPEC, 2026-08-25 by `ba`. /spec runs directly out of BACKLOG.
+                     # LEFT AT SPEC DELIBERATELY: the gate below is BLOCKED, and routing a blocked
+                     # stage to ESCALATED is the orchestrator's, exactly as promoting a passed one
+                     # to READY is. An agent that moves its own output past the gate that judges it
+                     # has removed the gate.
 owner: ""
 branch: ""
-size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md's scope and
+                      # its Out-of-scope section, not from an implementation: a sign-in action and a
+                      # sign-out action, session cookie handling across requests, a guard in front of
+                      # the protected routes, and a form wired to a page that already exists. M rather
+                      # than S because the guard is not one file — it sits in front of every protected
+                      # route, and Q-2 has not yet enumerated them. THE ESTIMATE SURVIVES ALL THREE
+                      # BRANCHES OF Q-1: the answer moves `schema_delta` and scheduling, not the size
+                      # of the story. MEM-01 and SEA-01 both carried M for comparable single-surface
+                      # scope. `size` stays the Tech Lead's at DESIGN, from the enumerated
+                      # allowed_paths.
 size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
 depends_on: [SYS-01]
 invariants_touched: [INV-08]
+                      # CONFIRMED at SPEC, not changed. 01-story.md reasons through all twelve issued
+                      # ledger IDs: INV-08 engaged, the other eleven reasoned and found not engaged,
+                      # and the one indirect chain (sign-in -> resolve a Member -> that Member's
+                      # occupancy and devices) walked and found not to reach, because every branch of
+                      # Q-1 reads at most one Member row and writes none. SEA-01 extended its
+                      # transcribed list and MEM-01 narrowed its own; this one holds.
 allowed_paths: []
 schema_delta: none
 requires_adr: false   # ADR-006 is accepted and merged; this ticket implements it rather than
@@ -64,6 +83,53 @@ chat_budget:
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
   spec:   { passed: false, at: null }
+  # BLOCKED, 2026-08-25T02:40:14Z, by `ba`. Not a FAIL: nothing in 01-story.md is wrong and no gate
+  # item is unmet — twelve criteria in Given/When/Then each with an ID, `invariants_touched`
+  # populated, Out-of-scope at fifteen items, `size_estimate` set to M. Two of the twelve, AC-11 and
+  # AC-12, are RESERVED PLACEHOLDERS and cannot be written, which is what makes the stage blocked
+  # rather than passed. State left at SPEC; routing to ESCALATED is the orchestrator's.
+  #
+  # THE BLOCK IS Q-1, AND IT IS THE ONE THIS FILE WAS SEEDED TO PUT IN FRONT OF A HUMAN — the 🟡 on
+  # the feature row: does this ticket resolve a `Member` for the signed-in identity, and by what key.
+  # 01-story.md states three branches with their prices: (a) resolve nothing, session presence alone
+  # admits; (b) resolve by email as a declared temporary convention, the only branch testable today
+  # under DATA_SOURCE=mock; (c) resolve by `Member.authUserId`, which makes `schema_delta` not-none
+  # and puts RULE-09's human signature mid-loop for a column nothing can populate yet. The story
+  # recommends (a) conditionally, or (b), and ADOPTS NEITHER.
+  #
+  # WHY IT BLOCKS RATHER THAN DEFERS, since the ticket is sign-in and sign-out only and role
+  # resolution could plausibly have been scoped out: route protection is on this ticket's feature row,
+  # and route protection is the act of deciding who is admitted. `session presence alone admits` is a
+  # branch, not a neutral default. Its consequence, stated in the story's Permissions section, is that
+  # any identity the provider authenticates reaches every surface of an application that enforces no
+  # rank anywhere — and INV-08, which is supposed to keep that set small and deliberately issued, is
+  # held today by a flag in `localStorage` (MD-14). A BA may not accept that price on the operator's
+  # behalf while writing the criterion that admits the request.
+  #
+  # AC-10 IS LIVE AND HOLDS UNDER EVERY BRANCH: signing in creates no Member and changes none.
+  # `create the Member on first sign-in` is the convenient answer to Q-1 and it is self-signup with
+  # the form removed. That criterion is INV-08, not a design preference, and no answer to Q-1 may
+  # overturn it.
+  #
+  # Three further questions are open and NONE blocks: Q-2, the enumerated list of protected routes,
+  # which DESIGN owns and which gates /qa because RULE-05 makes design section 6 QA's only channel;
+  # Q-3, whether AC-8 needs a middleware and therefore whether allowed_paths reaches a file SYS-01
+  # authored; Q-4, what a signed-in person sees at the sign-in surface, deliberately left unasserted
+  # rather than invented.
+  #
+  # H-1 and H-2 are human dependencies and neither is a defect. SYS-01 is IN_PROGRESS on
+  # origin/feat/SYS-01 and unmerged, so on feat/AUT-01 — cut from origin/main — SYS-01's own
+  # ticket.yaml still reads BACKLOG with four false gates and holds no artifacts. That is the unmerged
+  # lane, not board drift. And no Supabase project exists: six of the ten live criteria need an
+  # identity a provider will accept or reject, which is a human step outside `depends_on`.
+  #
+  # `schema_delta` and `requires_adr` are untouched at `none` and `false`. Both are conditional on
+  # Q-1 branch (c) and neither is decided here.
+  #
+  # No row was written to .ai/board/metrics.md. /spec still instructs it, and
+  # .ai/standards/session-model.md makes /ship the single writer of metrics.md and backlog.md — SYS-01
+  # and SEA-01 both read it that way at SPEC and appended nothing. The gate record is here, where
+  # /ship reads it.
   design: { passed: false, at: null }
   review: { passed: false, at: null }
   qa:     { passed: false, at: null }
