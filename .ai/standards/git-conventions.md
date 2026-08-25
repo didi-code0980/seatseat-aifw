@@ -1,6 +1,6 @@
 ---
-doc_version: 2
-last_updated: 2026-08-24
+doc_version: 3
+last_updated: 2026-08-25
 governed_by: [RULE-03, RULE-09, RULE-10]
 ---
 
@@ -88,7 +88,8 @@ Common to both modes, in every command:
 
 ## Commits
 
-**Agents do not commit — with one exception: the `orchestrator`, inside `/handoff` and `/ship`.**
+**Agents do not commit — with one exception: `/handoff` and `/ship`, and the exception is now keyed
+to the command rather than to a single role.**
 Every other stage leaves the working tree dirty. That is deliberate: a commit is an assertion that a
 change is coherent, and that assertion is one of the things being validated.
 
@@ -99,9 +100,26 @@ human to. MD-07.
 
 **`/handoff` was added for the same reason one lane further up.** Under the three-worktree arrangement
 a ticket crosses folders twice, and the artifacts one lane produced are the input the next lane reads.
-An input that exists only as a dirty file in a folder the next lane cannot open is not an input, and
-the constructing roles that produce it — `ba`, `tech-lead-design` — hold no `Bash` tool and cannot
-persist it themselves. MD-15. Three commit points now, one per boundary:
+An input that exists only as a dirty file in a folder the next lane cannot open is not an input.
+MD-15. Three commit points, one per boundary:
+
+| Command | Lane | Run by | Commits |
+|---|---|---|---|
+| `/handoff` | `aiw-design`, after DESIGN | `tech-lead-design` | the story and the design |
+| `/handoff` | `aiw-implement`, after QA | `qa` | `src/**`, `tests/**`, artifacts 03–06 |
+| `/ship` | `aiw-design` | `orchestrator` | `state: DONE`, the board files, then the pull request |
+
+**Changed 2026-08-25 on the operator's instruction: the lane that finished the work persists it.**
+Both hand-offs previously ran as separate `orchestrator` sessions. The reason given here for that —
+that the constructing roles *"hold no `Bash` tool and cannot persist it themselves"* — **was false.**
+Every agent definition under `.claude/agents/` grants `Bash`, `ba` included, and had for as long as
+the claim stood. The sentence is struck rather than quietly deleted, because it was load-bearing:
+three documents cited it, and a rule justified by a capability limit that does not exist is a rule
+resting on nothing. MD-27.
+
+The implement lane therefore has no `orchestrator` session at all. `/implement`, `/review`, `/qa` and
+`/handoff` each have an owner there; `orchestrator` remains in `aiw-design` for `/next-ticket` and
+`/ship`.
 
 | Command | Lane | Commits |
 |---|---|---|

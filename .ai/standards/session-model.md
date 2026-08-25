@@ -1,6 +1,6 @@
 ---
-doc_version: 4
-last_updated: 2026-08-24
+doc_version: 5
+last_updated: 2026-08-25
 governed_by: [RULE-11, RULE-12, RULE-13, RULE-14, RULE-15, RULE-16]
 ---
 
@@ -122,12 +122,25 @@ The old names said where a session happened to start; the new ones say what happ
 | Folder | Lane | Roles | Stages | Branch it holds |
 |---|---|---|---|---|
 | `aiw-design` | **design** | `ba`, `tech-lead-design`, `orchestrator` | `/spec` `/next-ticket` `/design` `/handoff` `/ship` | the ticket being specified, then the ticket being shipped |
-| `aiw-implement` | **implement** | `developer`, `tech-lead-review`, `qa`, `orchestrator` | `/implement` `/review` `/qa` `/handoff` | the ticket being implemented |
+| `aiw-implement` | **implement** | `developer`, `tech-lead-review`, `qa` | `/implement` `/review` `/qa` `/handoff` | the ticket being implemented |
 | `aiw-steward` | **model** | `steward` | `/thuki` `/status` `/docs-audit` | always `ops/*`, never a ticket |
 
-**`orchestrator` is in two rows, and that is not an error.** It is the only role permitted to commit
-(`.ai/standards/git-conventions.md`), so each lane needs one to run its `/handoff`, and a session's
-folder is fixed at launch. Two sessions, one per folder — see *Lifetimes* above.
+**`orchestrator` is in one row now, and the implement lane needs none.** Changed 2026-08-25 on the
+operator's instruction: `/handoff` is run by the role that produced the lane's last gate —
+`tech-lead-design` in `aiw-design`, `qa` in `aiw-implement`. Every command in the implement lane
+therefore has an owner already sitting in that folder, and the second `orchestrator` session the
+previous arrangement required is gone.
+
+**The reason that arrangement gave was false, which is why it is recorded rather than replaced.** It
+read: `orchestrator` *is the only role permitted to commit, so each lane needs one*. The permission
+half was a rule and has been amended. The capability half — repeated in
+`.ai/standards/git-conventions.md` and twice in `.claude/commands/handoff.md`, that `ba` and
+`tech-lead-design` hold no `Bash` tool — was never true of any agent definition in this repository.
+MD-27.
+
+A session's folder is still fixed at launch, so the role running `/handoff` is the one whose working
+tree holds the files being committed. That constraint is unchanged and is what makes the pairing above
+the only workable one.
 
 **Naming the roles does not make lanes role-shaped, and the distinction still earns its keep.** An
 early draft assigned roles to folders as the *organising principle* — `ba` always here, `developer`
@@ -200,14 +213,18 @@ stronger claim than a parked one and a cheaper state to resume from.
 
 ### The handoff protocol
 
-Three commits per ticket, at three boundaries, all by `orchestrator` running `/handoff`. Full steps
-in `.claude/commands/handoff.md`; what belongs here is why it has the shape it does.
+Three commits per ticket, at three boundaries. Full steps in `.claude/commands/handoff.md`; what
+belongs here is why it has the shape it does.
 
-| # | Where | After | What moves |
-|---|---|---|---|
-| 1 | `aiw-design` | `design` gate passes | `feat/<ID>` pushed carrying `01-story.md` and `02-design.md`; branch released |
-| 2 | `aiw-implement` | `qa` gate passes | the same branch pushed carrying `src/**`, `tests/**` and artifacts 03–06; branch released |
-| 3 | `aiw-design` | `/ship` | `state: DONE`, board files, the pull request |
+| # | Where | Run by | After | What moves |
+|---|---|---|---|---|
+| 1 | `aiw-design` | `tech-lead-design` | `design` gate passes | `feat/<ID>` pushed carrying `01-story.md` and `02-design.md`; branch released |
+| 2 | `aiw-implement` | `qa` | `qa` gate passes | the same branch pushed carrying `src/**`, `tests/**` and artifacts 03–06; branch released |
+| 3 | `aiw-design` | `orchestrator` | Definition of Done confirmed | `state: DONE`, board files, the pull request |
+
+**Each hand-off is run by the role that closed the gate it hands on.** That is the whole of the
+pairing rule, and it is why the two are not interchangeable: a role can only commit the working tree
+of the folder its session was launched in.
 
 The receiving lane opens with `git fetch && git switch feat/<ID> && git pull`.
 
