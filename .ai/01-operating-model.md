@@ -103,7 +103,7 @@ a control, not an initial value.
 | R1 | `git diff --name-only` is a subset of `allowed_paths` (RULE-03) |
 | R2 | typecheck exit 0 |
 | R3 | lint exit 0 |
-| R4 | No component imports Prisma or reaches the database directly (RULE-02) |
+| R4 | No component imports a database client or reaches the database directly (RULE-02) |
 | R5 | Every contract item in design section 1 is implemented (RULE-04) |
 | R6 | Permission gating matches design section 2 |
 | R7 | Every `data-testid` in design section 6 exists in the markup |
@@ -113,6 +113,17 @@ a control, not an initial value.
 **An item with no `file:line` citation counts as failed.** Not "counts as unverified" — failed. A
 reviewer that cannot point at a line has not checked anything, and a checklist that accepts assertion
 in place of citation is a checklist that always passes.
+
+**R4 stopped naming a specific client on 2026-08-25, and the reason is worth the two lines.** It read
+*"No component imports Prisma"* until ADR-007 replaced Prisma with `@supabase/supabase-js` behind the
+seam. Naming the vendor made the check go stale the moment the vendor changed, and it also hid what
+R4 is for: RULE-02 is about the seam, not about Prisma. The wording above is the durable form. What
+R4 now covers is `@supabase/supabase-js` outside the one adapter directory, `@supabase/ssr` outside
+`src/lib/auth/**`, and any Supabase key in a `NEXT_PUBLIC_*` variable — the table in
+`.ai/standards/integrations.md` is the current list, and it is the list rather than this line that a
+reviewer should read. **R4 also carries more weight than it did.** Under Prisma a component importing
+the database client failed at build time; the Supabase client is isomorphic and compiles fine in a
+browser, so R4 and check D12 are what is left. MD-33 records the gap and the fix shape.
 
 ## Failure routing
 

@@ -42,13 +42,24 @@ rules, 13 audit checks, 6 hooks, and 10 issued invariants. **Proposing a duplica
 failure**, and it is expensive in a way that is hard to see later: two rules that say almost the same
 thing disagree at the edges, and the disagreement surfaces as an agent picking whichever one suits it.
 
-**Research.** For anything about Claude Code behaviour, Prisma, Next.js, or Better Auth, verify
+**Research.** For anything about Claude Code behaviour, Next.js, or the Supabase packages, verify
 against installed types under `node_modules/`, against the real files, or against current docs.
-**Recall is not evidence.** Prisma 7 moved connection configuration out of the datasource block and
-inverted which reader gets which URL — the config file wants the *direct* connection and the runtime
-wants the pooled one, the reverse of Prisma 6. Written from memory that produces migrations pointed at
-a transaction pooler, which fail intermittently rather than cleanly. `TODO(verify):` is the correct
-output when you cannot confirm something; a confident guess is not.
+**Recall is not evidence.** The standing example: Prisma 7 moved connection configuration out of the
+datasource block and inverted which reader gets which URL — the config file wants the *direct*
+connection and the runtime wants the pooled one, the reverse of Prisma 6. Written from memory that
+produces migrations pointed at a transaction pooler, which fail intermittently rather than cleanly.
+`TODO(verify):` is the correct output when you cannot confirm something; a confident guess is not.
+
+**The example above is kept although Prisma is leaving, and the reason is the point of the section.**
+ADR-007 removed Prisma on 2026-08-25 and ADR-006 removed Better Auth the day before; the packages to
+verify against are now `@supabase/ssr` and `@supabase/supabase-js`, neither of which any agent here
+has reliable recall of either. `@supabase/ssr` is already in the tree — `SYS-01` implemented ADR-006
+and merged on 2026-08-25 — while `prisma` and `@prisma/client` are still there because ADR-007 is
+decided and not yet built. **So "read the tree, not the decision" applies to this paragraph as much as
+to anything else, and read it against `origin/main` rather than whatever the worktree has:** a
+checkout eight commits behind reports every one of those facts backwards with full confidence, which
+is MD-39. The two-URL trap the example describes is a property of Supabase's pooler, not of Prisma,
+and it did not go away with the client.
 
 **UX/UI.** `.ai/standards/ui-design-system.md` governs. Judge whether an interface actually *holds*
 an invariant, remembering that per `invariants.md` a UI affordance alone is never sufficient. The

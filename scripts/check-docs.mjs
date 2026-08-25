@@ -13,6 +13,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 
 const ROOT = process.cwd();
 const GROUPS = ["AUT", "ROO", "SEA", "DEV", "MEM", "GRP", "LAY", "REG", "DSH", "SYS"];
@@ -251,13 +252,76 @@ function pathCandidates(text) {
     );
 }
 
+// A gitignored path is absent by design, and D6's question does not apply to it. MD-40.
+//
+// `verify` was red on `main` for three runs before anyone read the log, and two of the three findings
+// were `node_modules/` — cited by `architecture.md` and `rbac-and-security.md`, both of which tell an
+// agent to inspect installed types there. `docs-audit` runs before `pnpm install`, so in CI that
+// directory does not exist. The third was `.claude/settings.local.json`, cited by `session-model.md`
+// precisely *because* it is gitignored and a new worktree starts without it.
+//
+// **All three documents were correct and the check was wrong**, and the shape of the error is the
+// same one MD-38 records: D6 asks "does this exist on my disk" when the question worth asking is
+// "does this repository contain this". A developer's disk has `node_modules/` and CI's does not, so
+// the check produced a finding that could not be reproduced by the person receiving it.
+//
+// Answering it with git rather than with a skip list is what keeps this from needing maintenance:
+// the ignore rules already say which paths the repository deliberately does not carry, so there is no
+// second list to update when one is added.
+//
+// Falls back to checking nothing when git is unavailable, which restores the previous behaviour
+// rather than passing everything. `check-ignore` exits 1 when no argument is ignored — that is a
+// result, not a failure, and it must not be read as one.
+const gitIgnored = (() => {
+  const all = new Set();
+  for (const file of aiFiles) {
+    for (const cand of pathCandidates(fs.readFileSync(file, "utf8"))) all.add(cand);
+  }
+  if (!all.size) return new Set();
+  try {
+    const out = execFileSync("git", ["check-ignore", "--stdin"], {
+      cwd: ROOT,
+      input: [...all].join("\n"),
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
+    });
+    return new Set(out.split(/\r?\n/).filter(Boolean));
+  } catch (e) {
+    // status 1 means "none of them are ignored" and carries the empty stdout with it.
+    if (e.status === 1) return new Set(String(e.stdout ?? "").split(/\r?\n/).filter(Boolean));
+    return new Set();
+  }
+})();
+
 for (const file of aiFiles) {
   const r = rel(file);
   // Human-owned `.ai/` documents only. A design's section 5 enumerates `allowed_paths` for files the
   // NEXT stage creates, so "does not exist on disk" is the expected state at the moment it is
   // written — the finding would be raised against an agent for correctly describing future work.
   if (!isGovernedDoc(r)) continue;
+
+  // ADRs are exempt. MD-38, decided 2026-08-25.
+  //
+  // A decision record is a historical claim about what was true when the decision was taken, and a
+  // large share of decisions authorise a deletion. ADR-006 removed `src/lib/auth/auth.ts`,
+  // `src/lib/auth/client.ts` and `src/app/api/auth/[...all]/route.ts`; SYS-01 carried it out; and
+  // from that merge onward D6 failed on ADR-002 and ADR-006 forever, for correctly describing files
+  // the repository had agreed to delete. **The false-positive rate here is structurally 100% for any
+  // ADR that authorises a deletion**, and the pressure it creates is to edit an accepted decision so
+  // a checker passes, which is forging the record rather than repairing it.
+  //
+  // The narrower alternative was a `removed_paths:` list in an ADR's front matter, skipped by name.
+  // Rejected: it keeps D6's coverage against a typo, but it costs every future ADR author a field
+  // they must remember, and forgetting it reproduces exactly this failure — a guard whose correct
+  // operation depends on being told about each exception is a guard that goes red and stays red.
+  //
+  // What is given up, stated rather than glossed: a mistyped path inside an ADR is no longer caught
+  // by anything. D11 still resolves every `ADR-nnn` reference to a file, so the citation graph
+  // between decisions is still checked; it is only paths into `src/` that lose coverage, in the one
+  // document class where a missing file is expected rather than suspicious.
+  if (r.startsWith(".ai/registry/decisions/")) continue;
   for (const cand of pathCandidates(fs.readFileSync(file, "utf8"))) {
+    if (gitIgnored.has(cand)) continue;
     // A glob is a statement about a set, not a claim that one file exists.
     const concrete = cand.replace(/\/?\*\*.*$/, "").replace(/\*.*$/, "");
     if (!concrete || concrete.endsWith("/") === false && concrete !== cand && concrete.includes("*")) continue;
