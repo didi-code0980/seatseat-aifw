@@ -1033,3 +1033,38 @@ two new D6 tests pass; the ten failures are MD-16's D12 set, unchanged and untou
 recorded with fix shapes and none is built — three checks in one session is how a guard gets written
 against a defect that has not been understood yet. No code, no `package.json`, no `eslint.config.mjs`,
 no migration, no feature ID.
+
+### 2026-08-25 — the pull request, and CI turns out to have been red on `main` for three runs
+
+**Opened PR #36** on `ops/adr-007-supabase-data-client`, under the direct-instruction exception in
+`.ai/standards/git-conventions.md` — *"any agent may commit and push when the operator instructs it
+to, in that session, for that work."* One `ops/` branch: none of this is ticket work.
+
+**MD-39 fired again inside the same session it was written in.** `main` had moved five more commits
+between the rebase an hour earlier and the push — including `2e918ca`, *another* D6 fix by another
+lane, teaching it that `:123` is a line citation rather than part of a filename. Rebased again, clean,
+no conflict with the D6 exemption from this run. **Two sessions edited the same check within an hour
+without either knowing**, which is the argument for MD-39's preflight stated better than MD-39 states
+it.
+
+**Then CI failed, and the failure was older than this branch.** `verify` was red on `main` for its
+last three runs — `5793d39`, `3b49436`, `9550a2f` — and PRs #32 and #33 were both merged through it.
+Six of the nine findings were the `decisions/` ones MD-38 records and this branch fixes. The remaining
+three are **MD-40**: `node_modules/`, cited by `architecture.md` and `rbac-and-security.md` because
+both tell an agent to read installed types rather than recall them, and `.claude/settings.local.json`,
+cited by `session-model.md` *because* it is gitignored. `docs-audit` runs before `pnpm install`. **All
+three documents were correct and D6 was wrong**, and the finding was unreproducible for whoever
+received it — it passes on every developer's machine.
+
+Fixed by asking git: D6 skips any candidate `git check-ignore` reports as ignored. A skip list would
+have needed maintaining; the ignore rules already are the list. Falls back to checking nothing without
+git, and `check-ignore` exiting 1 means *none were ignored* rather than *the check broke*.
+
+**The thing worth carrying out of this: MD-38 predicted it and the prediction was ignored for a day.**
+It said an audit red for the length of a release stops being read. Two pull requests then merged
+through a red `verify` without comment. `verify` is not in the Definition of Done — that names
+typecheck, lint, unit and e2e — which is exactly why it could rot in the open.
+
+**Verified before pushing:** `check-docs` 0 errors. `pnpm hooks:test` — four new D6 tests pass, two for
+MD-38 and two for MD-40, one of each being a negative control that the exemption is not wider than it
+reads. The ten failures are MD-16's D12 set, untouched by any of this.
