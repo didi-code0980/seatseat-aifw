@@ -110,6 +110,34 @@ catches it if a reviewer reads carefully, and CI catches it only on a `feat/<ID>
 `guard-allowed-paths.mjs`, or fix MD-09 so the CI check resolves its ticket from something other than
 the branch name and therefore stops being skippable.
 
+**MD-27 undercounted the documents and was too kind about the cause.** Two corrections, appended rather
+than folded into the row, because a register that edits its own account can only ever agree with the
+present.
+
+**A fourth document carried the claim.** MD-27 names `git-conventions.md`, `session-model.md` and
+`handoff.md` and says all three were corrected. `.claude/agents/orchestrator.md` carried it too —
+*"The constructing roles hold no `Bash` tool and cannot persist their own output"* — plus two ownership
+bullets and one refusal still routing `/handoff` through the orchestrator. Struck 2026-08-25. Three of
+the four were commands and standards, which is where a reader looks; the fourth was an agent
+definition, which is where the tools it was describing actually live. That is the one place the claim
+could have been checked against its own subject, and it is the place it survived longest.
+
+**"Nothing recorded it becoming false" is not what happened, and the truth is worse.**
+
+- For `ba`, the grant *was* recorded, by the steward, in the commit that made it: `a98f5d8`,
+  *"spec: step 0 cuts or switches the ticket branch, and ba gains Bash"*, plus a session-log entry the
+  same afternoon. The claim was true when first written and the downstream documents were simply not
+  revisited — ordinary staleness, and MD-27 describes it accurately.
+- For `tech-lead-design` the claim was **never true**. It has held `Bash` since it was created. The
+  steward read `tools: Read, Grep, Glob, Bash, PowerShell, Write, Edit, SendMessage` from that file
+  earlier in the same session, and then wrote that the role holds no `Bash` tool — not from stale
+  memory, but with the frontmatter already on screen.
+
+So MD-27 is two defects wearing one number: a fact that went stale and was not chased, and a fact that
+was asserted against evidence already read. The second is the one the proposed D-series check would
+catch, and it is also the one that argues hardest for it: the standing instruction to verify before
+answering did not prevent it, because the claim did not feel like one that needed checking.
+
 ## Review log
 
 | Date | Ticket | Items closed | Items added |
@@ -124,6 +152,7 @@ the branch name and therefore stops being skippable.
 | 2026-08-24 | — | none | MD-23, MD-24 |
 | 2026-08-24 | SEA-01 REVIEW | MD-25 | MD-25 |
 | 2026-08-24 | SEA-01 QA | MD-26 | MD-26 |
+| 2026-08-25 | — | none | none — MD-27 corrected in place |
 
 **MD-07 opened and closed on the same day, and that is not tidiness.** It blocked the loop the moment
 it was found, and the fix turned out to be three prose edits outside the registry — RULE-09 had never
