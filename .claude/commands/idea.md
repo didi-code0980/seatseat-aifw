@@ -10,8 +10,15 @@ Dispatch the `product` subagent.
 **Output:** a new file in `.ai/board/ideas/`, named `<yyyy-mm-dd>-<kebab-slug>.md`
 **Gate:** the file states a problem, not a solution; it has no feature ID.
 
-An idea has no feature ID and does not become one here. Only a human writes to
-`.ai/registry/features.md` (RULE-01).
+An idea has no feature ID and does not become one here. **You do not write
+`.ai/registry/features.md` from this command** — not because you are forbidden to, but because an
+idea that has not been triaged has no business claiming an ID. The row is written after TRIAGE
+returns `PROMOTE`, by whoever runs that step.
+
+*Corrected 2026-08-25. This line previously read "Only a human writes to `.ai/registry/features.md`
+(RULE-01)", which ADR-004 made false ten days before: the guard is unwired and RULE-01 is now
+enforced by CODEOWNERS review at merge rather than by a blocked write. The prohibition here is about
+sequence, not permission.*
 
 Policy lives in `.ai/01-operating-model.md`. Do not restate it; follow it.
 
