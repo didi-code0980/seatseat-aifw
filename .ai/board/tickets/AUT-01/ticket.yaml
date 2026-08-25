@@ -1,0 +1,81 @@
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded from .ai/templates/ticket.yaml at 2026-08-25 by the orchestrator, after the AUT-01 feature
+# row merged as PR #28. The ticket does not predate its row, which is the ordering RULE-01 and check
+# D1 both assume.
+#
+# THE FIRST AUT TICKET, and the group's table was bare from Phase C until PR #28. Two of the five
+# deseeded tickets are still waiting on AUT rows — Account management UI and Role assignment UI —
+# and neither is this one. AUT-01 is sign-in and sign-out only. It is the runtime path ADR-006
+# defines and SYS-01 leaves out: SYS-01 removes Better Auth and constructs the `@supabase/ssr`
+# client server-side, this ticket builds what uses it.
+#
+# THIS TICKET CANNOT PASS DoR YET, and that is recorded rather than worked around. `depends_on` is
+# [SYS-01], transcribed from the feature row's own words — "Depends on SYS-01 being DONE". DoR item 3
+# requires every ticket in depends_on to be DONE, and SYS-01 is IN_PROGRESS with REVIEW and QA both
+# `passed: false`. So this ticket may be SPECced — /spec runs directly out of BACKLOG and the story
+# does not depend on SYS-01 having shipped — but it will sit at SPEC rather than advance to READY
+# until SYS-01 is DONE. That is the gate behaving correctly, not a blockage to route around.
+#
+# THE OPEN QUESTION IS THE POINT OF SPEC HERE, and it is the 🟡 marker on the feature row: how a
+# Supabase identity maps to a `Member` for `Member.role` while `DATA_SOURCE=mock` and
+# `Member.authUserId` does not exist. It has teeth in two directions. If the answer needs the column,
+# `schema_delta` stops being `none`, `prisma/schema.prisma` is still a DRAFT under RULE-09, and a
+# human signature lands in the middle of the loop — the trap SYS-01's row was written to avoid.
+# If the answer does not need it, the mapping is a mock-only convention that a later ticket has to
+# unwind. The BA answers by asking, not by choosing: this is a human decision, and inventing either
+# branch is prohibited. `schema_delta` stays `none` below because that is what is true today, not
+# because the question is settled.
+#
+# invariants_touched is [INV-08], transcribed from the feature row. It is a warning rather than a
+# reassurance, for the same reason it is on SYS-01: ADR-006 replaced `disableSignUp: true` with a
+# client-side flag in localStorage, which sits on the machine of the person it restrains and enforces
+# nothing against anyone who opens developer tools. `.ai/registry/invariants.md` says so at the
+# invariant itself and MD-14 carries the fix shape. A sign-in surface is precisely where self-signup
+# would appear if it appeared at all, so QA should assert the flag behaves as specified and should
+# NOT report that INV-08 is enforced. The BA may extend or narrow this list at SPEC; SEA-01 extended
+# its transcribed four to seven, MEM-01 narrowed its four to two.
+#
+# NOTHING PAST `DATA_SOURCE=mock` IS TESTABLE UNTIL A SUPABASE PROJECT EXISTS. `SUPABASE_URL` and
+# `SUPABASE_ANON_KEY` are declared by SYS-01 in `.env.example` and consumed here, not re-declared.
+# ADR-006 records that they hold no real values yet. That is a second human dependency alongside
+# SYS-01, it is not expressible in `depends_on`, and it is written here so it is not discovered at QA.
+id: AUT-01
+title: "Sign in and sign out with Supabase Auth"
+feature_ids: [AUT-01]
+group: AUT
+state: BACKLOG
+owner: ""
+branch: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+depends_on: [SYS-01]
+invariants_touched: [INV-08]
+allowed_paths: []
+schema_delta: none
+requires_adr: false   # ADR-006 is accepted and merged; this ticket implements it rather than
+                      # proposing anything. Flips to true only if SPEC's open question resolves
+                      # toward `Member.authUserId`, which is a schema change and a RULE-09 gate.
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
+
+# Notes on fields that are easy to get wrong:
+#
+# invariants_touched  [] means "considered, none engaged". Absent means nobody looked.
+#                     Definition of Ready requires it to be explicit.
+# allowed_paths       [] is a control, not a placeholder. guard-allowed-paths.mjs blocks every
+#                     write outside this ticket folder while it is empty. DESIGN fills it.
+# rework_count        Only Developer-caused failures increment it (RULE-08). Two failures
+#                     escalate (RULE-06).
+# chat_budget         Six messages per pair per ticket (RULE-15). chat-guard.mjs increments
+#                     `used` and blocks at `max`. Pairs absent from this map are not chattable.
+# sync_enabled        false by default (RULE-10). Turn on per ticket, after the loop is proven.
