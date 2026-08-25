@@ -1,0 +1,77 @@
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded from .ai/templates/ticket.yaml at 2026-08-25 by the orchestrator, in the same change as its
+# feature row, so the ticket does not predate the row — the ordering RULE-01 and check D1 assume.
+#
+# THE FIRST GRP TICKET, and the first slice chosen rather than inherited. Every previous ticket came
+# from Phase C's seeding or from an ADR. This one was picked after the board ran dry: five of the ten
+# group tables were bare, and of those, GRP, LAY and DSH need no notion of who is signed in, while
+# every deseeded AUT and REG item does. That is the whole reason it is startable today.
+#
+# WHY IT IS LOW RISK, stated so a later reader does not mistake the choice for arbitrary:
+#   - No invariant engages. `.ai/registry/invariants.md` mentions Group nowhere. `invariants_touched`
+#     is expected to be [] at SPEC, which means considered and none found — NOT absent.
+#   - No decision is owed. The deletion semantics that took MEM-01 to an escalation and produced
+#     ADR-005 and INV-12 are already settled here by the draft schema: `Member.groupId` is `String?`
+#     with `onDelete: SetNull` (prisma/schema.prisma:167) and `Group.parentId` the same (:153). So
+#     deleting a group orphans its members and promotes its children to root. SPEC transcribes that.
+#   - `schema_delta` is `none`. The `Group` model is already drafted at prisma/schema.prisma:145 and
+#     this ticket is mock-backed, so nothing needs a RULE-09 signature mid-loop.
+#   - No dependency. Nothing in the system writes a Group today, so nothing can collide.
+#
+# THE SEAM IS READ-ONLY AND THAT IS THE WORK. `src/lib/data/mock/groups.ts` has `listGroups`,
+# `getGroup` and `listChildGroups` and no writer at all. This ticket adds create, rename, re-parent
+# and delete on both sides of the seam. `src/app/(app)/groups/page.tsx` is 23 lines and already
+# renders the list, so the surface starts from something rather than from nothing.
+#
+# THE ONE OPEN QUESTION IS A SCOPE BOUNDARY, NOT A BLOCKER — the 🟡 on the feature row. Does this
+# ticket ASSIGN MEMBERS TO GROUPS, or only manage the groups themselves? Nothing anywhere can put a
+# person in a group today: `createMember` sets `groupId` to null unconditionally and MEM-01 placed
+# group membership in its out-of-scope item 5. The answer decides disjointness — pull assignment in
+# and this ticket writes `src/lib/data/mock/members.ts`, which is MEM's surface. SPEC settles it the
+# way SEA-01 settled INV-10 placement: by confirming the split before DESIGN.
+#
+# TWO THINGS SPEC MUST NOT INVENT. Both are open in the registry and neither is this ticket's to
+# close: maximum nesting depth (.ai/registry/glossary.md:83) and whether a Member may belong to more
+# than one Group (prisma/schema.prisma:150 models one, and says so as the narrower reading). If the
+# story needs either answered, it goes under OPEN QUESTIONS and routes to a human — it is not chosen.
+id: GRP-01
+title: "Group CRUD UI"
+feature_ids: [GRP-01]
+group: GRP
+state: BACKLOG
+owner: ""
+branch: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+depends_on: []
+invariants_touched: []   # Expected to survive SPEC unchanged, and it is the first ticket for which
+                         # that is true. [] means considered, none engaged — see the notes below. The
+                         # BA re-checks rather than transcribing: SEA-01 extended its list from four
+                         # to seven at SPEC, MEM-01 narrowed its from four to two.
+allowed_paths: []
+schema_delta: none
+requires_adr: false
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
+
+# Notes on fields that are easy to get wrong:
+#
+# invariants_touched  [] means "considered, none engaged". Absent means nobody looked.
+#                     Definition of Ready requires it to be explicit.
+# allowed_paths       [] is a control, not a placeholder. guard-allowed-paths.mjs blocks every
+#                     write outside this ticket folder while it is empty. DESIGN fills it.
+# rework_count        Only Developer-caused failures increment it (RULE-08). Two failures
+#                     escalate (RULE-06).
+# chat_budget         Six messages per pair per ticket (RULE-15). chat-guard.mjs increments
+#                     `used` and blocks at `max`. Pairs absent from this map are not chattable.
+# sync_enabled        false by default (RULE-10). Turn on per ticket, after the loop is proven.

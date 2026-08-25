@@ -1,5 +1,5 @@
 ---
-doc_version: 5
+doc_version: 6
 last_updated: 2026-08-25
 governed_by: [RULE-01, RULE-17]
 ---
@@ -61,7 +61,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| SEA-01 | Seat occupancy — assign and release | SEA | IN_PROGRESS | INV-01, INV-02, INV-03, INV-06 | **All four gates passed on `feat/SEA-01` (2026-08-24) and the branch is pushed, but no pull request is open — so it is `IN_PROGRESS`, not `DONE`, per the Status clause above.** Fourth slice, specced parallel to MEM-01's implementation. **Placement is deliberately out of this row**: INV-10 governs grid overlap, and `types.ts:77` assigns it to every LAY ticket. SPEC must confirm the split before DESIGN — if placement is pulled in, INV-10 joins this list and the ticket becomes LAY's problem instead. INV-06 is the reason this ticket writes `mock/devices.ts`: releasing an occupant auto-downgrades that seat's primary device. |
+| SEA-01 | Seat occupancy — assign and release | SEA | DONE | INV-01, INV-02, INV-03, INV-06 | **Corrected 2026-08-25.** The row read `IN_PROGRESS` with a note saying the branch was pushed and no pull request was open. Both stopped being true when `feat/SEA-01` merged, and nothing updated it: `/ship` step 3 only gained the registry `Status` write on 2026-08-25, *after* SEA-01 shipped, so this is the one row the new step will never reach on its own. MD-29's column, one ticket wide. Fourth slice, specced parallel to MEM-01's implementation. **Placement is deliberately out of this row**: INV-10 governs grid overlap, and `types.ts:77` assigns it to every LAY ticket. SPEC must confirm the split before DESIGN — if placement is pulled in, INV-10 joins this list and the ticket becomes LAY's problem instead. INV-06 is the reason this ticket writes `mock/devices.ts`: releasing an occupant auto-downgrades that seat's primary device. |
 
 ## DEV — Devices
 
@@ -79,6 +79,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
+| GRP-01 | Group CRUD UI | GRP | PLANNED | — | Fifth CRUD slice, and the first with **no invariant engaged at all** — `invariants.md` mentions Group nowhere, so `invariants_touched` is expected to be `[]`, meaning considered and none found. Mock-backed; `schema_delta` expected to stay `none` (the `Group` model is already drafted at `prisma/schema.prisma:145`). The seam is **read-only today**: `src/lib/data/mock/groups.ts` has `listGroups`, `getGroup` and `listChildGroups` and no writer, so this ticket adds create, rename, re-parent and delete. **Deletion needs no decision and that is the difference from MEM-01.** The draft schema already answers it in both directions — `Member.groupId` is `String?` with `onDelete: SetNull` and `Group.parentId` likewise, so deleting a group orphans its members and promotes its children to root rather than refusing. SPEC should transcribe that, not re-litigate it. 🟡 Open at SPEC, and it is a scope boundary rather than a blocker: **whether this ticket assigns Members to Groups, or only manages the Groups themselves.** `createMember` sets `groupId` to null unconditionally and MEM-01 put group membership in out-of-scope item 5, so nothing anywhere can put a person in a group today. If assignment is pulled in, this ticket writes `src/lib/data/mock/members.ts` and stops being disjoint from MEM's surface. Two questions the registry already holds open and SPEC must **not** invent an answer to: maximum nesting depth (`glossary.md:83`), and whether a Member may belong to more than one Group (`schema.prisma:150` models one, the narrower reading). |
 
 ## LAY — Layout Designer
 
