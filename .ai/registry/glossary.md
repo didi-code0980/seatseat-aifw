@@ -1,6 +1,6 @@
 ---
-doc_version: 2
-last_updated: 2026-08-10
+doc_version: 3
+last_updated: 2026-08-25
 governed_by: [RULE-01]
 ---
 
@@ -29,8 +29,9 @@ exactly one stage, carrying front-matter that records what it read and who it co
 there is no partial credit and no "pass with comments".
 
 **Seam.** The `src/lib/data/` boundary. Every read and write of domain data crosses it. Its purpose
-is that the mock implementation and the Prisma implementation are interchangeable without touching a
-component (RULE-02).
+is that the mock implementation and the real one are interchangeable without touching a component
+(RULE-02). The real one was Prisma until ADR-007 (2026-08-25) and is `@supabase/supabase-js` after
+it — that the definition did not have to change is the seam doing its job.
 
 **Invariant.** A statement that must hold in every reachable state of the data. See
 `.ai/registry/invariants.md`. Distinct from an acceptance criterion, which describes one scenario.

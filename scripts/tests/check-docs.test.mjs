@@ -802,6 +802,33 @@ test("D6 is scoped by path, not switched off: the same bytes under .ai/standards
   assert.match(d6[0], /src\/lib\/data\/nonexistent\.ts, which does not exist on disk/);
 });
 
+// --- D6: ADRs are exempt (MD-38) ----------------------------------------------------------------
+//
+// A decision record describes what was true when the decision was taken, and decisions authorise
+// deletions. ADR-006 removed three auth files; SYS-01 carried it out; D6 then failed on ADR-002 and
+// ADR-006 forever, for correctly describing the deletion the repository had agreed to. The pressure
+// that creates is to edit an accepted ADR so a checker passes, which is why the exemption exists.
+
+test("a deleted path named in an ADR is not a D6 finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    "package.json": "{}",
+    ".ai/registry/decisions/ADR-002-probe.md":
+      FRONT + "Removed by this decision: `src/lib/auth/deleted-by-adr.ts`.\n",
+  }));
+  assert.deepEqual(r.findings("D6"), [], "an ADR may name a file the decision deleted");
+});
+
+test("D6's ADR exemption is scoped to decisions/, not to the registry", () => {
+  // The failure mode of an exemption is that it is wider than it reads. Same bytes, sibling path.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    "package.json": "{}",
+    ".ai/registry/probe-d6-adr.md":
+      FRONT + "Removed by this decision: `src/lib/auth/deleted-by-adr.ts`.\n",
+  }));
+  const d6 = r.findings("D6").filter((l) => l.includes("probe-d6-adr.md"));
+  assert.equal(d6.length, 1, `expected one D6 finding outside decisions/, got:\n${r.stdout}`);
+});
+
 test("D5, D6 and D9 agree on what is out of scope", () => {
   // One definition, three consumers. If they drift, a board artifact is exempt from one check and
   // not the others, which is worse than either policy applied consistently.

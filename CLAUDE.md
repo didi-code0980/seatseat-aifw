@@ -39,10 +39,16 @@ agent-writable. A ticket's working directory is `.ai/board/tickets/` — never u
 
 ## Stack
 
-Next.js 16 App Router, TypeScript, Prisma 7, PostgreSQL, Better Auth, Tailwind, dnd-kit, Vitest,
-Playwright, Docker Compose. Package manager is pnpm. Next.js 16, Prisma 7, and Better Auth are past
-reliable recall — inspect installed types or current docs before writing config against them, and
-write `TODO(verify):` rather than guessing.
+Next.js 16 App Router, TypeScript, Supabase (Postgres, data client, and auth), Tailwind, dnd-kit,
+Vitest, Playwright, Docker Compose. Package manager is pnpm. All of Next.js 16, `@supabase/ssr` and
+`@supabase/supabase-js` are past reliable recall — inspect installed types or current docs before
+writing config against them, and write `TODO(verify):` rather than guessing.
+
+**Half of this has landed and half has not.** The auth half is done — ADR-006 was implemented by
+`SYS-01` and merged on 2026-08-25, so `better-auth` is gone and `@supabase/ssr` is in. The data half
+is decided and not built: `prisma` and `@prisma/client` are still in `package.json`, and ADR-007
+(2026-08-25) removes them. Read `.ai/standards/integrations.md` for which package may be imported from
+which directory; there are exactly two and they do not overlap.
 
 ## Visual direction
 

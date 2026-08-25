@@ -1,6 +1,6 @@
 ---
-doc_version: 3
-last_updated: 2026-08-12
+doc_version: 4
+last_updated: 2026-08-25
 governed_by: [RULE-05, RULE-07, RULE-08]
 ---
 
@@ -48,12 +48,28 @@ tests is not done, and the unmapped AC is the one that will break.
 ## The two mandatory unit tests
 
 **`tests/unit/seam-parity.test.ts`.** Imports both seam implementations and asserts identical
-exported key sets and equal arity per export. This is what makes the mock-to-Prisma swap safe, and it
+exported key sets and equal arity per export. This is what makes the mock-to-real swap safe, and it
 is the reason the swap can be a configuration change rather than a rewrite.
 
 Parity is necessary and not sufficient. Matching names and arity does not prove matching return
-shapes; a mock that returns a field the Prisma implementation cannot produce passes parity and breaks
+shapes; a mock that returns a field the real implementation cannot produce passes parity and breaks
 at runtime. Where a shape is subtle, assert it.
+
+**Two things changed on 2026-08-25 and this test absorbs both.** The real implementation is
+`@supabase/supabase-js` rather than Prisma (ADR-007) — parity does not care which, and it is worth
+noticing that this file needed no change for the swap it exists to protect. What does matter is
+ADR-007 §7: **`DATA_SOURCE` becomes `"mock" | "supabase"` and defaults to `"supabase"`.** Mock stops
+being the state a process gets by doing nothing and becomes the state tests opt into explicitly. Two
+consequences, and the second is the one that bites:
+
+- **Every unit and component test must set `DATA_SOURCE=mock` deliberately.** A test that relied on
+  the default now reaches for a network, and it fails as a connection error rather than as an
+  assertion, which reads like an environment problem instead of a missing declaration.
+- **Parity stops being optional in practice.** While mock was the default, a drifted real
+  implementation was invisible to a passing suite. Once the application runs on the real one by
+  default, a suite that passes on mock says nothing about what anybody sees. Parity plus the shared
+  fixtures in `src/lib/data/fixtures.ts` is the whole of what keeps those two claims connected —
+  see `.ai/standards/data-model.md` §Seeding.
 
 **`tests/unit/permissions.test.ts`.** Asserts `ROLE_RANK` ordering and the `can()` truth table across
 all three roles. Every role, every action, both directions — including the denials. A permission test
