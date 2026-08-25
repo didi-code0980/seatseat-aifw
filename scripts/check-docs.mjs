@@ -237,7 +237,10 @@ function pathCandidates(text) {
   for (const m of text.match(/`([^`\n]+)`/g) ?? []) out.add(m.slice(1, -1));
   for (const m of text.match(/\]\(([^)\s]+)\)/g) ?? []) out.add(m.slice(2, -1));
   return [...out]
-    .map((s) => s.trim().replace(/[.,;:]+$/, ""))
+    // `:123` is a line citation, not part of the filename. The model asks for `file:line` in every
+    // review item and design, so a path carrying one has to resolve to the path. Trailing
+    // punctuation is stripped after it, because a citation can end a sentence.
+    .map((s) => s.trim().replace(/:\d+(?::\d+)?$/, "").replace(/[.,;:]+$/, ""))
     .filter(
       (s) =>
         s.includes("/") &&
