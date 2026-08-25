@@ -64,10 +64,30 @@ Per `## Replying` in `CLAUDE.md`. Do not tabulate the ACs or restate the test co
 and `06-test-report.md` hold them, and they are what the gate is read from. On PASS, say so. On FAIL,
 give the failing criterion and where it routes.
 
-On PASS, **print the next command and its session** — do not invoke it:
+On PASS the next command and its session go in the sign-off's *Tiếp theo* line, not in a block of
+their own. For reference, it reads:
 
 ```
 QA passed. Run /ship ROO-01 in the orchestrator session.
 ```
 
 Then end this session. On FAIL, print the routed command instead and still end this session.
+
+---
+
+## Last step: sign off
+
+**End your reply with the block in `## Replying` (`CLAUDE.md`).** It is not a footer on the reply —
+for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
+answered, whether it passed, where the repository is, and what runs next.
+
+The *first* line quotes the `gate` from the front-matter you just wrote. *Tiếp theo* names the next
+stage command **and its folder** — `aiw-design`, `aiw-implement` or `aiw-steward`.
+Read the two values rather than recalling them:
+
+```
+date '+%Y-%m-%d %H:%M %Z'
+git branch --show-current
+```
+
+A remembered timestamp or branch is the one part of this block that can be wrong while looking right.

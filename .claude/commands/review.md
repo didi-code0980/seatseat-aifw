@@ -73,3 +73,22 @@ implementation, and quoting your own report back proves nothing.
 Name the ticket by its ID. Not `ticket.yaml`, not "the ticket" — `SEA-01`.
 
 Then end this session.
+
+---
+
+## Last step: sign off
+
+**End your reply with the block in `## Replying` (`CLAUDE.md`).** It is not a footer on the reply —
+for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
+answered, whether it passed, where the repository is, and what runs next.
+
+The *first* line quotes the `gate` from the front-matter you just wrote. *Tiếp theo* names the next
+stage command **and its folder** — `aiw-design`, `aiw-implement` or `aiw-steward`.
+Read the two values rather than recalling them:
+
+```
+date '+%Y-%m-%d %H:%M %Z'
+git branch --show-current
+```
+
+A remembered timestamp or branch is the one part of this block that can be wrong while looking right.
