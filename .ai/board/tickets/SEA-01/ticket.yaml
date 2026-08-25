@@ -28,8 +28,13 @@ group: SEA
 # implemented, and 03-impl-log.md lists every file touched with a one-line reason. The stage's own
 # record is that document's front matter `gate: PASS` — no fifth gate key was invented here, because
 # .ai/templates/ticket.yaml defines exactly four and /ship checks those four.
+# `state: DONE` was written by the QA handoff commit f37236a, not here. That is out of turn —
+# /ship step 3 is the only place the transition is taken, and a ticket that marks itself DONE
+# at QA claims a ship that has not happened. It is left as it stands rather than rewritten
+# because it is now true: all four gates pass and the Definition of Done holds as of
+# 2026-08-25T01:52Z. Recorded as model debt rather than repaired silently.
 state: DONE
-owner: "developer"
+owner: "orchestrator"    # taken at /ship, per MEM-01. Was "developer", transcribed at QA handoff.
 # Transcribed, not chosen. The branch was cut before SPEC and this field was left empty through
 # DESIGN; guard-allowed-paths.mjs and scripts/check-allowed-paths.mjs both resolve the active ticket
 # from the branch NAME rather than from this field, so nothing depended on it — but an empty field
