@@ -36,8 +36,7 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
-| 1 | SEA-01 | Seat occupancy — assign and release | IN_PROGRESS | nothing — SPEC and DESIGN passed, `feat/SEA-01` pushed and free |
-| 2 | SYS-01 | Replace Better Auth with Supabase Auth | IN_PROGRESS | nothing — SPEC and DESIGN passed, `feat/SYS-01` pushed and free |
+| 1 | SYS-01 | Replace Better Auth with Supabase Auth | IN_PROGRESS | nothing — SPEC and DESIGN passed, `feat/SYS-01` pushed and free |
 
 `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
 rather than by Phase C, ran the full loop the same day, and is `DONE`.
@@ -57,12 +56,19 @@ uncommitted; it stopped holding the moment a ship ran, which is the one command 
 file. MEM-01 has moved to ARCHIVE, and the two remaining rows now carry their real state instead of
 the seeded `BACKLOG`.
 
-**Both remaining rows are IN_PROGRESS, which this table has no column to explain.** Neither is
-waiting on `/spec`: SEA-01 passed SPEC `2026-08-24T01:47:19Z` and DESIGN `2026-08-24T02:10:53Z`,
-SYS-01 passed SPEC `2026-08-24T07:12:03Z` and DESIGN `2026-08-24T08:47:49Z`, and both branches are
-pushed and held by no worktree. They are queued for `/implement` in the build lane, one at a time —
+**Repaired 2026-08-25 by `/ship SEA-01`.** SEA-01 has moved to ARCHIVE; the row that remains is
+SYS-01, and it is `IN_PROGRESS`, which this table still has no column to explain. It is not waiting on
+`/spec`: SYS-01 passed SPEC `2026-08-24T07:12:03Z` and DESIGN `2026-08-24T08:47:49Z`, and
+`feat/SYS-01` is pushed and held by no worktree. It is queued for `/implement` in the implement lane —
 `.ai/standards/session-model.md` lets a second feature into that lane only after the previous one has
-**merged**, so MEM-01's pull request gates both of them.
+**merged**, so SEA-01's pull request now gates it, exactly as MEM-01's gated SEA-01.
+
+**Read MD-16 before `/implement SYS-01`.** `pnpm hooks:test` is red on `main` — ten D12 tests in
+`scripts/tests/check-docs.test.mjs` still assert pre-ADR-006 semantics, verified by execution on
+2026-08-25 at 69 tests / 59 pass / 10 fail. `node scripts/check-docs.mjs` itself exits 0; the check
+works and its tests describe a different check. It belongs to whoever landed ADR-006, which is this
+ticket's lane, and a `/review` that opens on a red suite has to separate red-because-of-me from
+red-already.
 
 `SYS-01` is the first `SYS` ticket and the first that replaces infrastructure rather than adding a
 screen. It exists because ADR-006 was accepted on 2026-08-24; the feature row and this row were
@@ -130,9 +136,32 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
+| SEA-01 | 2026-08-25T01:52:41Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | MEM-01 | 2026-08-24T09:21:52Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | DEV-01 | 2026-08-23T08:35:53Z | *pending — see the note below* | 0 |
 | ROO-01 | 2026-08-23T05:29:36Z | [#1](https://github.com/didi-code0980/seatseat-aifw/pull/1) — merged 2026-08-23 | 0 |
+
+**SEA-01 took three `/ship` attempts, and the first two stopping is the result worth keeping.**
+Attempt 1 found `feat/SEA-01` twenty-five commits behind `origin/main` — cut before MEM-01 merged, so
+QA had run against a tree with neither `tests/e2e/members.spec.ts` nor `tests/unit/members.test.ts`.
+`06-test-report.md:23` records `45 passed` e2e and 74 unit, which are exactly the pre-MEM-01 counts
+against today's 61 and 92. The QA gate was `passed: true` and honestly measured, of a tree that no
+longer existed. Merging `origin/main` at ship surfaced the real conflict immediately:
+`members.spec.ts:477` (*no other member is changed in any respect*) failed because SEA-01's seat
+re-assignment moved `SEAT-B-06` between members mid-assertion, `playwright.config.ts` having set
+`fullyParallel: true` against one `webServer` holding the mock store in process memory. Attempt 2
+stopped on the same failure and fixed it on `ops/e2e-worker-isolation` — `fullyParallel: false`,
+`workers: 1` — which the operator merged. Attempt 3 merged that base in and passed 61/61.
+
+**Both halves are MD-29, and only one is fixed.** The worker isolation is repaired; *a gate can pass
+against a base the ticket will never merge into, and nothing re-checks it at ship* is not. It was
+handled by hand three times in one ship, and the next ticket cut before a merge reproduces it.
+`feat/SYS-01` is that ticket.
+
+**`state: DONE` was written by SEA-01's QA handoff commit `f37236a`, not by `/ship`.** Left as it
+stands because it is now true, and recorded rather than repaired silently — a ticket that marks
+itself DONE at QA claims a ship that has not happened, and on attempt 1 that claim was false while
+the branch was red.
 
 **ROO-01's PR column was wrong and is corrected here.** It read "Not opened" from the 2026-08-23
 `/ship` run, when `gh` was absent and the branch had no commits. The PR was opened and merged as
