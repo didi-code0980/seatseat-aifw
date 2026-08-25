@@ -3,13 +3,35 @@ description: Run the IN_PROGRESS stage — the Developer implements the design
 argument-hint: <TICKET-ID>
 ---
 
-Run in the **Developer session in the `aiw` folder — the build lane** — on branch `feat/$ARGUMENTS`.
+Run in the **Developer session in the `aiw-implement` folder — the implement lane** — on branch `feat/$ARGUMENTS`.
 
-**Acquire the branch first: `git fetch && git switch feat/$ARGUMENTS && git pull`.** The story and
-the design arrive already committed, pushed by `/handoff` from the design lane. If the switch fails
-with `fatal: 'feat/$ARGUMENTS' is already checked out at ...`, the design lane has not handed off —
-print the folder git named and stop. Do not re-derive the design from an uncommitted file in another
-worktree, and do not start from `main`: `02-design.md` would be missing and `allowed_paths` with it.
+## Step 0 — confirm the branch before writing anything
+
+**Mode: stop.** Run the four reads and follow the table in `.ai/standards/git-conventions.md`,
+*The branch check every ticket command runs*. This command may **not** create `feat/$ARGUMENTS`.
+
+```
+pwd
+git branch --show-current
+git fetch origin --quiet
+git status --porcelain
+```
+
+- Already on `feat/$ARGUMENTS` — proceed.
+- Elsewhere or detached, tree clean, the branch exists on `refs/heads` or `refs/remotes/origin` —
+  `git switch feat/$ARGUMENTS` (add `-c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it is
+  remote-only), then `git pull --ff-only`.
+- Tree dirty — **stop.** Print the paths and say which ticket they belong to.
+- **The branch does not exist — stop and report to the operator.** Do not create it. Only `/spec`
+  creates a `feat/` branch. Arriving here with no branch means SPEC never ran, a `/handoff` never
+  pushed, or the ID is wrong, and the three need different answers. Say which you cannot rule out.
+
+The story and the design arrive **already committed**, pushed by `/handoff` from the design lane. Two
+failures here look similar and are not: `fatal: ... already checked out at ...` means the design lane
+still holds the branch and has not handed off, while a branch that does not exist at all means SPEC or
+DESIGN never ran. Neither is fixed by starting from `main` — `02-design.md` would be missing and
+`allowed_paths` with it, and RULE-03 would then have nothing to enforce.
+
  That session is ephemeral but
 **survives REWORK** — keep it open until the ticket is DONE or ESCALATED, and re-run this command in
 the same session on a rework cycle. Restarting it every cycle would spend the RULE-06 budget

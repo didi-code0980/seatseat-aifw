@@ -30,8 +30,13 @@
 // still holds the ports of destroyed seats. Nothing in the seam reads it — `prisma/seed.ts` is its
 // only consumer, in another process. Do not read `ports` from a mock module.
 
-import { devices as seedDevices, rooms as seedRooms, seats as seedSeats } from "../fixtures";
-import type { Device, Room, Seat } from "../types";
+import {
+  devices as seedDevices,
+  members as seedMembers,
+  rooms as seedRooms,
+  seats as seedSeats,
+} from "../fixtures";
+import type { Device, Member, Room, Seat } from "../types";
 
 export const rooms: Room[] = seedRooms;
 
@@ -39,3 +44,10 @@ export const rooms: Room[] = seedRooms;
 export const seats: Seat[] = seedSeats;
 
 export const devices: Device[] = seedDevices;
+
+/**
+ * MEM-01. `mock/members.ts` becomes a writing module in that ticket, and a writing module that
+ * bypasses the store makes this file's first sentence false and gives the next reader two places to
+ * look. Aliased, like every binding above: same array object as `fixtures.ts`, no clone.
+ */
+export const members: Member[] = seedMembers;
