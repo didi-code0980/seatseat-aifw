@@ -90,11 +90,44 @@ after ADR-004 removed the write guard and the steward added the row itself. **Th
 route below is now cheaper than the paragraph describing it suggests — an agent can add the feature
 row, so restoring one is a request rather than a chore.
 
+**A fourth row joined them on 2026-08-25, and it did not arrive by that route.** Sign in and sign out
+with Supabase Auth was issued, seeded and specified in a single day, then **withdrawn by the operator
+to be discussed with product**. It is the first entry here removed for a reason other than a missing
+feature row — the row existed, and was deleted with it.
+
 | Title | Group | Waiting on |
 |---|---|---|
 | Account management UI | AUT | a row in the `AUT` table |
 | Role assignment UI | AUT | a row in the `AUT` table |
 | User self-release | REG | a row in the `REG` table |
+| Sign in and sign out with Supabase Auth | AUT | a product decision — see the note below |
+
+**The AUT sign-in row is withdrawn, not cancelled, and the work survives in git at `fdfe96a`.** That
+commit sits on the unmerged branch cut for the ticket — named for the withdrawn ID, which is why it is
+not written here — and it is not intended to merge; it is the archive. It carries `01-story.md` — ten live
+acceptance criteria, the invariants, the permission model and an explicit out-of-scope — and the
+`ticket.yaml` it was specified against. Restoring the feature means re-issuing the registry row and
+re-seeding from that commit, not writing the story again.
+
+**SPEC blocked before it was withdrawn, and the blocking question is the one product has to settle.**
+`gate: BLOCKED`, `next_state: ESCALATED`, `rework_count: 0` — the BA raised Q-1 rather than choosing
+an answer, which is the behaviour MEM-01's Q-1 established. The question: *does this ticket resolve a
+`Member` for the signed-in identity, and if so by what key?* Nothing in `.ai/registry/**` answers it.
+ADR-006 OQ-3 fixes the key for the day a Member is resolved — `Member.authUserId` — and is silent on
+whether this is the ticket that resolves one; SYS-01's out-of-scope item 1 records that the ticket
+adding that column has never been issued.
+
+Three branches, enumerated in the story with a recommendation stated and deliberately not adopted:
+resolve nothing and admit on session presence alone; resolve by email as a declared temporary
+convention, which is the only branch testable today; or add `Member.authUserId` here, which is the
+right end state, is untestable until a Supabase project exists, and puts a RULE-09 human gate in the
+middle of the loop.
+
+**Why it is a product question and not a technical one.** The first branch writes an acceptance
+criterion admitting every authenticated request into an application that enforces no rank anywhere,
+and INV-08 — the invariant meant to keep that set small — is held by a flag in browser storage that
+enforces nothing (MD-14). That is a decision about what the product promises, taken before it is a
+decision about what the code does.
 
 **Why they were removed rather than left visibly failing.** Only `ROO-01` has a registry row. The
 other five could not populate `feature_ids` without inventing a feature ID, which is prohibited — so
