@@ -88,6 +88,41 @@ export interface Seat {
   occupantId: string | null;
 }
 
+/**
+ * AC-2, AC-3, AC-9, and design F-4. INV-01 is the seam's refusal, not the caller's: whether a seat
+ * already has an occupant is stored data and not something the caller supplied, so the check belongs
+ * where the data is. A caller has to narrow this before it can claim success.
+ *
+ * `SEAT_OCCUPIED` and `MEMBER_NOT_FOUND` are separate members rather than one "ILLEGAL", for the
+ * reason `DesignatePrimaryOutcome` gives below: a shared reason code makes two failures
+ * indistinguishable in a test, which is how the bug survives.
+ *
+ * There is no `SEAT_ALREADY_OCCUPIED_BY_THIS_MEMBER` arm. Assigning member A to a seat A already
+ * occupies is refused as `SEAT_OCCUPIED` like any other: INV-01 counts occupants, not identities, and
+ * an idempotent success would be a write path that reports having done something it did not do.
+ */
+export type AssignOccupantOutcome =
+  | { assigned: true; seat: Seat }
+  | { assigned: false; reason: "SEAT_NOT_FOUND" | "MEMBER_NOT_FOUND" | "SEAT_OCCUPIED" };
+
+/**
+ * AC-5, AC-6, AC-7, AC-8. INV-06 is a consequence of this operation and of no other — `invariants.md`
+ * calls it "what INV-05 forces to happen when occupancy ends" — so the downgrade happens here and the
+ * fact that it happened is returned rather than inferred.
+ *
+ * `downgradedDeviceId` names the device this release demoted from PRIMARY to SECONDARY, or null when
+ * the seat had no primary device. It is returned for the reason `DeleteRoomOutcome` returns its counts
+ * and `DesignatePrimaryOutcome` returns `demotedDeviceId`: AC-6 is then assertable at the seam, where
+ * the downgrade actually happens, and not only through a second surface.
+ *
+ * A seat may hold at most one primary device (INV-04), so this is a single id and not a list. The
+ * release path only ever REMOVES a primary designation, which is the one-directional engagement
+ * `01-story.md` records for INV-04.
+ */
+export type ReleaseOccupantOutcome =
+  | { released: true; seat: Seat; downgradedDeviceId: string | null }
+  | { released: false; reason: "SEAT_NOT_FOUND" | "SEAT_NOT_OCCUPIED" };
+
 export interface Member {
   id: string;
   fullName: string;
