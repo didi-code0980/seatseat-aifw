@@ -1,6 +1,6 @@
 ---
-doc_version: 1
-last_updated: 2026-08-10
+doc_version: 2
+last_updated: 2026-08-26
 governed_by: [RULE-06, RULE-10]
 ---
 
@@ -24,7 +24,10 @@ Empty, and empty for a different reason than when this note was written. It read
 have existed are `DONE`" when there were two; there are now five, three of them `DONE` and two in
 flight past this gate. Nothing sits here because READY is a transient row — a ticket that passes DoR
 is dispatched to DESIGN rather than parked. A new row still needs a feature in
-`.ai/registry/features.md` first; five of the ten group tables are still bare — AUT, GRP, LAY, REG and DSH.
+`.ai/registry/features.md` first; ~~five of the ten group tables are still bare — AUT, GRP, LAY, REG and DSH~~
+— struck 2026-08-26. **One table is bare: DSH.** ADR-008 gave AUT four rows and LAY one, all `TRIAGE`
+or `RECOMMEND` and none of them seedable yet, which is the distinction the old sentence could not
+draw: a bare table meant *nothing recorded*, and it read as *nothing wanted*.
 
 ## BACKLOG
 
@@ -104,76 +107,30 @@ closed, on the second attempt at every judging gate. `DEV-01` then closed on the
 every gate, with no escalation and `rework_count: 0`, which is the result the ROO-01 run was run to
 make possible.
 
-## Deseeded — waiting on registry rows
+## Deseeded — absorbed into the feature ledger, 2026-08-26
 
-Five tickets were seeded in Phase C and have been **removed from the board**. They are *not*
-cancelled. Each is expected back, unchanged, the moment its feature row exists.
+**This section is closed. Its four rows are now `TRIAGE` rows in `.ai/registry/features.md`.** ADR-008
+made that file the single register for every feature the project knows about, issued or not, and this
+table was one of the three fragments it replaced.
 
-**Two have come back**, both on 2026-08-23, by exactly the route described below. Device CRUD UI
-returned as `DEV-01` after the operator added the row by hand. Member CRUD UI returned as `MEM-01`
-after ADR-004 removed the write guard and the steward added the row itself. **Three remain**, and the
-route below is now cheaper than the paragraph describing it suggests — an agent can add the feature
-row, so restoring one is a request rather than a chore.
+**It had already drifted, which is the argument for closing it rather than maintaining it.** The row
+reading *"User self-release — waiting on a row in the REG table"* stayed after `REG-01` was seeded on
+2026-08-25: the row it was waiting for existed and the table tracking its absence never learned.
+Nothing detected that, because nothing read this table. A board-plane list of what the registry is
+missing is a second source of truth about the registry, and it can only ever be as fresh as the last
+person who remembered it.
 
-**A fourth row joined them on 2026-08-25, and it did not arrive by that route.** Sign in and sign out
-with Supabase Auth was issued, seeded and specified in a single day, then **withdrawn by the operator
-to be discussed with product**. It is the first entry here removed for a reason other than a missing
-feature row — the row existed, and was deleted with it.
+**What was true here and is worth keeping** is why the rows were written by title and group rather
+than by ID: writing IDs that do not exist recreates five standing D1 errors, and *"an audit that is
+red for the length of a ticket run stops being read."* That reasoning survives the move intact — a
+`TRIAGE` row in the ledger carries **no ID**, for the same reason, now enforced by check D14 rather
+than by a convention in this paragraph. The rest of that argument was proven correct twice over on
+2026-08-25, when `verify` turned out to have been red on `main` for three runs with `pnpm verify`
+skipped entirely underneath it (MD-38, MD-40).
 
-| Title | Group | Waiting on |
-|---|---|---|
-| Account management UI | AUT | a row in the `AUT` table |
-| Role assignment UI | AUT | a row in the `AUT` table |
-| User self-release | REG | a row in the `REG` table |
-| Sign in and sign out with Supabase Auth | AUT | a product decision — see the note below |
-
-**The AUT sign-in row is withdrawn, not cancelled, and the work survives in git at `fdfe96a`.** That
-commit sits on the unmerged branch cut for the ticket — named for the withdrawn ID, which is why it is
-not written here — and it is not intended to merge; it is the archive. It carries `01-story.md` — ten live
-acceptance criteria, the invariants, the permission model and an explicit out-of-scope — and the
-`ticket.yaml` it was specified against. Restoring the feature means re-issuing the registry row and
-re-seeding from that commit, not writing the story again.
-
-**SPEC blocked before it was withdrawn, and the blocking question is the one product has to settle.**
-`gate: BLOCKED`, `next_state: ESCALATED`, `rework_count: 0` — the BA raised Q-1 rather than choosing
-an answer, which is the behaviour MEM-01's Q-1 established. The question: *does this ticket resolve a
-`Member` for the signed-in identity, and if so by what key?* Nothing in `.ai/registry/**` answers it.
-ADR-006 OQ-3 fixes the key for the day a Member is resolved — `Member.authUserId` — and is silent on
-whether this is the ticket that resolves one; SYS-01's out-of-scope item 1 records that the ticket
-adding that column has never been issued.
-
-Three branches, enumerated in the story with a recommendation stated and deliberately not adopted:
-resolve nothing and admit on session presence alone; resolve by email as a declared temporary
-convention, which is the only branch testable today; or add `Member.authUserId` here, which is the
-right end state, is untestable until a Supabase project exists, and puts a RULE-09 human gate in the
-middle of the loop.
-
-**Why it is a product question and not a technical one.** The first branch writes an acceptance
-criterion admitting every authenticated request into an application that enforces no rank anywhere,
-and INV-08 — the invariant meant to keep that set small — is held by a flag in browser storage that
-enforces nothing (MD-14). That is a decision about what the product promises, taken before it is a
-decision about what the code does.
-
-**Why they were removed rather than left visibly failing.** Only `ROO-01` has a registry row. The
-other five could not populate `feature_ids` without inventing a feature ID, which is prohibited — so
-each produced a standing D1 error in `/docs-audit`, five of them, indefinitely.
-
-An audit that is red for the length of a ticket run stops being read. The findings were true, but
-their truth was not the point: they described a human action nobody was going to take this week, and
-they sat on top of every real finding that appeared underneath them. A control everyone has learned
-to scroll past has already failed, and it fails silently the first time it reports something that
-matters.
-
-They are recorded here by title and group rather than by ID, because writing the IDs would recreate
-the same five findings from this file. That is not a workaround: those IDs genuinely do not exist
-yet, and referring to them as though they do is precisely what D1 exists to catch.
-
-**To restore one:** a human adds its row to `.ai/registry/features.md` (registry plane, RULE-01, no
-agent can do it), then the ticket is re-seeded from `.ai/templates/ticket.yaml` with `feature_ids`
-populated. Ordering after `ROO-01` is a human decision; the Phase C order was Device, Member,
-Account management, Role assignment, self-release. Note that the Device ticket carries INV-04,
-INV-05 and INV-06 — running it before the loop is proven would test domain difficulty when what is
-being measured is the process.
+**To promote one:** give it an ID and a status of `PLANNED` in the ledger. An agent may type that
+change (MD-24); the operator decides it by merging. Then re-seed the ticket from
+`.ai/templates/ticket.yaml` with `feature_ids` populated.
 
 ## BLOCKED
 
