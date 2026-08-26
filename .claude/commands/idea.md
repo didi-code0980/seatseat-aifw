@@ -23,7 +23,10 @@ Policy lives in `.ai/01-operating-model.md`. Do not restate it; follow it.
 for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
 answered, whether it passed, where the repository is, and what runs next.
 
-This command writes no artifact and passes no gate, so the first line ends `gate n/a`. *Tiếp theo* names
+**This command writes an artifact and it has a gate** — `.ai/board/ideas/<file>.md`, and the IDEA row of
+the stage ownership table in `.ai/01-operating-model.md` reads *an idea file exists with a problem
+statement, not a solution*. Quote that verdict on the first line; `gate n/a` is wrong here and was
+written into this file by mistake on 2026-08-25 (MD-35). *Tiếp theo* names
 a command that runs **in the folder you are in**. If the next move belongs to another
 lane, write `không có — <what this folder is waiting on>` instead: a session cannot see the other
 worktrees, so naming a command for one is a guess about a branch that may have moved. `CLAUDE.md`
