@@ -57,22 +57,61 @@ because DESIGN cannot have run otherwise. That is what has already happened for 
 DEV-01's `metrics.md` row records it in those words. `READY` stays in the state enum as the name of a
 condition, not of a stored value.
 
+## Suggest what to build next
+
+**Run this whenever the board has no runnable ticket, and whenever the operator asks what to do
+next.** Added 2026-08-26 on the operator's instruction. The standard is in `.claude/agents/orchestrator.md`
+under *Suggesting what to build next*; this is the procedure.
+
+**Read `.ai/registry/features.md` and select from it. Do not generate.** After ADR-008 that file holds
+every feature the project knows about at every stage of certainty, so the candidate pool already
+exists on disk. A suggestion that cannot be pointed at a row is an invention.
+
+Order by what is true, not by what sounds important:
+
+| # | Source | Why it ranks here |
+|---|---|---|
+| 1 | `PLANNED` rows with no `.ai/board/tickets/<ID>/` folder | Agreed, has an ID, nothing left to decide |
+| 2 | `RECOMMEND` rows | A ticket **hit** these and wrote them down as out-of-scope. Name the ticket that raised each |
+| 3 | `TRIAGE` rows | Proposals awaiting the operator. Say what each is blocked on |
+
+**Give the blocker with the candidate, not after it.** Several rows cannot start whatever their rank
+— the `AUT` rank-guard row needs a session to gate on and there is no sign-in; the `SYS` cutover row
+needs a human schema approval under RULE-09. A suggestion without its blocker is homework.
+
+**Say how many you chose from.** *"Three candidates, all three below"* and *"eleven candidates, the
+three that can start today"* are different claims. Presenting a filtered list as the whole list is how
+a shortlist becomes a decision nobody took.
+
+**When the operator picks one, write the row.** `.claude/agents/orchestrator.md` §*Writing a feature
+row* is the contract — promote an existing `TRIAGE` or `RECOMMEND` row rather than adding a second,
+transcribe the title, `[]` for invariants unless they named one, on an `ops/` branch. **You write it;
+they merge it.** Both halves get said when you report.
+
 ## Finish
 
-Name the ticket, the command, **and the folder** — three worktrees make a correct command in the wrong
-folder a silent write to the wrong branch.
+Name the ticket and the command. **Name a command only if it runs in the folder you are in** — this
+command runs in `aiw-design`, so it prints `aiw-design` commands.
 
 ```
 GRP-01 is at BACKLOG and its BACKLOG-produced DoR items pass.
-Run /spec GRP-01 in the aiw-design folder.
+Run /spec GRP-01.
 
-Implement lane: nothing — SEA-01 has not merged.
+Implement lane: waiting on SEA-01 to merge. Not checked from here.
 ```
 
-If nothing is runnable, say what is blocking instead, and say which of the two lanes is blocked —
-they block for different reasons and usually not at the same time. Never invoke the stage owner: a
-printed instruction the operator runs is a real session boundary, and that boundary is what RULE-13
-relies on.
+**The implement lane is reported as state, never as a command.** ~~Name the folder~~ — the rule until
+2026-08-26 was to name the folder with the command, and it did not stop this command naming a folder
+it cannot see. A session's folder is fixed at launch: it can read tickets in its own tree, which tells
+it about *tickets*, but not which branch `aiw-implement` is holding, whether that tree is dirty, or
+whether someone is already working there. Those three decide whether a command will actually run. So
+say what the other lane is waiting on and stop; `CLAUDE.md` §*Tiếp theo is for the folder you are
+standing in* carries the rule and the failure that produced it.
+
+If nothing is runnable, say what is blocking instead, then run the suggestion section above — a board
+with nothing to do is the moment the ledger's candidates are worth reading. Never invoke the stage
+owner: a printed instruction the operator runs is a real session boundary, and that boundary is what
+RULE-13 relies on.
 
 Definition of Ready is in `.ai/01-operating-model.md`. Session lifetimes are in
 `.ai/standards/session-model.md`.
@@ -85,13 +124,18 @@ Definition of Ready is in `.ai/01-operating-model.md`. Session lifetimes are in
 for most runs it *is* the reply. Do not stop at the step above and leave the operator to work out who
 answered, whether it passed, where the repository is, and what runs next.
 
-This command writes no artifact and passes no gate, so the first line ends `gate n/a`. *Tiếp theo* names
-whatever the board says runs next, **with its folder** — not a topic, a command.
-Read the two values rather than recalling them:
+This command writes no artifact and passes no gate, so the first line ends `gate n/a` — **unless you
+wrote a feature row**, in which case say so and name the pull request, because a row that is written
+and a row that is merged are different claims.
+
+*Tiếp theo* names a command that runs **in this folder**. If the next move is the implement lane's,
+write `không có — chờ <ID> merge`. Read the three values rather than recalling them:
 
 ```
 date '+%Y-%m-%d %H:%M %Z'
+pwd
 git branch --show-current
 ```
 
-A remembered timestamp or branch is the one part of this block that can be wrong while looking right.
+A remembered timestamp, folder or branch is the part of this block that can be wrong while looking
+right.

@@ -90,12 +90,17 @@ for most runs it *is* the reply. Do not stop at the step above and leave the ope
 answered, whether it passed, where the repository is, and what runs next.
 
 The *first* line quotes the `gate` from the front-matter you just wrote. *Tiếp theo* names the next
-stage command **and its folder** — `aiw-design`, `aiw-implement` or `aiw-steward`.
-Read the two values rather than recalling them:
+stage command, **and only if it runs in this folder**. If the next stage belongs to the other
+lane, write `không có — <what this folder is waiting on>`; `/handoff` is what moves the branch, and
+the lane that receives it reports its own next move. `CLAUDE.md` §*Tiếp theo is for the folder you
+are standing in*.
+Read the three values rather than recalling them:
 
 ```
 date '+%Y-%m-%d %H:%M %Z'
+pwd
 git branch --show-current
 ```
 
-A remembered timestamp or branch is the one part of this block that can be wrong while looking right.
+A remembered timestamp, folder or branch is the part of this block that can be wrong while looking
+right.

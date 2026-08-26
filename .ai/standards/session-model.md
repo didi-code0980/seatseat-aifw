@@ -1,6 +1,6 @@
 ---
-doc_version: 5
-last_updated: 2026-08-25
+doc_version: 6
+last_updated: 2026-08-26
 governed_by: [RULE-11, RULE-12, RULE-13, RULE-14, RULE-15, RULE-16]
 ---
 
@@ -124,6 +124,31 @@ Adopted 2026-08-23, when MEM-01 and SEA-01 first needed to be in flight together
 **A folder is decided by where the session is launched.** There is no routing: the working directory
 is the session root, `$CLAUDE_PROJECT_DIR` resolves to it, and `guard-allowed-paths.mjs` reads that
 folder's `.git/HEAD` to decide which ticket an agent is judged against. Open the folder, then talk.
+
+### A role answers for its own folder. Only `steward` answers for all three.
+
+Adopted 2026-08-26, on the operator's instruction. The sign-off contract is in `CLAUDE.md`; this is
+the reasoning behind it, because the rule reads like etiquette and is not.
+
+**A session cannot see the other two worktrees, and nothing about being in this repository makes it
+able to.** It can read the tickets in its own tree, which tells it about *tickets* — it cannot tell it
+which branch another folder is holding, whether that tree is dirty, or whether a session is already
+working there. Those are the three things that decide whether a command will actually run.
+
+So an agent names a command **only for the folder on its own sign-off line**. When the next move
+belongs elsewhere, it says what this folder is waiting on and stops. That is not less helpful; it is
+the difference between *"go run this there"* and *"I do not know what is there"*, and only the second
+is true.
+
+**`steward` is the exception, and `/status` is the shape of it.** Reporting the whole board is the
+steward's job, and it reads the repository rather than the folders — `ticket.yaml` is what is true, a
+session is where someone is typing. Even then it reports *state*, and names a command for another
+folder only when the operator has asked for the board.
+
+**The failure that produced this rule.** On 2026-08-25 a steward session signed off with *"Tiếp theo:
+`/spec GRP-01` — trong folder `aiw-design`."* GRP-01 had already passed SPEC and DESIGN and was in
+flight in `aiw-implement`. The reply named its folder exactly as the rule then required, and was
+wrong, because naming a folder is not the same as being able to see it.
 
 ### The three lanes
 
