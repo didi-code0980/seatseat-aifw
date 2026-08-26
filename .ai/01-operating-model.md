@@ -52,6 +52,18 @@ disagreed with the ledger. It cost the operator two questions before it was stru
 asked how to change a feature's description, and once when a DoR failure told them the producing stage
 was *the human step at BACKLOG*.
 
+**Who types it, as of 2026-08-26: the `orchestrator`, without being asked twice.** The operator's
+instruction was that naming the work is enough — *"khi tôi bảo sẽ làm gì thì nó tự động thêm vào chứ
+không cần đợi tôi tự thêm."* So the operator saying what to build IS the decision at this row, and the
+orchestrator records it: it promotes a matching `TRIAGE` or `RECOMMEND` row in the ledger rather than
+adding a second, transcribes the title from their words, and leaves `invariants_touched` empty unless
+they named one. ADR-008 clause 6; the contract is in `.claude/agents/orchestrator.md`. **It writes;
+the operator merges.** A row on a branch is a proposal.
+
+**The same command also proposes what to build**, per ADR-008 clause 7 — selecting from the ledger,
+never generating. `.ai/registry/features.md` holds every feature the project knows about after
+ADR-008, so a suggestion that cannot be pointed at a row is an invention.
+
 **The gate itself is unchanged and is not weakened by this.** `feature_ids` must still resolve to a
 row that exists, and check D1 still fails the audit on an ID that does not. What moved is who may
 satisfy it, not whether it must be satisfied — and the reason it must is the charter's, not RULE-01's:
@@ -79,7 +91,7 @@ this list and the stage ownership table below stay in agreement in both directio
 |---|---|---|---|---|
 | IDEA | `product` | `.ai/registry/**` | `.ai/board/ideas/**` | An idea file exists with a problem statement, not a solution |
 | TRIAGE | `product` + `tech-lead-design` | idea, registry | idea file | Verdict is one of REJECT, NEEDS-ADR, PROMOTE, with a reason |
-| BACKLOG | human | — | `features.md`, `backlog.md` | Feature IDs exist in the registry |
+| BACKLOG | human decides, `orchestrator` types | the operator's words, `features.md` | `features.md`, `backlog.md` | Feature IDs exist in the registry |
 | SPEC | `ba` | registry, `ticket.yaml` | `01-story.md`, `ticket.yaml` | ACs in Given/When/Then, each with an ID; `invariants_touched` populated; `size_estimate` set; Out-of-scope non-empty |
 | READY | `orchestrator` | `ticket.yaml`, `01-story.md`, `features.md` | `ticket.yaml`, `backlog.md` | Full DoR, below |
 | DESIGN | `tech-lead-design` | everything | `02-design.md`, `ticket.yaml` | Sections 1-7 complete; `allowed_paths` enumerated; `size` set |

@@ -103,12 +103,17 @@ for most runs it *is* the reply. Do not stop at the step above and leave the ope
 answered, whether it passed, where the repository is, and what runs next.
 
 This command writes no artifact and passes no gate, so the first line ends `gate n/a`. *Tiếp theo* names
-whatever the board says runs next, **with its folder** — not a topic, a command.
-Read the two values rather than recalling them:
+a command that runs **in the folder you are in**. If the next move belongs to another
+lane, write `không có — <what this folder is waiting on>` instead: a session cannot see the other
+worktrees, so naming a command for one is a guess about a branch that may have moved. `CLAUDE.md`
+§*Tiếp theo is for the folder you are standing in* carries the rule and the failure that produced it.
+Read the three values rather than recalling them:
 
 ```
 date '+%Y-%m-%d %H:%M %Z'
+pwd
 git branch --show-current
 ```
 
-A remembered timestamp or branch is the one part of this block that can be wrong while looking right.
+A remembered timestamp, folder or branch is the part of this block that can be wrong while looking
+right.

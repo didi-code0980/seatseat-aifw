@@ -84,16 +84,40 @@ not. There is no second file.**
    every citation of it passing, and Definition of Ready would accept a ticket against a feature the
    project has abandoned.
 
-6. **Anyone may add a `TRIAGE` or `RECOMMEND` row. Only the operator promotes one.** Promotion means
-   giving it an ID and a status of `PLANNED`, and it happens by merging the pull request that does so
-   — the MD-24 position, already settled on 2026-08-26: *"A human decides the row; an agent may type
-   it."* This ADR does not reopen it.
+6. **Anyone may add a `TRIAGE` or `RECOMMEND` row. Promotion is the operator's decision and the
+   `orchestrator` types it.** Promotion means giving a row an ID and a status of `PLANNED`. The
+   operator decides by **saying what they want built** and by **merging** the pull request that
+   records it; the orchestrator writes the row in between. This is the MD-24 position applied rather
+   than reopened — *"a human decides the row; an agent may type it"* — and it is what the operator
+   asked for on 2026-08-26: *"khi tôi Orchestrator hỏi tôi bảo sẽ làm gì thì nó tự động thêm vào chứ
+   không cần đợi tôi tự thêm."*
 
-7. **`.ai/board/backlog.md`'s "Deseeded — waiting on registry rows" table is absorbed and removed.**
+   **Four constraints, and the first is the one that will get skipped.** The full contract is in
+   `.claude/agents/orchestrator.md` §*Writing a feature row*.
+
+   - **Search the ledger first and promote a matching row rather than adding a second.** After this
+     ADR there are eight `TRIAGE` and `RECOMMEND` rows, so a match is likely. Two rows for one
+     feature rebuilds the fragmentation this ADR exists to end, from the inside.
+   - **Transcribe; never compose.** The title is the operator's words. `Invariants touched` is `[]`
+     unless they named one — `REG-01`'s row already records why: *"a plausible invention is more
+     expensive to find later than an obvious gap."*
+   - **Never issue an ID for a proposal nobody agreed to.** An idea the orchestrator had is a
+     `TRIAGE` row with no ID, which is clause 3, enforced by D14.
+   - **Writing is not merging.** RULE-09. The row becomes real when the operator merges, and the
+     report says which of the two has happened.
+
+7. **The `orchestrator` suggests what to build next, and it selects rather than generates.** Also
+   asked for on 2026-08-26. The ledger is the candidate pool: after this ADR it holds every feature
+   the project knows about, so a suggestion that cannot be traced to a row is an invention. Order is
+   `PLANNED` rows with no ticket, then `RECOMMEND` — those carry evidence, because a ticket **hit**
+   them — then `TRIAGE`. Blockers travel with the candidate; a suggestion the operator has to
+   research is homework. `.claude/commands/next-ticket.md` carries the procedure.
+
+8. **`.ai/board/backlog.md`'s "Deseeded — waiting on registry rows" table is absorbed and removed.**
    Its four rows become `TRIAGE` rows here. A board-plane table tracking the absence of a registry row
    is a second source of truth about the registry, and it had already drifted.
 
-8. **Check D14 enforces the shape.** Status is one of the six; `TRIAGE` and `RECOMMEND` have no ID;
+9. **Check D14 enforces the shape.** Status is one of the six; `TRIAGE` and `RECOMMEND` have no ID;
    `PLANNED`, `IN_PROGRESS` and `DONE` have one; an ID matches its group section; no ID appears twice.
 
 ## Rationale
@@ -183,5 +207,10 @@ plane and this ADR's rejected alternative is reconsidered on its merits.
 | `scripts/check-docs.mjs` | D14 added; D1 extended to reject an `OUTDATED` citation | — ✅ done |
 | `scripts/tests/check-docs.test.mjs` | D14 and the D1 extension | — ✅ done |
 | `.ai/board/model-debt.md` | MD-41 — `IN_PROGRESS` has no writer | — ✅ done |
-| `.claude/commands/docs-audit.md` | D14 in the check list | — ✅ done |
-| `.ai/01-operating-model.md` | The BACKLOG row's gate wording, which says feature IDs must exist | — |
+| `.claude/commands/docs-audit.md` | D14 in the check list, and D13 which had never been listed | — ✅ done |
+| `.claude/agents/orchestrator.md` | The registry prohibition struck; §*Writing a feature row* and §*Suggesting what to build next* added | — ✅ done |
+| `.claude/commands/next-ticket.md` | §*Suggest what to build next*; the implement lane reported as state rather than as a command | — ✅ done |
+| `CLAUDE.md` | §*The block* — `Branch:` becomes `Ở:`, and *Tiếp theo* is scoped to the folder you are in | — ✅ done |
+| `.ai/standards/session-model.md` | §*A role answers for its own folder* | 5 → 6 ✅ done |
+| `.claude/commands/*.md` | Sixteen files carried the old *name the folder* wording; `/handoff` and `/ship` got bespoke replacements | — ✅ done |
+| `.ai/01-operating-model.md` | The BACKLOG row's owner — human decides, `orchestrator` types — and the suggestion duty | — ✅ done |

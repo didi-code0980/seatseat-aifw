@@ -111,24 +111,44 @@ Vietnamese form because that is the conversation language today.
 ---
 **Tôi là `<agent>`.** Vừa <what you did> — <TICKET-ID>, gate <PASS | FAIL | BLOCKED | n/a>.
 **Xong lúc:** <output of `date '+%Y-%m-%d %H:%M %Z'`>
-**Branch:** <output of `git branch --show-current`, or `detached @ <sha>`>
-**Tiếp theo:** <command> — trong folder <aiw-design | aiw-implement | aiw-steward>
+**Ở:** <basename of `pwd`> — branch <output of `git branch --show-current`, or `detached @ <sha>`>
+**Tiếp theo:** <command to run in THIS folder>, or `không có — <what this folder is waiting on>`
 ```
 
-- **Read the time and the branch. Never supply them from context.** `date` and
+- **Read the time, the folder and the branch. Never supply them from context.** `date`, `pwd` and
   `git branch --show-current`, every time, even when you are confident. A sign-off is a claim about a
   machine's state, and an invented one is worse than none because it looks measured.
 - **No `Bash` tool means `unavailable — no Bash tool`**, not a guess. `product` is the only agent in
   this position today.
 - **Quote the gate from your artifact's front-matter.** If your reply completes no command, write
   `gate n/a` and say what you are waiting on in the *Tiếp theo* line.
-- **Name the folder, not just the command.** Three worktrees make a correct command in the wrong
-  folder a silent write to the wrong branch.
 - **On a FAIL, *Tiếp theo* is the routed command**, per the routing table in
   `.ai/01-operating-model.md` — not the next happy-path stage. On `ESCALATED`, it is a human decision
   and there is no command; say so.
 - **Never put this block in an artifact.** It is conversation. Artifacts carry front-matter, and that
   is the record.
+
+#### *Tiếp theo* is for the folder you are standing in. Only `steward` may answer for another.
+
+**Added 2026-08-26 on the operator's instruction, replacing *"name the folder, not just the
+command."*** That rule made every reply name a folder; it did not stop a reply naming a folder the
+session could not see, which turned out to be the more expensive failure.
+
+- **Name a command only if it runs in the folder on your *Ở* line.** If the next move belongs to
+  another lane, the honest answer is `không có — <what this folder waits on>`. *"Waiting on `<ID>` to
+  merge"* is a complete answer; it tells the operator to go somewhere else without pretending to know
+  what they will find there.
+- **Only `steward` may report across all three worktrees**, and only when asked — that is what
+  `/status` is. Every other role answers for one folder: its own.
+- **The reason is that a session's folder is fixed at launch and it cannot see the others.** A
+  command named for a folder you are not in is a guess about a branch that may have moved, a tree
+  that may be dirty, and a branch another worktree may be holding — `git switch` refuses a branch
+  checked out elsewhere, and the refusal surfaces in the folder the operator walked to, not in yours.
+- **This is written from a real failure, not a precaution.** On 2026-08-25 a `steward` session in
+  `aiw-steward` signed off with *"Tiếp theo: `/spec GRP-01` — trong folder `aiw-design`."* GRP-01 was
+  already past SPEC and past DESIGN, in flight in `aiw-implement`. The advice was confident,
+  correctly formatted, named the folder as the old rule required, and was wrong — because the session
+  giving it had no way to see the folder it was sending the operator to.
 
 ## Commands
 
