@@ -62,7 +62,34 @@ feature_ids: [GRP-01]  # RESOLVES as of 2026-08-25. The operator supplied the ro
                        # of the registry change is CODEOWNERS review on the pull request, which is how
                        # RULE-01 is enforced — the row is written, not yet approved.
 group: GRP
-state: QA            # ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T01:55:40Z.
+state: DONE          # SHIPPED 2026-08-26T02:06:22Z BY /ship. Four gates passed with timestamps,
+                     # `pnpm verify` exit 0, and `pnpm test:e2e` 82/82 exit 0 re-run on this branch at
+                     # ship rather than trusted from `06-test-report.md`.
+                     #
+                     # DONE MEANS GATED AND PUSHED, NOT MERGED. RULE-09 keeps the merge human. The
+                     # `Status: DONE` written into `.ai/registry/features.md` is the value the pull
+                     # request makes true the moment a human merges it, and not before.
+                     #
+                     # MD-35 WAS CHECKED AND IS INERT ON THIS SHIP — the first time that has been true.
+                     # The branch is seven commits behind `main`, and
+                     # `git diff feat/GRP-01...main -- src tests package.json pnpm-lock.yaml prisma
+                     # playwright.config.ts vitest.config.ts` is EMPTY: all seven touch `.ai/**`,
+                     # `.claude/**`, `scripts/**` and `CLAUDE.md` only. So the QA gate's base differs
+                     # from `main` in no file either suite executes, and the counts at
+                     # `06-test-report.md:23` still describe the tree that will merge. Verified by
+                     # execution, not inferred from the commit subjects — SEA-01 and SYS-01 both had
+                     # this checked by hand and only one of them survived it.
+                     #
+                     # ADR-007 IS ACCEPTED AND THIS TICKET WRITES A DIRECTORY IT DELETES.
+                     # `src/lib/data/prisma/groups.ts` is in `allowed_paths` and was written at
+                     # IN_PROGRESS as four `notWired` bodies. ADR-007, accepted 2026-08-25 — after this
+                     # ticket's DESIGN gate — replaces `src/lib/data/prisma/**` with a `supabase/`
+                     # sibling module for module. Nothing here is wrong and nothing routes back: the
+                     # cutover ticket has never been issued, so the adapter it replaces is still the
+                     # one in the tree. Recorded so the cutover inherits it rather than discovers it.
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: QA. ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T01:55:40Z.
                      # `03-impl-log.md` carries the gate in its front-matter and is the record; this
                      # line is the board's copy of it. Eight of the ten `allowed_paths` are written —
                      # the two absent are `tests/unit/groups.test.ts` and `tests/e2e/groups.spec.ts`,
@@ -96,8 +123,12 @@ state: QA            # ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T01:55:4
                      # NOW THAT THE GATE PASSES, for the opposite reason it was left here while the gate
                      # was BLOCKED: DoR is the orchestrator's evaluation, and an agent that promotes its
                      # own output past the gate that judges it has removed the gate.
-owner: ""
-branch: ""
+owner: "orchestrator"    # Taken at /ship, per MEM-01, SEA-01 and SYS-01. It was "" from seed
+                         # through QA, which is MD-36's second half: no stage owner named the field, so
+                         # nothing in the file said who moved it.
+branch: "feat/GRP-01"    # Transcribed at ship. Also "" from seed through QA, while
+                         # `guard-allowed-paths.mjs` resolved the active ticket from the real branch
+                         # name the whole time — the field is the board's copy, never the source.
 size_estimate: "M"    # S|M — set by ba at SPEC; gates DoR. Estimated from 01-story.md's scope and its
                       # Out-of-scope section, not from an implementation: one surface listing groups as
                       # a tree, a create form, a rename, a reparent, and a delete whose outcome Q-1 and
