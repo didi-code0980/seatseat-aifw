@@ -91,6 +91,7 @@ itself made necessary by an instance that happened during the session that recor
 steward wrote MD-32 against a `main` that was eight commits stale, while `origin/main` already carried
 a different MD-32 from SYS-01's ship. Recorded as MD-39, because the stale checkout is a distinct
 defect from the ID allocator and only one of the two is about numbering.
+| MD-32 | Steward, 2026-08-25, from a `/implement GRP-01` run the operator forwarded | **Step 0's dirty-tree rule could not tell a ticket's own work from another ticket's, so it stopped a developer over its own files.** The rule read *Tree dirty — stop. Print the paths and say which ticket they belong to*, with no classification step, in `implement.md`, `design.md`, `review.md` and `qa.md`. On `feat/GRP-01` it fired on six paths: five — `mock/groups.ts`, `mock/store.ts`, `prisma/groups.ts`, `types.ts`, `validation/group.ts` — are **inside GRP-01's own `allowed_paths`**, and one, `.ai/board/tickets/REG-01/`, is foreign. The developer obeyed correctly and asked the operator to *chốt giữ/bỏ phần seam* — to adjudicate whether to keep the agent's own work in progress. **That is the model spending the operator's time on a question the model manufactured**, which is one of the four costs the standing instructions name. It is also wrong on its own terms: `developer` is deliberately kept alive across REWORK, so a re-run of `/implement` finds this ticket's dirty files *by design*, and a rule that stops there makes rework unreachable. | Real, and it fired on the first ticket to re-enter `/implement` after the rule was written — one day | **Fixed 2026-08-25** in all four commands: step 0 now sorts dirty paths against `allowed_paths` plus `.ai/board/tickets/<ID>/**`. Inside is this ticket's own work and not a stop; outside is a stop naming the paths and the two possibilities — a lane that did not `/handoff`, or a session that wrote in the wrong folder — with an explicit instruction not to clean them up, because a stray artifact is evidence. **The general lesson is the one to keep:** a stop condition written as a blanket predicate rather than a classification will fire on the normal case, and the normal case is the one the rule was never aimed at. Same shape as `/ship` step 4 versus step 6 (MD-20) — two halves of one command disagreeing about which files belong. |
 
 ## Notes
 
@@ -198,6 +199,7 @@ answering did not prevent it, because the claim did not feel like one that neede
 | 2026-08-25 | — | none | none — MD-27 corrected in place |
 | 2026-08-25 | DEV-01, MEM-01 | MD-29 | MD-29 |
 | 2026-08-25 | — | none | MD-30, MD-31 |
+| 2026-08-25 | GRP-01 | MD-32 | MD-32 |
 | 2026-08-25 | ADR-007 | none | MD-32, MD-33, MD-34 |
 | 2026-08-25 | ADR-007, second pass | MD-34 part (2) — renumbered per the operator; MD-38 — D6 exempts `decisions/` | MD-39 |
 | 2026-08-25 | ADR-007 pull request | MD-40 — D6 skips gitignored paths | MD-40 |
