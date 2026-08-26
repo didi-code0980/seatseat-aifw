@@ -69,7 +69,18 @@ id: GRP-02
 title: "Member assignment to groups"
 feature_ids: [GRP-02]
 group: GRP
-state: IN_PROGRESS   # ADVANCED FROM SPEC BY /design ON 2026-08-26T03:28:58Z, gate PASS.
+state: QA            # ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T06:43:59Z.
+                     # 04-review.md passed at 2026-08-26T04:28:20Z, 06-test-report.md passed at 2026-08-26T06:43:59Z.
+                     # All 11 ACs passed (14 e2e tests in tests/e2e/member-groups.spec.ts).
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: REVIEW. ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-26T04:02:11Z, gate PASS.
+                     # Eight of the ten `allowed_paths` are touched; the two absent are QA's test
+                     # files, which section 5 lists as `new — QA` and which are written at the QA
+                     # stage against section 6. `03-impl-log.md` records no deviation and no
+                     # consultation — section 1 was copy-pasteable as the design promised, and no
+                     # field name in the diff is absent from it (RULE-04).
+                     # state: IN_PROGRESS. ADVANCED FROM SPEC BY /design ON 2026-08-26T03:28:58Z, gate PASS.
                      # THE TICKET NEVER SAT AT READY, and that is a fact about how it was run rather
                      # than a defect: the operator invoked /design directly, so the orchestrator's
                      # DoR evaluation was not performed. GRP-01 was advanced the same way and its
@@ -187,8 +198,8 @@ tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
   spec:   { passed: true,  at: "2026-08-26T03:07:43Z" }
   design: { passed: true,  at: "2026-08-26T03:28:58Z" }
-  review: { passed: false, at: null }
-  qa:     { passed: false, at: null }
+  review: { passed: true,  at: "2026-08-26T04:28:20Z" }
+  qa:     { passed: true,  at: "2026-08-26T06:43:59Z" }
 
 # Notes on fields that are easy to get wrong:
 #
