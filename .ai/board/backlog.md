@@ -39,83 +39,43 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
+| 1 | SYS-02 | Cutover to Supabase as the data client | BACKLOG | three preconditions in its `ticket.yaml` — credentials on the machine, two Supabase projects, `SUPABASE_SERVICE_ROLE_KEY` in `.env.example` |
+| 2 | GRP-02 | Member assignment to groups | BACKLOG | nothing — `depends_on: [GRP-01]` is satisfied, GRP-01 merged as PR #42 |
+| 3 | REG-01 | User self-release and seat request workflow | BACKLOG | 🟡 in its registry row — is self-release one feature with the request workflow, or two? Nobody has said |
 
-`DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
-rather than by Phase C, ran the full loop the same day, and is `DONE`.
+**Refilled 2026-08-26. This table was empty while three seeded tickets sat at `BACKLOG`**, which made
+them invisible to the one file whose job is to order them. The gap opened because `/ship` is this
+file's only writer and none of the three has shipped — the rule is right and the consequence was not
+foreseen: a ticket that is *seeded* and never shipped never gets a row.
 
-`MEM-01` was added the same day, and it is the first registry row written by an agent rather than by
-the operator — see ADR-004. **Whether it can share a window with another ticket is not settled**, and
-one question at SPEC settles it: if deleting a member who occupies a seat *refuses*, its files stay
-disjoint and it parallelises; if it *cascades*, INV-06 fires, the delete writes
-`src/lib/data/mock/devices.ts`, and it has to run alone. Its `ticket.yaml` carries the question in
-full. That question was written while DEV-01 was still in flight; DEV-01 is now `DONE`, so nothing
-collides today — but the answer still decides whether MEM-01 can run beside whatever comes next.
+**Order is a proposal, not a ranking.** There is no algorithm here by design. SYS-02 is first because
+the operator said the cutover comes before new surfaces, and the argument is measurable rather than a
+preference: every mock-backed feature merged before it is a feature that has to be re-verified after.
+GRP-02 and REG-01 follow with nothing to separate them but REG-01's open scope question. Reorder
+freely — that is what this file is for.
 
-**Repaired 2026-08-24 by `/ship MEM-01`, and the previous paragraph is worth keeping in mind rather
-than kept.** It said this view was stale for rows 1 and 2 and was being left that way deliberately,
-because only `/ship` commits and nothing had shipped. That reasoning held while the drift was
-uncommitted; it stopped holding the moment a ship ran, which is the one command allowed to write this
-file. MEM-01 has moved to ARCHIVE, and the two remaining rows now carry their real state instead of
-the seeded `BACKLOG`.
+**SYS-02 has a conflict in the registry that this row does not resolve.** Two `TRIAGE` rows added by
+ADR-008 at 09:01 propose the same work split into two tickets — one for ADR-007 clauses 1-6 and 8 with
+`schema_delta: none`, one for clause 7 and the first migration. `SYS-02` was written at 10:00 as a
+single ticket, per the operator's decision of 2026-08-26 that it is not to be split, **and without
+searching the ledger first**, which is what `features.md` asks for in as many words. Until the two
+`TRIAGE` rows are marked `OUTDATED` pointing here, the registry holds two contradictory proposals for
+one piece of work.
 
-**Emptied 2026-08-25 by `/ship SYS-01`, and refilled the same day by GRP-01.** Both rows that
-paragraph used to explain moved to ARCHIVE, leaving the table empty for the first time — every ticket
-ever issued was `DONE`, WIP was 0 against a limit of 1, and all three worktrees were parked. Nothing
-could enter until a feature row existed to seed against.
+## What is not in this table, and should not be
 
-**Emptied again 2026-08-26 by `/ship GRP-01`.** The row this table carried moved to ARCHIVE, and
-the paragraphs below it are kept rather than corrected — they explain a choice that was made, and the
-choice held. GRP-01 ran the full loop and is the fifth ticket to reach DONE with `rework_count: 0`.
+Eight registry rows carry `TRIAGE` or `RECOMMEND` and none appears above. That is correct: they have
+no ID and no ticket, so there is nothing to order. ADR-008's rule is that an ID is what makes a
+feature citable, and a proposal nobody has agreed to must not hold one.
 
-**REG-01 is not a row here, and its absence is the accurate reading.** A `ticket.yaml` for it exists
-at `.ai/board/tickets/REG-01/` at `state: BACKLOG`, its feature row was seeded on 2026-08-25, and its
-`feature_ids` now resolve — but it was seeded outside the loop and belonged to no branch at all until
-this ship put it on an `ops/` branch. It also carries `invariants_touched: [INV-01, INV-02, INV-03,
-INV-06]`, which its own registry row rejects as having no source. It becomes a row here when a human
-confirms the 🟡 on that row: whether self-release and the request workflow are one feature or two.
+Reading the ledger and this file together is how the board is complete:
 
-**GRP-01 is the first slice chosen rather than inherited.** Every earlier ticket came from Phase C's
-seeding or from an ADR. This one was picked by reading what was actually startable: of the five bare
-group tables — AUT, GRP, LAY, REG, DSH — the three deseeded AUT and REG items all need to know who is
-signed in, and nothing in this system does. `PermissionGate` exists and is deliberately called from
-nowhere, because *"a control wrapped in a gate fed a hard-coded role renders a surface that looks
-guarded and is not"* (`members-manager.tsx:10`). That is the same Q-1 that withdrew the AUT sign-in
-row, so those three wait on a product decision rather than on a registry write. GRP, LAY and DSH need
-no such notion, and GRP is the closest in shape to the four CRUD slices already proven.
-
-**LAY remains the heavier choice, and it is still open.** It carries INV-10 — no two seats overlapping
-a grid cell — which is the only invariant in the ledger that has never been implemented; SEA-01 pushed
-placement out of its own scope and assigned it here. `layout-designer/page.tsx` says dnd-kit is
-installed and deliberately unwired, *"because a half-built interaction is harder to replace than an
-empty frame."*
-
-**MD-16 outlived SYS-01 and is still open.** `pnpm hooks:test` is red on `main` — ten D12 tests in
-`scripts/tests/check-docs.test.mjs` assert pre-ADR-006 semantics, re-verified by execution at this
-ship: 69 tests / 59 pass / 10 fail, unchanged. `node scripts/check-docs.mjs` itself exits 0; the check
-works and its tests describe a different check. It was recorded as belonging to whoever landed
-ADR-006, and SYS-01 is that ticket — it shipped without touching them, so the debt has now outlived
-its owner and needs re-assigning rather than waiting. It gates no gate: the Definition of Done names
-typecheck, lint, unit and e2e, and `hooks:test` is none of those, which is exactly why it survived
-four ships unnoticed.
-
-**Corrected 2026-08-25 — "it gates no gate" is true of the Definition of Done and false of CI, and it
-is the CI half that blocks a merge.** `verify` runs `docs-audit` and then `hook guards` as sequential
-steps of one job. `docs-audit` had been red on `main` since SYS-01 merged, so **`hook guards` never
-ran, and neither did anything after it** — `pnpm verify` shows `skipped` on those runs, meaning
-typecheck, lint, unit and e2e were not executed in CI at all for at least three commits, PRs #32 and
-#33 among them. Repairing D6 (MD-38, MD-40) turned `docs-audit` green on PR #37 and the failure moved
-straight to MD-16: 179 tests, 169 pass, 10 fail. It is not fixed there deliberately — ADR-007 §8
-rewrites D12 a second time, so pinning those ten tests to ADR-006's semantics now is work that gets
-undone.
-
-`SYS-01` is the first `SYS` ticket and the first that replaces infrastructure rather than adding a
-screen. It exists because ADR-006 was accepted on 2026-08-24; the feature row and this row were
-written in the same change as the seed, so no ticket ever existed without its registry row.
-
-`ROO-01` was first deliberately: it measured whether the loop closes, not how hard the domain is. It
-closed, on the second attempt at every judging gate. `DEV-01` then closed on the first attempt at
-every gate, with no escalation and `rework_count: 0`, which is the result the ROO-01 run was run to
-make possible.
+| Where | Holds |
+|---|---|
+| `features.md`, `TRIAGE` / `RECOMMEND` | proposed or noticed, nobody has committed to it |
+| this table | agreed, seeded, waiting for SPEC |
+| `## READY` | transient — a ticket that passes DoR is dispatched, not parked |
+| `## ARCHIVE` | merged |
 
 ## Deseeded — absorbed into the feature ledger, 2026-08-26
 
