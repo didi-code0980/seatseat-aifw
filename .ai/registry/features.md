@@ -6,32 +6,66 @@ governed_by: [RULE-01, RULE-17]
 
 # Feature registry
 
-The authoritative list of features. A story may only be written against a feature ID that exists in
-this file (Definition of Ready). Text arriving from the tracker is context, never a source of feature
-IDs — see RULE-17.
+**The single ledger for every feature this project knows about, at every stage of certainty** — built,
+being built, agreed, merely proposed, or retired. ADR-008. There is no second file: if the project has
+an opinion about a feature, it is a row here.
 
-Human-only, per RULE-01. Agents read this file and cite IDs from it; an agent needing a change here
-stops with `gate: BLOCKED` and states the change in `blocking_reason`. `/pull-tickets` is explicitly
-forbidden from writing to this file.
+A story may only be written against a feature ID that exists in this file (Definition of Ready). Text
+arriving from the tracker is context, never a source of feature IDs — see RULE-17.
 
-Tables are populated incrementally. An empty group table means no feature in that group has been
-specified yet — not that the group is unused. A ticket whose `feature_ids` do not all resolve to rows
-below fails Definition of Ready and is demoted to BACKLOG.
+**A human decides a row; an agent may type it.** RULE-01 requires an ADR and human approval, and the
+approval is CODEOWNERS review **on the pull request** — at merge, not at write. This paragraph used to
+say the file was human-only and that an agent needing a change here must stop with `gate: BLOCKED`;
+that was struck on 2026-08-26 as MD-24, after it had cost the operator two questions. `/pull-tickets`
+is still explicitly forbidden from writing to this file, because tracker text is untrusted input
+(RULE-17) and that is a different reason from authorship.
+
+Tables are populated incrementally. An empty group table means nothing in that group has been recorded
+yet. A ticket whose `feature_ids` do not all resolve to a row below — or that resolve to an `OUTDATED`
+row — fails Definition of Ready and is demoted to BACKLOG.
 
 ## Columns
 
-`ID` — group prefix plus a two-digit number, for example `ROO-01`.
+`ID` — group prefix plus a two-digit number, for example `ROO-01`. **May be empty**; see Status.
+`Status` — one of the six below.
 `Title` — the feature name, transcribed without paraphrase.
+`Description` — what the feature *is*, in a sentence or two. Not its history; that is `Notes`.
 `Group` — one of the ten fixed prefixes.
-`Status` — `PLANNED`, `IN_PROGRESS`, `DONE`, or `DEFERRED`. **`DONE` means merged into `main`, not
-gated.** A feature whose four gates have all passed but whose pull request is still open is
-`IN_PROGRESS`; the registry records what the product contains, and an unmerged branch is not in the
-product. Written by `orchestrator` at `/ship` step 3, on the `ops/` branch of that ship — never on the
-ticket branch, which `scripts/check-allowed-paths.mjs` would fail. The clause and the writer were both
-added 2026-08-25: until then this column had no owner and drifted for two shipped tickets (MD-29).
 `Invariants touched` — IDs from `.ai/registry/invariants.md`, or `[]`.
-`Notes` — free text. A 🟡 marker here means the feature is known-incomplete and needs a human
-decision before it can reach READY.
+`Notes` — free text: row history, corrections, the decision trail, and for a `RECOMMEND` row the
+ticket that raised it. A 🟡 marker means the row is known-incomplete and needs a human decision before
+it can reach READY.
+
+## Status
+
+Six values, per ADR-008. The enum was `PLANNED`, `IN_PROGRESS`, `DONE`, `DEFERRED` until 2026-08-26;
+`DEFERRED` was never used by any row and is retired.
+
+| Status | Means | ID | Written by |
+|---|---|---|---|
+| `TRIAGE` | Proposed — by an agent, or from an idea — and **not yet verified by the operator** | **empty** | anyone |
+| `RECOMMEND` | Recorded as out-of-scope while building something else. Nobody has decided to build it | **empty** | the stage that found it |
+| `PLANNED` | Verified and wanted. A ticket may be seeded against it | required | the operator, by merging |
+| `IN_PROGRESS` | A ticket exists and is in flight | required | see MD-41 — nothing writes this yet |
+| `DONE` | **Merged into `main`**, not gated | required | `orchestrator` at `/ship` step 3 |
+| `OUTDATED` | No longer true or no longer wanted. Kept as a record, never deleted | either | the operator |
+
+**`TRIAGE` and `RECOMMEND` rows have no ID, and that is the enforcement rather than a formatting
+rule.** An ID is what makes a feature citable: check D1 resolves it and Definition of Ready accepts
+it. Both ask whether a row *exists*, not whether anyone agreed with it — so an unverified proposal
+holding an ID is a proposal an agent can write a story against with every check passing. Check D14
+fails the audit on a `TRIAGE` or `RECOMMEND` row that has one.
+
+**`DONE` means merged into `main`.** A feature whose four gates have all passed but whose pull request
+is still open is not `DONE`; the registry records what the product contains, and an unmerged branch is
+not in the product. Written by `orchestrator` at `/ship` step 3, on the `ops/` branch of that ship —
+never on the ticket branch, which `scripts/check-allowed-paths.mjs` would fail. The clause and the
+writer were both added 2026-08-25: until then this column had no owner and drifted for two shipped
+tickets (MD-29).
+
+**Promotion is the operator's, and it happens by merging.** A `TRIAGE` or `RECOMMEND` row becomes
+`PLANNED` when it is given an ID and that change is merged. An agent may propose the promotion; it may
+not perform it, because merging is RULE-09.
 
 ## Group prefixes
 
@@ -48,57 +82,65 @@ expansions exactly.
 
 ## AUT — Authentication & Accounts
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| | TRIAGE | Sign in and sign out with Supabase Auth | A person signs in and signs out, and the application knows who is making a request. | AUT | INV-08 | **Issued, seeded, specified, then withdrawn by the operator on 2026-08-24** to be discussed with product; the row was deleted with it in commit `1148108`, which is why the group table read empty for two days. The story survives at `fdfe96a` on an unmerged branch as an archive — ten live acceptance criteria, the invariants, the permission model and an explicit out-of-scope. **Blocked on one product question, not a technical one:** does signing in resolve a `Member` for the signed-in identity, and if so by what key? Three branches are enumerated in `.ai/board/ideas/2026-08-25-supabase-consolidation-scope-unsettled.md` and none is chosen. `SYS-01` swapped the provider underneath this; it delivered no sign-in surface and never claimed to. |
+| | TRIAGE | Account management UI | A Manager or an Admin creates and manages accounts. | AUT | INV-08 | Seeded in Phase C, deseeded, and never issued a row. INV-08 says accounts are created by Manager or Admin only, and **no surface in the product does it** — the invariant currently has no implementation to guard. Read MD-14 before assuming the `localStorage` flag ADR-006 records enforces anything. |
+| | TRIAGE | Role assignment UI | A Manager or an Admin changes a member's role. | AUT | [] | Seeded in Phase C, deseeded, and never issued a row. `Member.role` is the source of role and `can()` is the only comparison; nothing lets a person change the value. |
+| | RECOMMEND | Rank guard on the shipped CRUD surfaces | Every shipped surface applies the rank check its design names, against the signed-in person. | AUT | INV-08 | **Raised as out-of-scope by three tickets and never picked up.** `ROO-01`'s row says *"Auth guard deferred to AUT"*; `DEV-01` out-of-scope item 1 and `MEM-01` out-of-scope item 1 both exclude *"sessions, roles, and any guard on this surface"*. `PermissionGate` exists and is deliberately called from nowhere, because a control wrapped in a gate fed a hard-coded role renders a surface that looks guarded and is not. **This cannot start before the sign-in row above**: there is no session to gate on. |
 
 ## ROO — Rooms
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-| ROO-01 | Room CRUD UI | ROO | DONE | INV-01, INV-04, INV-05, INV-06, INV-07, INV-10, INV-11 | First loop-validation slice. Auth guard deferred to AUT. Merged in PR #1, 2026-08-23. |
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| ROO-01 | DONE | Room CRUD UI | Create, list, edit and delete rooms. Deleting a room destroys its seats, and the interface confirms by naming how many will be lost. | ROO | INV-01, INV-04, INV-05, INV-06, INV-07, INV-10, INV-11 | First loop-validation slice. Auth guard deferred to AUT. Merged in PR #1, 2026-08-23. |
 
 ## SEA — Seats
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-| SEA-01 | Seat occupancy — assign and release | SEA | DONE | INV-01, INV-02, INV-03, INV-06 | **Corrected 2026-08-25.** The row read `IN_PROGRESS` with a note saying the branch was pushed and no pull request was open. Both stopped being true when `feat/SEA-01` merged, and nothing updated it: `/ship` step 3 only gained the registry `Status` write on 2026-08-25, *after* SEA-01 shipped, so this is the one row the new step will never reach on its own. MD-29's column, one ticket wide. Fourth slice, specced parallel to MEM-01's implementation. **Placement is deliberately out of this row**: INV-10 governs grid overlap, and `types.ts:77` assigns it to every LAY ticket. SPEC must confirm the split before DESIGN — if placement is pulled in, INV-10 joins this list and the ticket becomes LAY's problem instead. INV-06 is the reason this ticket writes `mock/devices.ts`: releasing an occupant auto-downgrades that seat's primary device. |
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| SEA-01 | DONE | Seat occupancy — assign and release | Assign an occupant to an existing seat and release them. Placement is not part of it. | SEA | INV-01, INV-02, INV-03, INV-06 | **Corrected 2026-08-25.** The row read `IN_PROGRESS` with a note saying the branch was pushed and no pull request was open. Both stopped being true when `feat/SEA-01` merged, and nothing updated it: `/ship` step 3 only gained the registry `Status` write on 2026-08-25, *after* SEA-01 shipped, so this is the one row the new step will never reach on its own. MD-29's column, one ticket wide. Fourth slice, specced parallel to MEM-01's implementation. **Placement is deliberately out of this row**: INV-10 governs grid overlap, and `types.ts:77` assigns it to every LAY ticket. SPEC must confirm the split before DESIGN — if placement is pulled in, INV-10 joins this list and the ticket becomes LAY's problem instead. INV-06 is the reason this ticket writes `mock/devices.ts`: releasing an occupant auto-downgrades that seat's primary device. |
+| | RECOMMEND | Network ports on a seat | A seat's network ports, recorded as part of its fixed physical description. | SEA | [] | **Named in the charter as one of the three things this system manages, and it has never had a row.** Raised as out-of-scope twice: `DEV-01` item 3 and `SEA-01` item 2, both saying *"a port belongs to a seat and is part of that seat's fixed physical description"*. Neither ticket built it and no ticket has been seeded for it. |
 
 ## DEV — Devices
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-| DEV-01 | Device CRUD UI | DEV | DONE | INV-04, INV-05, INV-06, INV-07 | Second CRUD slice — tests whether the ROO-01 pattern transfers. Mock-backed. Merged in PR #7, 2026-08-23; first ticket through the loop with `rework_count: 0` and no escalation. **Status corrected 2026-08-25** — it read `PLANNED` for two days because no command wrote this column (MD-29). |
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| DEV-01 | DONE | Device CRUD UI | Create, list, edit and delete devices, assign them to seats, and designate one primary device per seat. A device may sit unassigned in inventory. | DEV | INV-04, INV-05, INV-06, INV-07 | Second CRUD slice — tests whether the ROO-01 pattern transfers. Mock-backed. Merged in PR #7, 2026-08-23; first ticket through the loop with `rework_count: 0` and no escalation. **Status corrected 2026-08-25** — it read `PLANNED` for two days because no command wrote this column (MD-29). |
 
 ## MEM — Members
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-| MEM-01 | Member CRUD UI | MEM | DONE | INV-08, INV-12 | Merged in PR #17, 2026-08-24. **Status corrected 2026-08-25**, same cause as DEV-01 (MD-29). Third CRUD slice, first row written by an agent (ADR-004). Member deletion resolved to a **refusal** at SPEC — ADR-005, which issues INV-12. INV-01, INV-05 and INV-06 were on this row conditionally and fall away with that answer; INV-12 is on it because MEM-01 is the ticket that implements the deletion INV-12 governs. |
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| MEM-01 | DONE | Member CRUD UI | Create, list, edit and delete members. Deletion is refused while the member occupies a seat or owns a device, rather than cascading. | MEM | INV-08, INV-12 | Merged in PR #17, 2026-08-24. **Status corrected 2026-08-25**, same cause as DEV-01 (MD-29). Third CRUD slice, first row written by an agent (ADR-004). Member deletion resolved to a **refusal** at SPEC — ADR-005, which issues INV-12. INV-01, INV-05 and INV-06 were on this row conditionally and fall away with that answer; INV-12 is on it because MEM-01 is the ticket that implements the deletion INV-12 governs. |
 
 ## GRP — Groups
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-| GRP-01 | Group CRUD UI | GRP | DONE | [] | The first GRP row. Creates, lists as a tree, renames, moves parent, and deletes groups. Member assignment deferred to GRP-02. Q-1 resolved to Refuse, Q-2 resolved to Detach (INV-12 unengaged). **`Status` written to `DONE` by `/ship` step 3 on 2026-08-26, on its own `ops/` branch, and it is the first row this step has ever written on the ship that produced it** — DEV-01, MEM-01 and SEA-01 were all corrected after the fact (MD-29). `DONE` means merged: PR #42 carries the ticket and this row is the value that pull request makes true. If #42 is closed unmerged, this row is wrong and reverting it is the repair. |
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| GRP-01 | DONE | Group CRUD UI | Create groups, list them as a tree, rename, move a group's parent, and delete. Assigning members to groups is not part of it. | GRP | [] | The first GRP row. Member assignment deferred to GRP-02. Q-1 resolved to Refuse, Q-2 resolved to Detach (INV-12 unengaged). **`DONE` written by `/ship` step 3 on 2026-08-26 — the first time any command has written this column.** MD-41's own row records the hand-set `IN_PROGRESS` this replaces, and MD-29 records the three earlier features whose Status was corrected after the fact; this is the first written by the ship that produced it. `DONE` means **merged**: the ticket is in PR #42 and this value is what merging it makes true. If #42 is closed unmerged, this row is wrong and reverting it is the repair. |
 
 ## LAY — Layout Designer
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| | RECOMMEND | Seat placement on the room grid | Place seats on a room's grid by drag and drop. A placement is a grid coordinate plus a rectangular footprint, and no two seats in a room may overlap a cell. | LAY | INV-10 | **Carries the only invariant in the ledger that has never been implemented.** Raised as out-of-scope by `SEA-01` item 1 — *"placement and everything spatial"* — and by `ROO-01` item 2. `SEA-01`'s own row records that INV-10 is assigned to every LAY ticket. dnd-kit is installed and deliberately unwired, *"because a half-built interaction is harder to replace than an empty frame."* The backlog calls this the heavier of the startable choices and leaves it open. |
 
 ## REG — Seat Requests
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-| REG-01 | User self-release and seat request workflow | REG | PLANNED | [] | 🟡 **Row written 2026-08-25 to make an existing ticket legal, not to plan the work.** A `ticket.yaml` for REG-01 was seeded on 2026-08-25 with no row behind it — check D1 failed on the first document that cited the ID. The title is transcribed, not composed: it is the ticket's own `title`, and it matches the *User self-release* entry the backlog's Deseeded section has carried since Phase C. **`Invariants touched` is `[]` deliberately.** The seeded ticket claims `INV-01, INV-02, INV-03, INV-06`, transcribed from a row that did not exist, so that list has no source and is not carried here — a plausible invention is more expensive to find than an obvious gap. SPEC determines the real set and this row is amended then. The 🟡 stands until a human confirms the scope: self-release and the request workflow may be one feature or two, and REG-01 covering both is an assumption nobody has stated. |
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| REG-01 | PLANNED | User self-release and seat request workflow | A person releases the seat they occupy, and requests a seat through an approval workflow. | REG | [] | 🟡 **Row written 2026-08-25 to make an existing ticket legal, not to plan the work.** A `ticket.yaml` for REG-01 was seeded on 2026-08-25 with no row behind it — check D1 failed on the first document that cited the ID. The title is transcribed, not composed: it is the ticket's own `title`, and it matches the *User self-release* entry the backlog carried since Phase C. **`Invariants touched` is `[]` deliberately.** The seeded ticket claims `INV-01, INV-02, INV-03, INV-06`, transcribed from a row that did not exist, so that list has no source and is not carried here — a plausible invention is more expensive to find than an obvious gap. SPEC determines the real set and this row is amended then. The 🟡 stands until a human confirms the scope: self-release and the request workflow may be one feature or two, and REG-01 covering both is an assumption nobody has stated. |
 
 ## DSH — Dashboard
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
 
 ## SYS — System
 
-| ID | Title | Group | Status | Invariants touched | Notes |
-|----|-------|-------|--------|--------------------|-------|
-| SYS-01 | Replace Better Auth with Supabase Auth | SYS | DONE | INV-08 | SPEC and DESIGN both passed on `feat/SYS-01` (2026-08-24); no implementation yet. Implements ADR-006. Removes the `better-auth` dependency, the server instance, the browser client and the catch-all route handler; adopts `@supabase/ssr` constructed **server-side only**, exempted in `no-restricted-imports` for `src/lib/auth/**` alone. `src/lib/auth/permissions.ts` is unchanged — it never depended on Better Auth. **`schema_delta` is expected to stay `none`**: `Member.authUserId` is not needed while `DATA_SOURCE=mock`, and pulling it in would put a RULE-09 human gate in the middle of the loop. If DESIGN concludes otherwise, that is a finding to raise, not a decision to take. INV-08 is on this row because self-signup moves from `disableSignUp: true` to the client-side flag ADR-006 records — **read MD-14 before assuming that flag enforces anything.** |
+| ID | Status | Title | Description | Group | Invariants touched | Notes |
+|----|--------|-------|-------------|-------|--------------------|-------|
+| SYS-01 | DONE | Replace Better Auth with Supabase Auth | The authentication provider is Supabase Auth, constructed server-side only. Better Auth is removed entirely. | SYS | INV-08 | Implements ADR-006. Merged as PR #32 and #33 on 2026-08-25. Removes the `better-auth` dependency, the server instance, the browser client and the catch-all route handler; adopts `@supabase/ssr` exempted in `no-restricted-imports` for `src/lib/auth/**` alone. `src/lib/auth/permissions.ts` is unchanged — it never depended on Better Auth. `schema_delta` stayed `none`: `Member.authUserId` is not needed while `DATA_SOURCE=mock`, and pulling it in would have put a RULE-09 human gate in the middle of the loop. INV-08 is on this row because self-signup moved from `disableSignUp: true` to the client-side flag ADR-006 records — **read MD-14 before assuming that flag enforces anything.** It delivered no sign-in surface; see the AUT table. |
+| | TRIAGE | Supabase data client replaces Prisma | The implementation behind `src/lib/data/` becomes `@supabase/supabase-js`, server-side only. Prisma leaves the tree. The seam itself does not move. | SYS | [] | **Implements ADR-007 clauses 1 to 6 and 8.** `schema_delta` stays `none` and `DATA_SOURCE` keeps defaulting to `mock`, which keeps the RULE-09 schema approval at a ticket boundary instead of the middle of a loop — the cutover is the row below. Includes the D12 rewrite clause 8 requires **and MD-16's ten tests with it**, which is the argument for doing this before another feature slice: CI runs `docs-audit` then `hook guards` as sequential steps, so while `hook guards` is red `pnpm verify` is skipped and typecheck, lint, unit and e2e do not run at all. ADR-007's OQ-1 and OQ-2 are answered at DESIGN. |
+| | TRIAGE | Cut over from mock fixtures to the hosted database | The application runs against the real Supabase Postgres rather than mock fixtures, and the seed data lands in it. | SYS | INV-04, INV-05, INV-07, INV-10 | **Implements ADR-007 clause 7.** The first SQL migration, collapsing `prisma/schema.prisma` and `prisma/constraints.draft.sql` into one artefact in the language INV-04's partial index and INV-05's constraint trigger always required. **`schema_delta` is not `none`, so this needs a human ADR-linked approval under RULE-09 before Definition of Ready passes.** `DATA_SOURCE` becomes `"mock" \| "supabase"` defaulting to `"supabase"`; `src/app/page.tsx` renders that string under `data-testid="home-data-source"`, so any e2e assertion on `prisma` breaks. Preconditions from ADR-007 OQ-4, which the operator answered on 2026-08-25 — the project exists; what is still unrecorded is which credentials are on which machine, and whether one project serves every environment. ADR-007's OQ-3 and OQ-5 are answered at DESIGN. |

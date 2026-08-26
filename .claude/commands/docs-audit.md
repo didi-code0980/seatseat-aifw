@@ -21,9 +21,24 @@ the repair it makes is the one nobody reviewed. Findings go to the operator.
 | D10 | Every state in the `ticket.yaml` enum appears in the gate table, and the reverse |
 | D11 | Every `ADR-nnn` referenced has a file in `.ai/registry/decisions/` |
 | D12 | Supabase is confined to the shape ADR-006 authorises — `@supabase/ssr` only, restricted in lint, imported nowhere under `src/` but `src/lib/auth/` |
+| D13 | Every Definition of Ready item names a stage that produces it, and that stage sits at or before READY |
+| D14 | The feature ledger's status and ID agree — `TRIAGE` and `RECOMMEND` carry no ID, the other statuses carry one, IDs are unique and sit in their own group table |
+
+**D13 was missing from this table until 2026-08-26** and had been since it was written. The check runs
+and always has; only its entry here was absent, which is the same class of defect as an ADR's affected
+list saying nothing changed (MD-32) — a register nothing reconciles against the thing it registers.
 
 D8 is advisory and never fails the run; it is a prompt for human judgement, because a paraphrase can
 be a legitimate summary or a second source of truth and only a person can tell which.
+
+**D14 protects one thing, and it is worth naming because the check looks like formatting.** ADR-008
+made `features.md` the single register for every feature at every stage of certainty, including
+proposals nobody has verified. What stops an agent building its own proposal is that a `TRIAGE` or
+`RECOMMEND` row carries **no ID** — because an ID is what makes a feature citable, and both D1 and
+Definition of Ready ask only whether a row *exists*, never whether a human agreed with it. D14 is what
+makes that rule enforced rather than merely written down. D1 gained the other half at the same time: a
+citation of an `OUTDATED` row now fails, so retiring a feature actually stops tickets being seeded
+against it.
 
 **D2 recognises deliberately unissued IDs.** An ID listed in the `## Unissued IDs` table of
 `invariants.md` is valid to cite and never valid to use. The alternative was making the author write
