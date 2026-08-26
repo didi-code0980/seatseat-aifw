@@ -69,7 +69,34 @@ id: GRP-02
 title: "Member assignment to groups"
 feature_ids: [GRP-02]
 group: GRP
-state: QA            # ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T06:43:59Z.
+state: DONE          # SHIPPED 2026-08-26T07:18:01Z BY /ship. Four gates passed with timestamps,
+                     # `pnpm verify` exit 0, and `pnpm test:e2e` 96/96 exit 0 re-run on this branch at
+                     # ship rather than trusted from `06-test-report.md` — the same 96 the QA gate
+                     # recorded, so the report describes the tree that will merge.
+                     #
+                     # DONE MEANS GATED AND PUSHED, NOT MERGED. RULE-09 keeps the merge human.
+                     #
+                     # MD-35 CHECKED AND INERT, SECOND TIME RUNNING. The branch ships seven commits
+                     # behind `main`, and `git diff feat/GRP-02...origin/main -- src tests
+                     # package.json pnpm-lock.yaml prisma playwright.config.ts vitest.config.ts` is
+                     # EMPTY. The QA gate's base differs from `main` in no file either suite executes.
+                     # Established by execution, not inferred from commit subjects.
+                     #
+                     # `tests/unit/member-groups.test.ts` IS AN ENUMERATED allowed_path AND IS EMPTY,
+                     # DECLARED RATHER THAN OMITTED. `06-test-report.md:155` states the reason and
+                     # `99-questions.md` F-1 raised it before the gate: design section 6 is a
+                     # `data-testid` contract naming no seam call, so a unit test has no function to
+                     # target under RULE-05. All 11 ACs are covered by e2e alone. `allowed_paths` is a
+                     # ceiling, not a quota, so this is not a Definition of Done failure — but it is
+                     # the first ticket to map every AC through one suite, and GRP-01 mapped each
+                     # through two.
+                     #
+                     # `src/lib/data/prisma/members.ts` IS WRITTEN INTO A DIRECTORY ADR-007 DELETES,
+                     # exactly as GRP-01 wrote `prisma/groups.ts`. SYS-02 is now issued and seeded as
+                     # the cutover ticket; it inherits both.
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: QA. ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T06:43:59Z.
                      # 04-review.md passed at 2026-08-26T04:28:20Z, 06-test-report.md passed at 2026-08-26T06:43:59Z.
                      # All 11 ACs passed (14 e2e tests in tests/e2e/member-groups.spec.ts).
                      #
@@ -92,7 +119,8 @@ state: QA            # ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T06:43:5
                      # ---- THE RECORD THIS REPLACES, KEPT ----
                      # state: SPEC. ADVANCED FROM BACKLOG BY /spec ON 2026-08-26T03:07:43Z, gate PASS.
                      # DoR is the orchestrator's to evaluate and this stage does not set READY.
-owner: ""
+owner: "orchestrator"    # Taken at /ship, per MEM-01, SEA-01, SYS-01 and GRP-01. It was
+                         # "" from seed through QA — MD-36, fourth occurrence out of five.
 branch: "feat/GRP-02"   # cut from origin/main by /spec step 0, 2026-08-26.
 size_estimate: "M"    # SET BY ba AT SPEC. Grounds are in `01-story.md` under **Size**, and the
                       # short form is that this is two halves rather than one field: a write path
