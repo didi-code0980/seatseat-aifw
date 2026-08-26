@@ -90,6 +90,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
+| REG-01 | User self-release and seat request workflow | REG | PLANNED | [] | 🟡 **Row written 2026-08-25 to make an existing ticket legal, not to plan the work.** A `ticket.yaml` for REG-01 was seeded on 2026-08-25 with no row behind it — check D1 failed on the first document that cited the ID. The title is transcribed, not composed: it is the ticket's own `title`, and it matches the *User self-release* entry the backlog's Deseeded section has carried since Phase C. **`Invariants touched` is `[]` deliberately.** The seeded ticket claims `INV-01, INV-02, INV-03, INV-06`, transcribed from a row that did not exist, so that list has no source and is not carried here — a plausible invention is more expensive to find than an obvious gap. SPEC determines the real set and this row is amended then. The 🟡 stands until a human confirms the scope: self-release and the request workflow may be one feature or two, and REG-01 covering both is an assumption nobody has stated. |
 
 ## DSH — Dashboard
 

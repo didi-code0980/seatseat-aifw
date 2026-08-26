@@ -23,14 +23,18 @@ lifecycle that deliver it. Nothing here restates a rule.
 | `product` | ephemeral | task done |
 | `devops` | ephemeral | task done |
 
-**One orchestrator per lane folder, not one per run.** The table reads `persistent` and it is written
-in the singular, from before there were three worktrees. Since 2026-08-24 the lead role runs in two
-folders — `aiw-design` for `/next-ticket`, `/handoff` after DESIGN, and `/ship`; `aiw-implement` for `/handoff`
-after QA. It has to be two sessions rather than one, because a folder is decided by where a session is
-launched and a session cannot change folder, while the files each `/handoff` commits live in that
-folder's working tree. The implement lane's orchestrator has exactly one job and is idle the rest of the
-time; that is cheaper than the alternative, which is one session reaching into another worktree with
-`git -C` — precisely what `guard-project-root.mjs` used to refuse before ADR-004 unwired it.
+**One orchestrator, and it lives in `aiw-design`.** ~~One per lane folder~~ — struck 2026-08-26. That
+wording lasted a day: it was written when both hand-offs were the orchestrator's, and the next day
+`/handoff` moved to the role that closed the lane's last gate, which leaves the implement lane with no
+orchestrator to be idle in. The lead session now runs `/next-ticket`, `/ship` and nothing else, all in
+`aiw-design`.
+
+What survives from that paragraph is the constraint that produced it, because it still binds anything
+that commits: **a folder is decided by where a session is launched and a session cannot change
+folder**, so whatever persists a lane's work must already be in that lane. The alternative is one
+session reaching into another worktree with `git -C` — precisely what `guard-project-root.mjs` refused
+before ADR-004 unwired it, and the reason `qa` rather than a second orchestrator hands off from
+`aiw-implement`.
 
 **Roles that get asked stay alive; roles that pass judgement die after speaking.**
 
@@ -69,12 +73,20 @@ Each line is run in the session named. The orchestrator prints the next line aft
 | # | Command | Session | Produces |
 |---|---|---|---|
 | 1 | `/spec ROO-01` | BA — persistent | `01-story.md`, plus `invariants_touched` and `size_estimate` in `ticket.yaml` |
-| — | `/next-ticket` | orchestrator — lead | the DoR evaluation; `SPEC -> READY` on a pass, back to `BACKLOG` on a fail |
+| — | `/next-ticket` | orchestrator — lead, `aiw-design` only | the DoR evaluation, **reported and not written** — see below |
 | 2 | `/design ROO-01` | Tech Lead — persistent | `02-design.md`, `allowed_paths` and `size` in `ticket.yaml` |
 | 3 | `/implement ROO-01` | Developer — fresh, kept until DONE or ESCALATED | code, `03-impl-log.md` |
 | 4 | `/review ROO-01` | **fresh session, discarded after the verdict** | `04-review.md` |
 | 5 | `/qa ROO-01` | **fresh session, discarded after the verdict** | `05-test-plan.md`, `06-test-report.md`, `tests/**` |
 | 6 | `/ship ROO-01` | orchestrator — lead | PR opened; a human merges (RULE-09) |
+
+**`READY` is evaluated and never stamped.** This row used to read *`SPEC -> READY` on a pass, back to
+`BACKLOG` on a fail*, and no command ever performed it: `next-ticket.md` writes nothing by its own
+first line, and `spec.md` forbids the BA to set it. Three documents, no writer — MD-30. Corrected
+2026-08-25 by admitting what has always happened rather than inventing a writer: a ticket that passes
+DoR is *reported* ready and goes straight to `/design`, and the DESIGN gate's timestamp is the proof,
+because DESIGN cannot have run otherwise. DEV-01's `metrics.md` row says exactly this. `READY` stays
+in the enum as the name of a condition, not of a stored value.
 
 **The unnumbered row is not optional.** SPEC runs directly out of BACKLOG, and DoR is evaluated
 between SPEC and READY, because two of its six items are the BA's output. The BA does not promote its
