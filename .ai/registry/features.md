@@ -1,6 +1,6 @@
 ---
-doc_version: 7
-last_updated: 2026-08-25
+doc_version: 8
+last_updated: 2026-08-26
 governed_by: [RULE-01, RULE-17]
 ---
 
@@ -79,7 +79,7 @@ expansions exactly.
 
 | ID | Title | Group | Status | Invariants touched | Notes |
 |----|-------|-------|--------|--------------------|-------|
-| GRP-01 | Group CRUD UI | GRP | PLANNED | [] | The first GRP row. Creates, lists as a tree, renames, moves parent, and deletes groups. Member assignment deferred to GRP-02. Q-1 resolved to Refuse, Q-2 resolved to Detach (INV-12 unengaged). |
+| GRP-01 | Group CRUD UI | GRP | DONE | [] | The first GRP row. Creates, lists as a tree, renames, moves parent, and deletes groups. Member assignment deferred to GRP-02. Q-1 resolved to Refuse, Q-2 resolved to Detach (INV-12 unengaged). **`Status` written to `DONE` by `/ship` step 3 on 2026-08-26, on its own `ops/` branch, and it is the first row this step has ever written on the ship that produced it** — DEV-01, MEM-01 and SEA-01 were all corrected after the fact (MD-29). `DONE` means merged: PR #42 carries the ticket and this row is the value that pull request makes true. If #42 is closed unmerged, this row is wrong and reverting it is the repair. |
 
 ## LAY — Layout Designer
 
