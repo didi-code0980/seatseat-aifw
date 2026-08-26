@@ -43,9 +43,41 @@ gates:
 #   1. DATABASE_URL, DIRECT_URL, the Supabase project URL and keys, and SUPABASE_SERVICE_ROLE_KEY are
 #      present on the machine. .env.local is gitignored and no agent can verify it from the repo.
 #      Under ADR-007 clause 7 the application does not start without them.
-#   2. Two Supabase projects exist, dev and prod. Decided 2026-08-26: clause 7 makes every `pnpm dev`
-#      and every `pnpm verify` reach a database, so one shared project means every test run touches
-#      production data.
+#
+#      PARTIALLY MET AS OF 2026-08-26, VERIFIED BY READING KEY NAMES IN ALL THREE WORKTREES.
+#      `.env.local` now exists in `aiw-design`, `aiw-implement` and `aiw-steward`, and each carries
+#      `DATA_SOURCE`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
+#      **`DATABASE_URL` and `DIRECT_URL` are absent from all three.** Whether that blocks anything is
+#      a real question rather than an oversight: `@supabase/supabase-js` authenticates with the URL
+#      and a key and needs no Postgres connection string, so the two URLs are needed for the
+#      MIGRATION half of this ticket and not for the client half. Precondition 3 says the two-URL
+#      split *"is a pooler property and survives; the wiring does not"*. SPEC establishes which
+#      tool runs the first migration and therefore which of the two URLs it needs — from the Supabase
+#      CLI docs, per precondition 3, not from memory.
+#   2. ANSWERED 2026-08-26 BY THE OPERATOR: THERE IS ONE SUPABASE PROJECT, NOT TWO. Their words:
+#      *"CHỉ có 1 project supabase duy nhất."* This is a legitimate answer and not a violation —
+#      ADR-007 §"Two Supabase projects, `dev` and `prod`" reserved exactly this to them: *"if a second
+#      project costs money that is the one place the decision is theirs rather than the tech lead's."*
+#      The ADR states the technical preference; the operator holds the call and has made it.
+#
+#      **THE CONSEQUENCE IS UNCHANGED BY THE ANSWER AND SPEC MUST CARRY IT.** Clause 7 defaults
+#      `DATA_SOURCE` to `supabase`, so with one project every `pnpm dev` and every `pnpm verify`
+#      reads and writes the same database the product uses. `.ai/standards/testing-standards.md`
+#      depends on tests running without a network, and `06-test-report.md` for every future ticket
+#      would be measured against live data.
+#
+#      **The lever already exists in the decision and SPEC does not need to invent one.** Clause 7:
+#      *"The mock adapter is kept, not deleted — it is what lets unit tests run without a network."*
+#      So `DATA_SOURCE` is the seam between the two, and what has to be decided is WHERE it is pinned
+#      — per worktree in `.env.local`, in the test harness, or in CI — and whether the default
+#      clause 7 flips is the default every lane actually runs under. That is a design question, not
+#      an invention, and it belongs in `01-story.md` under OPEN QUESTIONS if SPEC cannot settle it
+#      from what is written. It was NOT settled here.
+#
+#      ---- THE PRECONDITION THIS REPLACES, KEPT ----
+#      2. Two Supabase projects exist, dev and prod. Decided 2026-08-26: clause 7 makes every
+#         `pnpm dev` and every `pnpm verify` reach a database, so one shared project means every
+#         test run touches production data.
 #   3. .env.example still names Prisma's field layout. The two-URL split is a pooler property and
 #      survives; the wiring does not. Verify against the Supabase CLI docs, not from memory.
 #
