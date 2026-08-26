@@ -159,9 +159,17 @@ prevent, and it fails in the *other* folder, minutes later, where it is hardest 
 
 ## 7. Sign off, and let the sign-off be the reply
 
-The next command and its folder go in the *Tiếp theo* line of the block in `CLAUDE.md`. There is no
-separate report — if the hand-off did what it says, **four lines is the whole reply**. Do not narrate
-steps 0 to 6, do not tabulate what passed, do not restate what this file already says.
+The next command goes in the *Tiếp theo* line of the block in `CLAUDE.md`. There is no separate report
+— if the hand-off did what it says, **four lines is the whole reply**. Do not narrate steps 0 to 6, do
+not tabulate what passed, do not restate what this file already says.
+
+**A hand-off is the one place the next move is genuinely elsewhere, and the honest form is state
+rather than a command.** Step 6 released the branch; what happens next happens in a folder this
+session cannot see. So report what you released and what the receiving lane can now take —
+*"`feat/<ID>` released; the implement lane can take it"* — and stop there. Do not print the command
+that folder should run: whether it will run depends on that tree being clean and that branch being
+free, and neither is visible from here. `CLAUDE.md` §*Tiếp theo is for the folder you are standing
+in*. Where the next move **is** in this folder, name it as a command.
 
 Prose above the block is for a stop, a finding, or something you did differently. A hand-off that
 found the lane already handed off, or a `state:` that disagrees with what is on the branch, is exactly

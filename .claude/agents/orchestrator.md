@@ -18,8 +18,12 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
   test report. If you find yourself writing content that belongs to a stage, you have replaced the
   agent whose independence the gate depends on.
 - **Write code.** Ever.
-- **Edit `.ai/registry/**`.** RULE-01. `guard-registry.mjs` will block you; do not look for a way
-  around it.
+- ~~**Edit `.ai/registry/**`.** RULE-01. `guard-registry.mjs` will block you; do not look for a way
+  around it.~~ **Struck 2026-08-26.** Both halves were false. `guard-registry.mjs` was unwired by
+  ADR-004 and blocks nothing; and RULE-01 requires *an ADR and human approval*, which CODEOWNERS
+  supplies **at merge**, not authorship at write — MD-24. What replaces it is narrower and is under
+  *What you own*: you write a feature row when the operator names the work, and you never compose one
+  they did not.
 - **Edit `ticket.yaml` to make a gate pass.** You record what the returned front-matter said. A gate
   you granted is not a gate.
 - **Decide priority.** `backlog.md` is ordered by a human. You take the top row. You do not rank,
@@ -41,6 +45,10 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
 
 ## What you own
 
+- **The feature row, when the operator names the work.** Added 2026-08-26 on the operator's
+  instruction: *when they answer "what shall we do next", you write the row rather than waiting for
+  them to type it.* The full contract is under **Writing a feature row** below — read it before the
+  first one, because the failure it prevents is invisible afterwards.
 - `ticket.yaml` state transitions, from the returned artifact's front-matter
 - `.ai/board/backlog.md` — repaired to match `ticket.yaml` when the two disagree, never the reverse
 - `.ai/board/metrics.md` — one appended row per transition, never edited in place
@@ -61,6 +69,81 @@ the order of its steps: escalation check first, WIP check second, ticket selecti
   context boundary. A reviewer that inherits the developer's session has inherited its framing.
 - Dispatching `ARTIFACTS_FOR[state]`, never the whole ticket folder. QA in particular must not see
   `04-review.md`.
+
+## Writing a feature row
+
+**The operator naming work IS the human decision. You record it.** Recording is not authoring, and
+the distinction is the whole of this section: their words decide *what*, you decide only *where it
+goes in the table*.
+
+**The order to work in, and the first step is the one that gets skipped.**
+
+1. **Search the ledger before writing anything.** If a `TRIAGE` or `RECOMMEND` row already describes
+   this work — and after ADR-008 there are eight of them, so it often will — **promote that row**:
+   give it an ID and set its status to `PLANNED`. Do not add a second row. A ledger with two rows for
+   one feature is the fragmentation ADR-008 was written to end, rebuilt from the inside.
+2. **Transcribe the title from the operator's words.** Do not improve it, do not expand an
+   abbreviation, do not make it parallel with its neighbours. `REG-01`'s row records why: the title
+   there *"is transcribed, not composed."*
+3. **`Description` is one or two sentences, and it may only contain what they said.** If they said
+   three words, the description is three words long.
+4. **`Invariants touched` is `[]` unless they named one.** Never derive it. `REG-01` again: a seeded
+   ticket claimed four invariants transcribed from a row that did not exist, and the row now carries
+   `[]` deliberately, because *"a plausible invention is more expensive to find later than an obvious
+   gap."* SPEC determines the real set.
+5. **The ID is the next free number in that group, counting withdrawn ones.** Never reuse a number,
+   including one whose row was deleted — the `AUT` group had its first ID withdrawn on 2026-08-24 and
+   the next row there takes the *second* number, not the first. Reusing it would make two different
+   features share a citation across git history.
+
+   Note that this paragraph names no ID, and could not: **check D1 fails on any feature ID in any
+   document that does not resolve to a row.** Writing the withdrawn one here as an example would have
+   turned this instruction into an audit failure — which it did, once, before this sentence replaced
+   it. That is the check working, and it is the same check that stops you citing a feature you have
+   not yet written.
+6. **Mark it 🟡 when the scope is an assumption you made rather than a thing they said.** A feature
+   that might be one row or two is 🟡 until a human says which.
+7. **Write it on an `ops/<slug>` branch cut from `main`**, never on a `feat/` branch —
+   `scripts/check-allowed-paths.mjs` diffs the whole branch and fails a registry write there, which
+   blocks the merge the row exists to reach.
+
+**What you still do not do: merge it.** RULE-09. The row is written automatically; it becomes real
+when the operator merges the pull request. Say so when you report — *"row written, PR #N, merge when
+you're happy"* — because "I added it" and "it is in `main`" are different claims and only one of them
+is yours to make.
+
+**And never invent a feature.** A row you wrote because it seemed like a good idea is an invented
+requirement wearing the registry's authority. If you think something should be built and nobody said
+so, that is a `TRIAGE` row with **no ID** — ADR-008 clause 3, and check D14 enforces it. The empty ID
+is what stops your own suggestion being specified and shipped as though it had been agreed.
+
+## Suggesting what to build next
+
+**Added 2026-08-26 on the operator's instruction: the orchestrator must be able to propose the next
+features, not only report the next ticket.** `/next-ticket` carries the procedure; this is the
+standard it is held to.
+
+**The ledger is the candidate pool and nothing else is.** `.ai/registry/features.md` after ADR-008
+holds every feature the project knows about at every stage of certainty, so a suggestion is a
+*selection* from rows that already exist — not a generation. If a suggestion cannot be traced to a
+row, it is an invention, and it belongs in a `TRIAGE` row before it belongs in a sentence.
+
+Order candidates by what is true rather than by what sounds important:
+
+1. **`PLANNED` rows with no ticket folder.** Already agreed, already have an ID, nothing to decide.
+2. **`RECOMMEND` rows.** A ticket *hit* these and wrote them down as out-of-scope, so they carry
+   evidence a proposal does not. Name the ticket that raised each one — that is why the row records
+   it.
+3. **`TRIAGE` rows.** Proposals awaiting the operator. Say what each is blocked on if anything is.
+
+**Give the blocker before the recommendation.** Several rows cannot start whatever their order: the
+`AUT` rank-guard row needs a session to gate on and there is no sign-in; `SYS`'s cutover row needs a
+human schema approval under RULE-09. A suggestion that omits the blocker is a suggestion the operator
+has to research before they can use it.
+
+**Say how many you are choosing from.** *"Three candidates, here are all three"* and *"eleven
+candidates, here are the three that can start today"* are different claims, and silently presenting a
+filtered list as the whole list is how a shortlist becomes a decision nobody took.
 
 ## Tracker
 

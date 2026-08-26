@@ -1091,3 +1091,68 @@ fast-forward were both refused by the harness classifier. Rather than reach for 
 denied command, the work went to `ops/adr-007-supabase-data-client-v2` and #36 was closed pointing at
 #37. A wasted branch name is cheaper than a bent rule, and the reason is written on the closed PR so
 it does not read as a mistake later.
+
+### 2026-08-26 — the feature ledger, and two rules the operator added to the same pull request
+
+**ADR-008 — one ledger for every feature, issued or not.** Asked for straight after a question this
+steward answered badly: *where does the project really store all its features?* **Nowhere.**
+`features.md` held the seven with IDs, `backlog.md` §Deseeded held four without, and `decisions/` held
+ADR-007's two that nobody had written down at all. No check reconciled any of it, and the operator had
+already paid for that — they read `features.md`, saw no authentication feature, and asked why. Every
+fact in the four-paragraph answer was recorded somewhere; none of it was recorded where a person
+looking for features would look.
+
+**Departed from the literal ask once, and said so in the ADR rather than quietly.** They asked for *a
+file*. A new file would have delivered the words and not the thing: `features.md` cannot be deleted —
+DoR, D1, RULE-17 and every story cite it — so a second file makes **four** fragments instead of three.
+The defect is fragmentation; the only repair is a merge.
+
+**The clause that carries the whole decision: `TRIAGE` and `RECOMMEND` rows have no ID.** An ID is
+what makes a feature citable, and D1 and DoR both ask only whether a row *exists*, never whether a
+human agreed with it. Give an AI's own proposal an ID and an agent can specify, build and ship it with
+every check green. D14 enforces the empty ID; that is why the check exists rather than a prose
+convention. **D1 gained the other half** — citing an `OUTDATED` row now fails, so retiring a feature
+actually stops tickets being seeded against it.
+
+**Eight rows added, none inventing an ID**, all recoverable from files and all previously invisible:
+the withdrawn sign-in row, two Phase C items, a rank guard three tickets pushed out of scope, network
+ports (named in the charter, never given a row), seat placement (the only invariant never
+implemented), and ADR-007's two halves.
+
+**Then the operator added two changes to the same PR.**
+
+**One — the orchestrator writes the registry row itself.** *"Khi tôi bảo sẽ làm gì thì nó tự động thêm
+vào chứ không cần đợi tôi tự thêm"*, and it must be able to **suggest** what to build next. Its agent
+definition still said *"Edit `.ai/registry/**` — `guard-registry.mjs` will block you"*; both halves
+were false, the guard since ADR-004 and the authorship since MD-24. Struck, and replaced with a
+narrower contract: search the ledger and **promote a match rather than adding a second row**,
+transcribe the title from their words, `[]` for invariants unless they named one, `ops/` branch, and
+never issue an ID for a proposal nobody agreed to. Suggestions **select from the ledger, never
+generate** — a suggestion that cannot be pointed at a row is an invention, and blockers travel with
+the candidate.
+
+**Two — a reply answers for the folder it is standing in.** *"Các agent lúc báo cáo nên cho biết mình
+đang ở folder nào, và việc tiếp theo cần làm trên folder đó chứ không scan hết 3 folder. Chỉ có thư ký
+được quyền scan 3 folder."* The sign-off's `Branch:` line becomes `Ở: <folder> — branch <name>`, read
+from `pwd` rather than recalled, and *Tiếp theo* names a command only if it runs here; otherwise
+`không có — <what this folder is waiting on>`.
+
+**The old rule was "name the folder, not just the command", and it was not enough — which I proved the
+day before it was replaced.** On 2026-08-25 I signed off *"Tiếp theo: `/spec GRP-01` — trong folder
+`aiw-design`."* GRP-01 was already past SPEC and past DESIGN, in flight in `aiw-implement`. The reply
+named its folder exactly as required and was wrong, because naming a folder is not being able to see
+it. A session's folder is fixed at launch; it can read tickets in its own tree, which tells it about
+*tickets*, not about which branch another worktree is holding or whether that tree is clean. Sixteen
+command files carried the old phrasing and all sixteen are updated; `/handoff` and `/ship` got bespoke
+wording because a hand-off is the one place the next move genuinely is elsewhere — it reports what it
+released, as state, and does not print a command for a folder it cannot see.
+
+**Verified:** `check-docs` 0 errors. **D1 caught my own writing mid-run** — the orchestrator contract
+used the withdrawn AUT id as an example of a number not to reuse, and the audit failed on it, which is
+exactly the check that stops an agent citing a feature it has not written. Rewritten to name no id at
+all, and the episode left in the text. `pnpm hooks:test` — the nine new D14/D1 tests pass; ten
+failures, MD-16's D12 set, untouched.
+
+**Not done:** MD-41's writer for `IN_PROGRESS` — `GRP-01` is still set by hand. MD-34's duplicate-id
+check. MD-33's two D12 extensions. Three checks in one session is how a guard gets written against a
+defect nobody understands yet.

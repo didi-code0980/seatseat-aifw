@@ -45,7 +45,7 @@ Six values, per ADR-008. The enum was `PLANNED`, `IN_PROGRESS`, `DONE`, `DEFERRE
 |---|---|---|---|
 | `TRIAGE` | Proposed — by an agent, or from an idea — and **not yet verified by the operator** | **empty** | anyone |
 | `RECOMMEND` | Recorded as out-of-scope while building something else. Nobody has decided to build it | **empty** | the stage that found it |
-| `PLANNED` | Verified and wanted. A ticket may be seeded against it | required | the operator, by merging |
+| `PLANNED` | Verified and wanted. A ticket may be seeded against it | required | `orchestrator`, when the operator names the work — merged by the operator |
 | `IN_PROGRESS` | A ticket exists and is in flight | required | see MD-41 — nothing writes this yet |
 | `DONE` | **Merged into `main`**, not gated | required | `orchestrator` at `/ship` step 3 |
 | `OUTDATED` | No longer true or no longer wanted. Kept as a record, never deleted | either | the operator |
@@ -63,9 +63,16 @@ never on the ticket branch, which `scripts/check-allowed-paths.mjs` would fail. 
 writer were both added 2026-08-25: until then this column had no owner and drifted for two shipped
 tickets (MD-29).
 
-**Promotion is the operator's, and it happens by merging.** A `TRIAGE` or `RECOMMEND` row becomes
-`PLANNED` when it is given an ID and that change is merged. An agent may propose the promotion; it may
-not perform it, because merging is RULE-09.
+**Promotion is the operator's decision and the `orchestrator` types it.** A `TRIAGE` or `RECOMMEND`
+row becomes `PLANNED` when it is given an ID. The operator decides by **saying what they want built**;
+the orchestrator writes the row without waiting to be asked twice; the operator confirms by
+**merging**, because merging is RULE-09. ADR-008 clause 6, and the contract the orchestrator works to
+is in `.claude/agents/orchestrator.md` — search the ledger and promote a match rather than adding a
+second row, transcribe the title from their words, `[]` for invariants unless they named one, and
+never issue an ID for a proposal nobody agreed to.
+
+**Written and merged are different claims.** A row on a branch is a proposal; a row on `main` is the
+registry. Whoever reports the write says which one has happened.
 
 ## Group prefixes
 

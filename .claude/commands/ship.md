@@ -102,14 +102,21 @@ Steps:
 9. If `tracker.sync_enabled` is true, push `gate_state` and `pr_url`. If it is false, skip silently —
    that is the expected state for early tickets.
 
-10. **Sign off — and the pull request URL goes above the block.** The next command and its folder are
-    the *Tiếp theo* line of the block in `CLAUDE.md`; the PR link is the one thing a ship produces that
-    the operator cannot get anywhere else, so it goes in the prose above it. Everything else — the
-    gates you checked, the files you classified, the commands you ran — stays out. `git show --stat`
-    and the ticket folder hold all of it.
+10. **Sign off — and the pull request URL goes above the block.** The next command is the *Tiếp theo*
+    line of the block in `CLAUDE.md`; the PR link is the one thing a ship produces that the operator
+    cannot get anywhere else, so it goes in the prose above it. Everything else — the gates you
+    checked, the files you classified, the commands you ran — stays out. `git show --stat` and the
+    ticket folder hold all of it.
 
-    Name the folder, not just the command. Three worktrees mean a correct command in the wrong folder
-    writes to the wrong branch, and since ADR-004 nothing refuses it.
+    **Name a command only if it runs in this folder.** A ship ends in `aiw-design`, and what usually
+    comes next is a human merging — which is not a command at all. Write `không có — chờ merge PR #N`
+    and let the link above the block carry the ask. `CLAUDE.md` §*Tiếp theo is for the folder you are
+    standing in*: naming a folder is not the same as being able to see it, and since ADR-004 nothing
+    refuses a command run in the wrong one.
+
+    **When the board has nothing runnable after the ship, suggest what to build next** — the
+    procedure is in `.claude/commands/next-ticket.md` §*Suggest what to build next*, and a shipped
+    ticket with an empty board is exactly the moment the ledger's candidates are worth reading.
 
 11. **Park the lane on the latest `main`** — same three commands as `/handoff` step 6, same reasons:
 
