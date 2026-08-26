@@ -5,25 +5,163 @@ id: SYS-02
 title: "Cutover to Supabase as the data client"
 feature_ids: [SYS-02]
 group: SYS
-state: BACKLOG
+state: IN_PROGRESS   # ADVANCED FROM SPEC BY /design ON 2026-08-26T09:22:00Z, gate PASS.
+                     #
+                     # THE TICKET NEVER SAT AT `READY` AND THIS FILE DOES NOT PRETEND IT DID. `/spec`
+                     # left it at SPEC because DoR is the orchestrator's to evaluate and SPEC does not
+                     # set READY; the operator then ran `/design` directly. Recorded rather than
+                     # smoothed over: `Q-4` in `01-story.md` is the DoR question that was never put,
+                     # and it is a bookkeeping question — ADR-007 is ACCEPTED and `adr:` below now
+                     # carries the link DoR item 4 reads.
+                     #
+                     # ---- WHAT THIS LINE SAID BEFORE, KEPT ----
+                     # state: SPEC — ADVANCED FROM BACKLOG BY /spec ON 2026-08-26T08:33:56Z, gate PASS, on the
+                     # SECOND run. The first returned BLOCKED on `size_estimate` and that verdict is
+                     # kept in `01-story.md` rather than erased. DoR is the orchestrator's to
+                     # evaluate; this stage does not set READY.
 owner: ""
 branch: ""
-size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
-size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+size_estimate: "M"    # SET BY ba ON THE SECOND RUN, 2026-08-26T08:33:56Z, BY Q-1 EXIT (b).
+                      #
+                      # READ THIS BEFORE TREATING THE NUMBER AS A MEASUREMENT. The first run left this
+                      # field EMPTY and gated BLOCKED, because three documents cannot all hold at once:
+                      #   - `.ai/01-operating-model.md` Sizing — XL is "any size, if it changes the
+                      #     schema", and XL escalates. `schema_delta` below is not `none`, and both
+                      #     this file and the feature row say that is EXPECTED here.
+                      #   - Definition of Ready item 5 — `size_estimate` is S or M. No third value.
+                      #   - `.ai/registry/features.md:152` — not to be split. The same Sizing table
+                      #     independently puts this ticket at L, "more than 12 files", handled as
+                      #     "must split at DESIGN".
+                      #
+                      # The operator reissued `/spec SYS-02` unchanged after that verdict. Under the
+                      # standing instruction "an instruction repeated is a decision made" that is the
+                      # decision to pass, and exit (b) is the only one of Q-1's three this stage can
+                      # execute — (a) amends the operating model under RULE-01, (c) is the refused
+                      # verdict. Exit (b) reads the field as its own definition states it: "from the
+                      # story's scope and its Out-of-scope section". On SCOPE this ticket is one
+                      # operation and `M` is honest. On FOOTPRINT it is not `M` and nothing here
+                      # claims it is.
+                      #
+                      # CONSEQUENCE FOR DESIGN, STATED SO IT IS NOT DISCOVERED: `size` below is
+                      # expected to come out XL, and the two fields are expected to DISAGREE. The
+                      # rule that a story estimated M which designs out larger was under-specified
+                      # DOES NOT APPLY HERE and routing this back to SPEC would produce the same
+                      # story again. Q-1 in `01-story.md` is the record and is routed to the steward.
+
+size: "L"             # VERDICT, 2026-08-26T09:22:00Z, counted from the 25 globs enumerated in
+                      # `02-design.md` section 5 — 13 files deleted, 13 created, 28 modified. Grounds
+                      # in full under `02-design.md` **Size verdict**; the three things a reader needs
+                      # without opening it:
+                      #
+                      # 1. NOT XL. `.ai/01-operating-model.md` §Sizing was amended on 2026-08-26
+                      #    (PR #54) so a schema change WITH AN APPROVED ADR LINKED is not XL on that
+                      #    ground. `adr:` below carries ADR-007, which is ACCEPTED. The other two XL
+                      #    clauses do not fire: no existing `src/lib/data/` function changes signature,
+                      #    and no DTO in `types.ts` changes shape — that file is in `allowed_paths` for
+                      #    comment text only.
+                      #
+                      # 2. NOT SPLIT. `L` prescribes a split; `.ai/registry/features.md:152` forbids
+                      #    one and §Sizing now carries that exception by name. Registry is RULE-01 and
+                      #    outranks a handling default.
+                      #
+                      # 3. `size_estimate` ABOVE SAYS `M` AND THE TWO DISAGREE. The header on that
+                      #    field predicted this and said the disagreement rule must not be applied
+                      #    mechanically. IT WAS NOT. The ticket is NOT routed back to `ba`: the story
+                      #    stated the disagreement in advance and argued it, the operator already
+                      #    decided this exact question once by reissuing `/spec SYS-02`, and re-running
+                      #    SPEC cannot change a number counted from `allowed_paths`. What the gap is
+                      #    evidence of stays open as `D-2` in `02-design.md`, routed to the steward:
+                      #    PR #54 fixed the XL row and left DoR item 5 still admitting only S or M.
 depends_on: []
 # TRANSCRIBED from the features.md row. `ba` owes per-ID reasoning at SPEC and is expected to NARROW
 # this list, not extend it.
 #
 # INV-10 is deliberately absent and must not be added back at SPEC. It needs btree_gist and a
 # generated column, nobody has chosen the shape, and it stays enforced at the seam. Carried as debt.
-invariants_touched: [INV-04, INV-05, INV-06]
-allowed_paths: []
+# EXTENDED BY `ba` AT SPEC, 2026-08-26T08:03:28Z, FROM THREE IDS TO TEN — against the expectation
+# stated four lines above, which said NARROW and not extend. Per-ID grounds are in `01-story.md`
+# under **Invariants touched** and are not repeated here.
+#
+# The reason in one sentence: this is the ticket that authors the FIRST MIGRATION, and a migration is
+# the artefact in which every structural invariant is either expressed or silently omitted. The three
+# IDs on the feature row are the three that get a named INSTRUMENT in ADR-007 OQ-5; they are not the
+# three the change could AFFECT, which is the test `.ai/registry/invariants.md` sets.
+#
+# The four most easily missed, because each is held by an ABSENCE that a tidy first migration adds:
+#   INV-02  held by there being NO unique constraint on the occupant reference
+#   INV-07  held by the device owner reference being NULLABLE
+#   INV-03  the invariant's own note names this ticket twice: no migration may add a `status` column
+#           to the seat table, and no seed may write one
+#   INV-12  held only if the member delete rules REFUSE rather than cascade — ADR-005
+#
+# INV-10 IS STILL ABSENT AND IS STILL NOT ADDED BACK. The instruction above and
+# `.ai/registry/features.md:152` both say so and both are registry plane. `01-story.md` complies and
+# records, as Q-5, that compliance is not the same as agreement: by the test in `invariants.md` the
+# shape HAD to be considered and was left at the seam, which that file says is evidence the invariant
+# was in play. Routed to the steward; it changes nothing in this ticket either way.
+invariants_touched: [INV-01, INV-02, INV-03, INV-04, INV-05, INV-06, INV-07, INV-08, INV-11, INV-12]
+# ENUMERATED BY tech-lead-design AT DESIGN, 2026-08-26T09:22:00Z. `02-design.md` section 5 carries the
+# per-entry justification; this list is the machine-readable copy that `scripts/check-allowed-paths.mjs`
+# and review check R1 read.
+#
+# `prisma/**`, `prisma.config.ts` and `src/lib/data/prisma/**` are on the list IN ORDER TO BE REMOVED —
+# the checker matches every changed path including deletions.
+#
+# `src/lib/auth/supabase.ts` is on the list because `.ai/registry/features.md:152` and this file's own
+# header both require it: its comment block forbids naming the data package and ADR-007 reverses that.
+# Comment text only; the code is untouched.
+#
+# `src/lib/data/types.ts`, `src/lib/data/mock/**` and `src/lib/data/fixtures.ts` are COMMENT TEXT ONLY.
+# No type, no fixture value and no mock behaviour changes — AC-5 and AC-12 are the criteria and R5 is
+# where it is judged.
+allowed_paths:
+  - "supabase/**"
+  - "src/lib/data/index.ts"
+  - "src/lib/data/types.ts"
+  - "src/lib/data/fixtures.ts"
+  - "src/lib/data/mock/**"
+  - "src/lib/data/prisma/**"
+  - "src/lib/data/supabase/**"
+  - "src/lib/auth/supabase.ts"
+  - "src/app/(app)/seats/seats-manager.tsx"
+  - "tests/unit/seam-parity.test.ts"
+  - "scripts/seed.ts"
+  - "scripts/check-docs.mjs"
+  - "scripts/tests/check-docs.test.mjs"
+  - "prisma/**"
+  - "prisma.config.ts"
+  - "eslint.config.mjs"
+  - "vitest.config.mts"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - ".env.example"
+  - ".gitignore"
+  - ".github/CODEOWNERS"
+  - ".github/workflows/verify.yml"
+  - "docker/Dockerfile"
+  - "docker/docker-compose.yml"
 # NOT none, and this is the one ticket where that is expected rather than a finding. The first
 # migration creates the schema, adds Account.auth_user_id, and carries three constraints. RULE-09
 # puts a human signature on it — that signature is the only stop in this ticket, and DESIGN should
 # not raise it as a blocker.
 schema_delta: "first migration — schema, Account.auth_user_id, INV-04/05/06 constraints"
-requires_adr: false
+requires_adr: false   # A DIFFERENT QUESTION FROM `adr:` BELOW, AND THE TWO DISAGREEING IS NOT A
+                      # DEFECT. This asks whether the ticket still needs a decision taken; `adr:`
+                      # names the decision already taken. Both are correct here: nothing is owed, and
+                      # ADR-007 is what settled it.
+# DoR item 4 reads this. Added 2026-08-26 by the orchestrator at the operator's instruction, after
+# `/next-ticket` reported item 4 FAIL: `schema_delta` is not `none` and this field did not exist.
+#
+# NOTHING ABOUT THE DECISION CHANGED — ONLY THE FIELD THAT RECORDS IT. ADR-007 has been
+# `ACCEPTED — 2026-08-25, by the operator` since before this ticket was seeded, and the SYS-02
+# registry row already read "Implements ADR-007". What was missing was the machine-readable half:
+# PR #54 added `adr:` to `.ai/templates/ticket.yaml` and rewrote DoR item 4 to read it, and every
+# ticket in the repository predates that change, so none carries the field. SYS-02 is the only one
+# that needs it, because it is the only ticket whose `schema_delta` is not `none`.
+#
+# This is a transcription, not an approval. RULE-09 still puts a human signature on the migration
+# itself, and this ticket's own header says so — DESIGN is told not to raise that as a blocker.
+adr: "ADR-007"
 rework_count: 0
 chat_budget:
   developer->tech-lead-design: { used: 0, max: 6 }
@@ -32,8 +170,24 @@ chat_budget:
   qa->tech-lead-design:        { used: 0, max: 6 }
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
-  spec:   { passed: false, at: null }
-  design: { passed: false, at: null }
+  spec:   { passed: true,  at: "2026-08-26T08:33:56Z" }
+  design: { passed: true,  at: "2026-08-26T09:22:00Z" }
+  # PASS. All seven sections complete, `allowed_paths` enumerated above, `size` set to L.
+  #
+  # NOT BLOCKED, and the one thing that could have made it so is answered rather than deferred:
+  # `schema_delta` is not `none`, and `requires_adr` is false because ADR-007 already took the
+  # decision. `02-design.md` section 4 DRAFTS the first migration and does not approve it — the RULE-09
+  # signature is the operator's, on the pull request, through CODEOWNERS. This file's own header
+  # instructs DESIGN not to raise that as a blocker and it did not.
+  #
+  # ONE FINDING THAT DOES NOT BLOCK THIS GATE AND DOES BLOCK A GREEN PULL REQUEST — `D-1` in
+  # `02-design.md`. Deleting `prisma/` and `src/lib/data/prisma/` breaks twelve path references in six
+  # human-owned documents under `.ai/registry/**` and `.ai/standards/**`, which turns check D6 red;
+  # `docs-audit` runs in CI on any pull request touching `.ai/`, and this one touches
+  # `.ai/board/tickets/SYS-02/`. Those files are not in `allowed_paths` and must not be — the fix is a
+  # steward change landing with this ticket. ADR-007's affected-documents table does not cover it
+  # because `.ai/registry/decisions/**` is exempt from D6 (MD-38), which is why it was invisible when
+  # that table was written.
   review: { passed: false, at: null }
   qa:     { passed: false, at: null }
 
