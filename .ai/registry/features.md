@@ -1,5 +1,5 @@
 ---
-doc_version: 8
+doc_version: 9
 last_updated: 2026-08-26
 governed_by: [RULE-01, RULE-17]
 ---
@@ -119,6 +119,7 @@ expansions exactly.
 | ID | Status | Title | Description | Group | Invariants touched | Notes |
 |----|--------|-------|-------------|-------|--------------------|-------|
 | GRP-01 | IN_PROGRESS | Group CRUD UI | Create groups, list them as a tree, rename, move a group's parent, and delete. Assigning members to groups is not part of it. | GRP | [] | The first GRP row. Member assignment deferred to GRP-02. Q-1 resolved to Refuse, Q-2 resolved to Detach (INV-12 unengaged). **Status set by hand 2026-08-26, not by a command.** `ticket.yaml` on `feat/GRP-01` has read `IN_PROGRESS` since DESIGN passed on 2026-08-25 while this row read `PLANNED` — nothing writes this column before `/ship`. MD-41. |
+| GRP-02 | PLANNED | Member assignment to groups | Assign and re-assign a Member to a Group, and restore the group column to the members list. | GRP | [] | **Typed by an agent, decided by the operator — `/ship GRP-01`, 2026-08-26, under `.ai/01-operating-model.md`'s *"a human decides the row; an agent may type it"* (MD-24, 2026-08-26). The decision is quoted, not inferred:** the operator's own GRP-01 row reads *"Member assignment deferred to GRP-02"*, and `03-impl-log.md:10` records their Q-0 answer as *"scope approved as Group CRUD UI; member assignment deferred to GRP-02"*. The `Description` is transcribed from GRP-01's out-of-scope item 1 and `02-design.md:435`, not composed. **Written because check D1 was failing four of GRP-01's gate-passed artifacts** — `01-story.md`, `02-design.md`, `03-impl-log.md` and `05-test-plan.md` all cite `GRP-02`, no row existed, and CI's `verify` job stopped at `docs-audit` so PR #42 could not merge. The failure predates ADR-008; it went unseen because `docs-audit` had been red on `main` since SYS-01, so the step never ran. **`PLANNED` rather than `RECOMMEND`, and that choice is forced rather than preferred.** `RECOMMEND` is the honest status for work nobody has scheduled, but ADR-008 clause 3 gives `RECOMMEND` no ID by design, and an ID is exactly what D1 must resolve. If the intent is that GRP-01's artifacts should not have cited an unissued feature at all, the repair is a steward change to D1 and this row should be refused. **`Invariants touched` is `[]` provisionally** — nothing in `invariants.md` mentions Group, but `src/lib/data/mock/members.ts` is MEM's surface and the BA determines the real set at SPEC, exactly as REG-01's row says of its own. No ticket is seeded against this row by this change. |
 
 ## LAY — Layout Designer
 
