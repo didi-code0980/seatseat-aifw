@@ -300,7 +300,15 @@ lane.
 covers either, and two tickets in flight means two branches appending to the same lines. This has
 already produced one merge conflict, on 2026-08-23, between two `ops/` branches.
 
-**One writer: `/ship`.** Not one lane — one command. `/handoff` is explicitly forbidden to touch
+**One writer: `/ship`.** Not one lane — one command.
+
+**The rule governs lane writes, and a repair is not a lane write.** Added 2026-08-26, after the steward
+refilled `backlog.md` on the operator's instruction and noticed it had stepped over a rule it wrote
+itself. What the rule is for is two lanes appending to the same lines from two branches; a one-off
+repair on an `ops/` branch is not that, and a rule nobody may repair against is worse than the drift it
+prevents. **The exception is narrow and stays visible:** the operator instructs it, it goes on an
+`ops/` branch with its own pull request, and the reply says the rule was stepped over. A repair that
+could have waited for the next `/ship` is not covered. `/handoff` is explicitly forbidden to touch
 either file and puts them in its second set if a stage left them dirty. Since only one ticket is ever
 shipping, only one branch ever writes them, and the design lane's transitions are recorded when the
 ticket ships rather than when it moves.
