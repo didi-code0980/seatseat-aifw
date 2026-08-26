@@ -1,0 +1,57 @@
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+# Seeded from .ai/templates/ticket.yaml at 2026-08-26, after the operator answered ADR-007's four
+# remaining open questions with a technical lead and the SYS-02 row was written.
+id: SYS-02
+title: "Cutover to Supabase as the data client"
+feature_ids: [SYS-02]
+group: SYS
+state: BACKLOG
+owner: ""
+branch: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+depends_on: []
+# TRANSCRIBED from the features.md row. `ba` owes per-ID reasoning at SPEC and is expected to NARROW
+# this list, not extend it.
+#
+# INV-10 is deliberately absent and must not be added back at SPEC. It needs btree_gist and a
+# generated column, nobody has chosen the shape, and it stays enforced at the seam. Carried as debt.
+invariants_touched: [INV-04, INV-05, INV-06]
+allowed_paths: []
+# NOT none, and this is the one ticket where that is expected rather than a finding. The first
+# migration creates the schema, adds Account.auth_user_id, and carries three constraints. RULE-09
+# puts a human signature on it — that signature is the only stop in this ticket, and DESIGN should
+# not raise it as a blocker.
+schema_delta: "first migration — schema, Account.auth_user_id, INV-04/05/06 constraints"
+requires_adr: false
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
+
+# PRECONDITIONS — confirm before SPEC, stop if any is missing. ADR-007 records all three; they are
+# repeated here so this ticket inherits them instead of discovering them.
+#
+#   1. DATABASE_URL, DIRECT_URL, the Supabase project URL and keys, and SUPABASE_SERVICE_ROLE_KEY are
+#      present on the machine. .env.local is gitignored and no agent can verify it from the repo.
+#      Under ADR-007 clause 7 the application does not start without them.
+#   2. Two Supabase projects exist, dev and prod. Decided 2026-08-26: clause 7 makes every `pnpm dev`
+#      and every `pnpm verify` reach a database, so one shared project means every test run touches
+#      production data.
+#   3. .env.example still names Prisma's field layout. The two-URL split is a pooler property and
+#      survives; the wiring does not. Verify against the Supabase CLI docs, not from memory.
+#
+# ALLOWED_PATHS MUST INCLUDE src/lib/auth/supabase.ts at DESIGN. Its comment block forbids naming the
+# data package there and ADR-007 reverses that; RULE-03 refuses the edit if the path is left off.
+#
+# DO NOT SPLIT. D12 is red from the first commit until it is rewritten as a two-package map, and a
+# split places a red pull request in the middle deliberately. MD-16's ten failing D12 tests are
+# rewritten here, which is what MD-16 asked for.
