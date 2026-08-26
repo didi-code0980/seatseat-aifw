@@ -1,0 +1,95 @@
+# state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
+#
+# Seeded from .ai/templates/ticket.yaml on 2026-08-26 by the orchestrator, after the operator chose
+# GRP-02 over REG-01 to restart the loop.
+#
+# THE TICKET DOES NOT PREDATE ITS ROW, AND THIS IS THE FIRST ONE FOR WHICH THAT WAS ALREADY TRUE.
+# `.ai/registry/features.md` carries `GRP-02 | PLANNED` with an ID, merged in PR #44 before this file
+# existed. GRP-01's own header records the opposite case — it was seeded by the `ba` at SPEC against
+# an empty GRP table, and check D1 failed on every document that cited it. REG-01 was seeded the same
+# way. Nothing here needs a human to catch up.
+#
+# WHY THIS ONE AND NOT REG-01. REG-01's row carries a 🟡 — whether self-release and the request
+# workflow are one feature or two — and that question blocks READY, so `/spec` would run and stop at
+# the DoR gate. GRP-02 owes no decision: scope, deletion semantics and the deferral were all settled
+# during GRP-01, by the operator, in writing.
+#
+# THE SCOPE IS TRANSCRIBED, NOT COMPOSED. Every clause below is quoted from a merged artifact:
+#   - `01-story.md:376` out-of-scope item 1 — "Putting a member into a group, and taking them out.
+#     The member side of *a Member belongs to a Group*. Deferred to `GRP-02` by name, in the feature
+#     row itself." A surface that grows a *move this person to another group* control is this ticket.
+#   - `01-story.md:383` out-of-scope item 2 — "Any group-scoped view of members. *The members of this
+#     group*, a count on a group row, a filter on the member list, or a group column returning to the
+#     member screen." It records that item 2 needs item 1 first, because a group-scoped view is empty
+#     until members can be put into groups. Both items are inside THIS ticket; the ordering is
+#     internal to it and is not a dependency on another ticket.
+#   - `02-design.md:435` — "The ticket that restores a group column to `/members` — GRP-02,
+#     out-of-scope items 1 and 2 — makes `/members` a second reader and must add the path in the same
+#     change." That is a design obligation this ticket inherits: `revalidatePath("/members")` beside
+#     the existing `/groups` call. `src/actions/groups.ts:16` carries the same note in the code.
+#
+# ONE THING SPEC INHERITS AND MUST NOT INVENT. MEM-01 dropped the group column deliberately, and its
+# reason was NOT cosmetic: *"a group id is not a group name and no seam function resolves one"*
+# (`02-design.md:432`). Restoring the column therefore needs a resolver that does not exist yet.
+# Whether that is a new seam function, a join in `listMembers`, or a shape change to the member DTO is
+# DESIGN's, not SPEC's — but the story has to state that the column cannot be restored by rendering
+# `Member.groupId`, or DESIGN will discover it after `allowed_paths` is fixed.
+#
+# ALSO OPEN IN THE REGISTRY AND STILL NOT THIS TICKET'S TO CLOSE — the same two GRP-01 refused to
+# answer: maximum nesting depth (`.ai/registry/glossary.md`), and whether a Member may belong to more
+# than one Group (`prisma/schema.prisma` models one, and says so as the narrower reading). The second
+# one presses harder here than it did on GRP-01, because assignment is exactly where a second group
+# would have to be expressible. If the story needs it answered, it goes under OPEN QUESTIONS and
+# routes to a human — it is not chosen.
+id: GRP-02
+title: "Member assignment to groups"
+feature_ids: [GRP-02]
+group: GRP
+state: BACKLOG
+owner: ""
+branch: ""
+size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+depends_on: [GRP-01]  # SATISFIED — GRP-01 is DONE and merged as PR #42 on 2026-08-26T02:49:03Z, so
+                      # DoR item 3 passes. Recorded rather than left empty because it is true and
+                      # checkable: members cannot be assigned to groups until groups can be created,
+                      # and GRP-01 is the ticket that made them creatable. Every ticket this project
+                      # has issued carried `[]` here, which made DoR item 3 vacuous six times running.
+invariants_touched: []   # PROVISIONAL, AND IT MATCHES THE REGISTRY ROW RATHER THAN ASSERTING MORE
+                         # THAN IT. That row says `[]` and says why: "nothing in invariants.md
+                         # mentions Group, but member assignment writes MEM's surface, and SPEC
+                         # determines the real set." The `ba` re-checks and does not transcribe —
+                         # SEA-01 went from four to seven at SPEC, MEM-01 from four to two. INV-12 is
+                         # the one worth reasoning through explicitly: it governs member DELETION, and
+                         # nothing here deletes a member, but the file this ticket writes is the file
+                         # INV-12 protects.
+allowed_paths: []
+schema_delta: none    # `Member.groupId` is already drafted and already written by GRP-01's delete
+                      # path, so assignment adds no field. If DESIGN concludes the group column needs
+                      # a DTO or schema change to resolve a group NAME, that is a finding to raise —
+                      # not a decision to take (SYS-01 set this precedent and held `none` throughout).
+requires_adr: false
+rework_count: 0
+chat_budget:
+  developer->tech-lead-design: { used: 0, max: 6 }
+  developer->ba:               { used: 0, max: 6 }
+  qa->ba:                      { used: 0, max: 6 }
+  qa->tech-lead-design:        { used: 0, max: 6 }
+tracker: { provider: clickup, external_id: "", sync_enabled: false }
+gates:
+  spec:   { passed: false, at: null }
+  design: { passed: false, at: null }
+  review: { passed: false, at: null }
+  qa:     { passed: false, at: null }
+
+# Notes on fields that are easy to get wrong:
+#
+# invariants_touched  [] means "considered, none engaged". Absent means nobody looked.
+#                     Definition of Ready requires it to be explicit.
+# allowed_paths       [] is a control, not a placeholder. guard-allowed-paths.mjs blocks every
+#                     write outside this ticket folder while it is empty. DESIGN fills it.
+# rework_count        Only Developer-caused failures increment it (RULE-08). Two failures
+#                     escalate (RULE-06).
+# chat_budget         Six messages per pair per ticket (RULE-15). chat-guard.mjs increments
+#                     `used` and blocks at `max`. Pairs absent from this map are not chattable.
+# sync_enabled        false by default (RULE-10). Turn on per ticket, after the loop is proven.
