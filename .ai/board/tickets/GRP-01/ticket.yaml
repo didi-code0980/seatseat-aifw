@@ -62,7 +62,27 @@ feature_ids: [GRP-01]  # RESOLVES as of 2026-08-25. The operator supplied the ro
                        # of the registry change is CODEOWNERS review on the pull request, which is how
                        # RULE-01 is enforced — the row is written, not yet approved.
 group: GRP
-state: IN_PROGRESS   # ADVANCED FROM SPEC BY /design ON 2026-08-25T07:14:49Z, gate PASS. The two
+state: QA            # ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T01:55:40Z.
+                     # `03-impl-log.md` carries the gate in its front-matter and is the record; this
+                     # line is the board's copy of it. Eight of the ten `allowed_paths` are written —
+                     # the two absent are `tests/unit/groups.test.ts` and `tests/e2e/groups.spec.ts`,
+                     # which are QA's under RULE-05 and are not this stage's to create.
+                     #
+                     # `rework_count` is NOT incremented and stays 0. This was the first IN_PROGRESS
+                     # run to complete, not a rework cycle: no `04-review.md` exists, so no reviewer
+                     # verdict has ever routed back here (RULE-08).
+                     #
+                     # THE STAGE RAN TWICE AND THE FIRST RUN LEFT NO ARTIFACT. An earlier
+                     # `/implement` session wrote the five seam and validation files and stopped
+                     # before the action and UI layers; a later run stopped at its own step 0 on a
+                     # dirty tree carrying an untracked `.ai/board/tickets/REG-01/` that belonged to
+                     # no branch. The operator cleared REG-01 and re-ran. The adopted files were read
+                     # in full against design section 1 before this run's gate was claimed, and
+                     # `03-impl-log.md` says so under *Files touched* rather than leaving the
+                     # reviewer to infer it from a diff whose author is not the log's author.
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: IN_PROGRESS. ADVANCED FROM SPEC BY /design ON 2026-08-25T07:14:49Z, gate PASS. The two
                      # comment paragraphs below are the record as it stood at SPEC and are kept as
                      # written rather than corrected. What they say about DoR is still true and is
                      # now moot: the orchestrator's evaluation was not performed, because the
@@ -217,8 +237,8 @@ gates:
   # NO CHAT. `chat_before_verdict: none` in the design front-matter, and `chat_budget` below is
   # untouched — the `tech-lead-design`->`ba` pair is absent from that map and is therefore not
   # chattable. Everything the design owed the story went into the artifact.
-  review: { passed: false, at: null }
-  qa:     { passed: false, at: null }
+  review: { passed: true,  at: "2026-08-26T01:47:08Z" }
+  qa:     { passed: true,  at: "2026-08-26T01:55:40Z" }
 
 # Notes on fields that are easy to get wrong:
 #
