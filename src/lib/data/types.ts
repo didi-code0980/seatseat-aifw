@@ -201,6 +201,32 @@ export type DeleteMemberOutcome =
   | { deleted: false; reason: "NOT_FOUND" }
   | { deleted: false; reason: "REFERENCED"; references: MemberReferences };
 
+/**
+ * GRP-02, AC-3, AC-4, AC-6, AC-7.
+ *
+ * `groupId` is not nullable on the way in, and the absence of a null is the whole of how
+ * out-of-scope item 2 is held: "remove from a group without assigning another" is a verb the story
+ * neither grants nor refuses (Q-4), and a signature that cannot express it cannot ship it by
+ * accident. 02-design.md F-4.
+ *
+ * `previousGroupId` is the group the member belonged to before, or null when they belonged to none.
+ * It is RETURNED rather than inferred, for the reason `DeleteRoomOutcome` returns its counts and
+ * `DesignatePrimaryOutcome` returns `demotedDeviceId`: AC-4's "no longer belongs to Engineering" is
+ * then assertable at the seam, where the write actually happens, and not only through a rendered
+ * cell.
+ *
+ * Two reason codes and not one `ILLEGAL`, for the reason `DesignatePrimaryOutcome` gives at length:
+ * a shared reason code makes two failures indistinguishable in a test, which is how the bug
+ * survives. AC-6 asserts the GROUP_NOT_FOUND arm specifically.
+ *
+ * Assigning a member to the group they already belong to SUCCEEDS, with `previousGroupId` equal to
+ * `groupId`. There is no arm for it and it is not an oversight — 02-design.md F-5 says why this
+ * reasons the opposite way from `AssignOccupantOutcome` two hundred lines above.
+ */
+export type AssignMemberToGroupOutcome =
+  | { assigned: true; member: Member; previousGroupId: string | null }
+  | { assigned: false; reason: "MEMBER_NOT_FOUND" | "GROUP_NOT_FOUND" };
+
 export interface Group {
   id: string;
   name: string;

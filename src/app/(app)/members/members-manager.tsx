@@ -16,8 +16,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FormEvent, JSX, ReactNode } from "react";
 
-import type { MemberRow } from "./page";
+import type { GroupOption, MemberRow } from "./page";
 import {
+  assignMemberToGroup,
   createMember,
   deleteMember,
   getMemberReferences,
@@ -44,6 +45,18 @@ const ROLE_OPTIONS: readonly Role[] = ["USER", "MANAGER", "ADMIN"];
 const NO_SEATS = "none";
 
 /**
+ * GRP-02, AC-2. The literal the group cell renders for a member who belongs to no group.
+ *
+ * The same spelling MEM-01 uses for a member occupying no seat and GRP-01 uses for a group with no
+ * parent. It satisfies AC-2's "distinguishable from a group whose name is blank" because
+ * `groupNameSchema` makes a blank name unreachable — which AC-2 says itself.
+ */
+const NO_GROUP = "none";
+
+/** GRP-02. The assign chooser's placeholder. Its `value=""` carries "no group chosen" to the schema. */
+const SELECT_A_GROUP_LABEL = "Select a group";
+
+/**
  * The fields a form collects. `VALIDATION` and `DUPLICATE_EMAIL` both arrive as a field map.
  * `REFERENCED` never does: it has two assertable facts inside it and renders structurally, in the
  * refusal dialog, rather than as a sentence against a field (02-design.md section 1.4).
@@ -51,6 +64,9 @@ const NO_SEATS = "none";
 function fieldMessages(error: MemberActionError | null): Partial<Record<MemberFieldName, string>> {
   if (error === null) return {};
   if (error.kind === "VALIDATION" || error.kind === "DUPLICATE_EMAIL") return error.fields;
+  // GRP-02, AC-6. A refusal about the group the person chose, rendered against the control they
+  // chose it in — the third field-carrying kind, and it joins the two above for their reason.
+  if (error.kind === "GROUP_NOT_FOUND") return error.fields;
   return {};
 }
 
@@ -97,17 +113,27 @@ interface RefusedTarget {
   references: MemberReferences;
 }
 
-export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
+export function MembersManager({
+  rows,
+  groupOptions,
+}: {
+  rows: MemberRow[];
+  // GRP-02, AC-5. Composed by the server component from `listGroups()`; this component never reads
+  // the seam and never derives a path of its own.
+  groupOptions: GroupOption[];
+}): JSX.Element {
   const router = useRouter();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<MemberRow | null>(null);
+  const [assignTarget, setAssignTarget] = useState<MemberRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MemberRow | null>(null);
   const [refusedTarget, setRefusedTarget] = useState<RefusedTarget | null>(null);
 
   const [pending, setPending] = useState(false);
   const [createError, setCreateError] = useState<MemberActionError | null>(null);
   const [editError, setEditError] = useState<MemberActionError | null>(null);
+  const [assignError, setAssignError] = useState<MemberActionError | null>(null);
   const [deleteError, setDeleteError] = useState<MemberActionError | null>(null);
   // A refused row action has no form open to render against. Absent until one is refused, which is
   // why it is null rather than "".
@@ -115,8 +141,10 @@ export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
 
   const createFields = fieldMessages(createError);
   const editFields = fieldMessages(editError);
+  const assignFields = fieldMessages(assignError);
 
   const editLoose = looseMessage(editError);
+  const assignLoose = looseMessage(assignError);
   const deleteLoose = looseMessage(deleteError);
   const actionMessage = looseMessage(actionError);
 
@@ -161,6 +189,34 @@ export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
 
     setEditError(null);
     setEditTarget(null);
+    router.refresh();
+  }
+
+  /**
+   * GRP-02, AC-3, AC-4, AC-6. `submitEdit`'s shape exactly.
+   *
+   * The chooser's placeholder carries `value=""`, so an unmade choice arrives as the empty string
+   * and is refused by `memberGroupIdSchema` with *A group is required.* **It is not an
+   * unassignment** — no control here can remove a member from a group, and the mechanism is the
+   * type rather than a check (02-design.md F-4).
+   */
+  async function submitAssign(id: string, data: FormData): Promise<void> {
+    setPending(true);
+    const result = await assignMemberToGroup({
+      id,
+      groupId: String(data.get("groupId") ?? ""),
+    });
+    setPending(false);
+
+    if (!result.ok) {
+      setAssignError(result.error);
+      return;
+    }
+
+    setAssignError(null);
+    setAssignTarget(null);
+    // AC-3's and AC-4's "without a manual reload". `revalidatePath` invalidated the server's copy;
+    // this is what makes the page re-render against it.
     router.refresh();
   }
 
@@ -228,6 +284,12 @@ export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
     void submitEdit(editTarget.member.id, new FormData(event.currentTarget));
   }
 
+  function onAssignSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    if (assignTarget === null) return;
+    void submitAssign(assignTarget.member.id, new FormData(event.currentTarget));
+  }
+
   function closeCreate(): void {
     setCreateOpen(false);
     setCreateError(null);
@@ -236,6 +298,13 @@ export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
   function closeEdit(): void {
     setEditTarget(null);
     setEditError(null);
+  }
+
+  // AC-8, AC-10, AC-11: dismissing the assign dialog writes nothing. The assignment is the submit
+  // control's, and it alone.
+  function closeAssign(): void {
+    setAssignTarget(null);
+    setAssignError(null);
   }
 
   // AC-8: dismissing the confirmation performs nothing. Nothing has been written at this point —
@@ -311,6 +380,19 @@ export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
             ),
           },
           {
+            key: "group",
+            header: "Group",
+            // GRP-02, AC-1 and AC-2. The group's NAME, bare — the value in its own element with the
+            // label in the header — so AC-1's "shows Platform" and AC-2's empty state are assertable
+            // without parsing a sentence. MEM-01 dropped this column because it rendered a raw id;
+            // the resolution to a name happens in the server component (page.tsx).
+            render: (r) => (
+              <span data-testid={`members-row-${r.member.email}-group`}>
+                {r.groupName ?? NO_GROUP}
+              </span>
+            ),
+          },
+          {
             key: "seats",
             header: "Seats occupied",
             mono: true,
@@ -355,6 +437,21 @@ export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
                   data-testid={`members-row-${r.member.email}-edit`}
                 >
                   Edit
+                </Button>
+                {/* GRP-02, AC-3 to AC-6. Unconditional, like Edit and Delete beside it: not hidden
+                    for a member who already has a group — that member is AC-4's subject — and not
+                    hidden when no group exists, because hiding a control makes the state that
+                    produced it untestable. The empty case is handled inside the dialog. */}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setAssignError(null);
+                    setAssignTarget(r);
+                  }}
+                  data-testid={`members-row-${r.member.email}-assign`}
+                >
+                  Assign group
                 </Button>
                 <Button
                   type="button"
@@ -469,6 +566,62 @@ export function MembersManager({ rows }: { rows: MemberRow[] }): JSX.Element {
           <FieldError testId="member-edit-role-error" message={editFields.role} />
         </Field>
         {editLoose !== null ? <p className="text-sm text-accent">{editLoose}</p> : null}
+      </EntityFormDialog>
+
+      {/* GRP-02, AC-3 to AC-7. One control: the group chooser. Nothing else about the member is on
+          this form, which is what makes AC-8 a claim about the operation rather than about which
+          fields the person happened not to touch. */}
+      <EntityFormDialog
+        open={assignTarget !== null}
+        title="Assign group"
+        submitLabel="Assign group"
+        onSubmit={onAssignSubmit}
+        onClose={closeAssign}
+        testIdPrefix="member-assign"
+        pending={pending}
+      >
+        <Field label="Group" htmlFor="member-assign-group">
+          <Select
+            id="member-assign-group"
+            name="groupId"
+            // Keyed on the member's id so the control remounts when the target row changes and its
+            // default follows the row that was opened rather than the one opened first.
+            key={`group-${assignTarget?.member.id ?? "none"}`}
+            defaultValue={assignTarget?.member.groupId ?? ""}
+            data-testid="member-assign-group"
+          >
+            {/* The placeholder is always rendered and its empty value is part of the contract: an
+                unmade choice arrives as "" and is refused by `memberGroupIdSchema` with *A group is
+                required.* It is NOT an unassignment — `assignMemberToGroup` takes `groupId: string`
+                and cannot express one (02-design.md F-4). */}
+            <option value="">{SELECT_A_GROUP_LABEL}</option>
+            {/* AC-5. Every group in the tree, by full path, and nothing is filtered out: the
+                member's current group stays in the list, and choosing it is the successful no-op
+                F-5 describes. Paths and not bare names, because two groups may share a name under
+                different parents (GRP-01 AC-4b). */}
+            {groupOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.path}
+              </option>
+            ))}
+          </Select>
+          <FieldError testId="member-assign-group-error" message={assignFields.groupId} />
+        </Field>
+
+        {/* Rendered only when no group exists at all. The control that opened this dialog is still
+            shown on every row in that state, so the sentence has to be here rather than in place of
+            a button that was hidden. Submitting is refused by the schema either way. */}
+        {groupOptions.length === 0 ? (
+          <p data-testid="member-assign-empty" className="text-sm text-muted">
+            No group exists yet. Create one on the Groups screen, then assign this member to it.
+          </p>
+        ) : null}
+
+        {assignLoose !== null ? (
+          <p data-testid="member-assign-error" className="text-sm text-accent">
+            {assignLoose}
+          </p>
+        ) : null}
       </EntityFormDialog>
 
       <Dialog

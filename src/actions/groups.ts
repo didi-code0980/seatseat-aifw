@@ -13,20 +13,33 @@
 
 import { revalidatePath } from "next/cache";
 
-// **The three write actions revalidate `/groups` and nothing else** — 02-design.md section 1.4,
-// step 5.
+// **The three write actions revalidate `/groups` and `/members`** — GRP-01's 02-design.md section
+// 1.4 step 5, amended by GRP-02 F-3.
 //
-// `grep -rln "groups\|groupId" src/app src/actions src/components` returns exactly two files:
-// `src/app/(app)/groups/page.tsx` and `src/app/(app)/layout.tsx`, and the layout holds nav labels
-// only. No second route renders group data, which is why this ticket does not repeat MEM-01's
-// two-path revalidation.
+// **What changed, and why the change was written into this file before it was made.** GRP-01 said
+// here that `/members` was deliberately NOT revalidated, on the ground that MEM-01 had dropped the
+// group column from the member list — a group id is not a group name and no seam function resolved
+// one — so no rendered cell anywhere depended on `Member.groupId`, and adding the path would have
+// been revalidating a route against a change it could not display. That paragraph named `GRP-02`,
+// out-of-scope items 1 and 2, as the ticket that would make `/members` a second reader and would
+// have to add the path in the same change. This is that change; the reasoning is kept rather than
+// deleted, because the reason a path was absent is what makes its arrival checkable.
 //
-// **`/members` is deliberately not revalidated, although AC-13 writes `Member.groupId`.** MEM-01
-// dropped the group column from the member list on purpose — a group id is not a group name and no
-// seam function resolves one — so no rendered cell anywhere depends on the field this ticket
-// writes. Adding the path would be revalidating a route against a change it cannot display. The
-// ticket that restores a group column to `/members` — `GRP-02`, out-of-scope items 1 and 2 — makes
-// `/members` a second reader and must add the path in the same change.
+// **All three write actions gain it, not only the delete**, and each for its own reason:
+//
+//   - `deleteGroup` writes `Member.groupId` directly (AC-13). Without the path the group column
+//     would keep showing a deleted group's name.
+//   - `updateGroup` — a rename changes the *text* GRP-02's AC-1 renders on every member row in that
+//     group.
+//   - `createGroup` — `/members` renders the assign chooser from `listGroups()` in its server
+//     component, so a group created here is missing from that chooser until something else
+//     refreshes `/members`. This is MEM-01's finding F-6 exactly, which was measured rather than
+//     predicted: a member created on `/members` was absent from the owner select on `/devices`,
+//     four options where there should have been five.
+//
+// No third route renders group data: `grep -rln "groups\|groupId" src/app src/actions
+// src/components` returns `src/app/(app)/groups/page.tsx`, `src/app/(app)/members/**` and
+// `src/app/(app)/layout.tsx`, and the layout holds nav labels only.
 //
 // `getGroupReferences` does not revalidate. It writes nothing, and revalidating on a read would
 // re-render the page every time a delete button is pressed, including the times it is then
@@ -160,6 +173,9 @@ export async function createGroup(input: unknown): Promise<GroupActionResult<Gro
   }
 
   revalidatePath("/groups");
+  // GRP-02 F-3: `/members` renders the assign chooser from `listGroups()`, so a new group is absent
+  // from it until this route is invalidated. MEM-01's F-6 is the measured precedent.
+  revalidatePath("/members");
   return { ok: true, data: outcome.group };
 }
 
@@ -193,6 +209,9 @@ export async function updateGroup(input: unknown): Promise<GroupActionResult<Gro
   }
 
   revalidatePath("/groups");
+  // GRP-02 F-3: a rename changes the text the member list's group column renders for every member
+  // in this group.
+  revalidatePath("/members");
   return { ok: true, data: outcome.group };
 }
 
@@ -243,6 +262,9 @@ export async function deleteGroup(
   }
 
   revalidatePath("/groups");
+  // GRP-02 F-3: this writes `Member.groupId` on every detached member (AC-13), and the member
+  // list's group column is what renders it.
+  revalidatePath("/members");
   return {
     ok: true,
     data: { id: outcome.groupId, membersDetached: outcome.membersDetached },
