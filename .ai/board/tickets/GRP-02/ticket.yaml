@@ -41,15 +41,111 @@
 # one presses harder here than it did on GRP-01, because assignment is exactly where a second group
 # would have to be expressible. If the story needs it answered, it goes under OPEN QUESTIONS and
 # routes to a human — it is not chosen.
+#
+# --- APPENDED BY `ba` AT SPEC, 2026-08-26T03:07:43Z. Nothing above this line was changed. ---
+#
+# THE THREE FIELDS BELOW THAT MOVED ARE `state`, `size_estimate` AND `gates.spec`, plus `branch`.
+# `invariants_touched` did not move and the header above predicted correctly that it would not; the
+# BA's own per-ID reasoning is in `01-story.md` and the comment on that field records the verdict
+# without replacing the orchestrator's provisional note.
+#
+# BOTH THINGS THE HEADER ABOVE TOLD SPEC TO DO ARE DONE, and each is checkable:
+#   - *the story has to state that the column cannot be restored by rendering `Member.groupId`* —
+#     `01-story.md` says it under **User value**, under **Size** as the reason the estimate is not
+#     `S`, and again as `Q-1`, which routes the resolver question to DESIGN and gates `/qa`.
+#   - *whether a Member may belong to more than one Group ... is not chosen* — it is `Q-5`, routed to
+#     the operator. `AC-7` writes the glossary's narrower reading (*a Member belongs to a Group*) as
+#     a criterion, and `Q-5` states plainly that AC-7 is withdrawn if the answer is many-to-many.
+#     The criterion exists so the ticket is buildable; the question exists so the choice stays human.
+#
+# ONE THING THE HEADER ABOVE COULD NOT HAVE KNOWN, recorded because it is a fact about this run
+# rather than about the ticket: the first `/spec GRP-02` returned `gate: BLOCKED` claiming no ticket
+# existed. That was wrong. This worktree was parked on a stale `origin/main` that predated 6ba81f4,
+# so the file was invisible rather than absent, and the branch for this run is cut from the current
+# `origin/main` where it is present. No artifact carries the mistaken claim; it is written here
+# because a reader comparing the chat to the repository would otherwise find a contradiction and no
+# explanation.
 id: GRP-02
 title: "Member assignment to groups"
 feature_ids: [GRP-02]
 group: GRP
-state: BACKLOG
-owner: ""
-branch: ""
-size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
-size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
+state: DONE          # SHIPPED 2026-08-26T07:18:01Z BY /ship. Four gates passed with timestamps,
+                     # `pnpm verify` exit 0, and `pnpm test:e2e` 96/96 exit 0 re-run on this branch at
+                     # ship rather than trusted from `06-test-report.md` — the same 96 the QA gate
+                     # recorded, so the report describes the tree that will merge.
+                     #
+                     # DONE MEANS GATED AND PUSHED, NOT MERGED. RULE-09 keeps the merge human.
+                     #
+                     # MD-35 CHECKED AND INERT, SECOND TIME RUNNING. The branch ships seven commits
+                     # behind `main`, and `git diff feat/GRP-02...origin/main -- src tests
+                     # package.json pnpm-lock.yaml prisma playwright.config.ts vitest.config.ts` is
+                     # EMPTY. The QA gate's base differs from `main` in no file either suite executes.
+                     # Established by execution, not inferred from commit subjects.
+                     #
+                     # `tests/unit/member-groups.test.ts` IS AN ENUMERATED allowed_path AND IS EMPTY,
+                     # DECLARED RATHER THAN OMITTED. `06-test-report.md:155` states the reason and
+                     # `99-questions.md` F-1 raised it before the gate: design section 6 is a
+                     # `data-testid` contract naming no seam call, so a unit test has no function to
+                     # target under RULE-05. All 11 ACs are covered by e2e alone. `allowed_paths` is a
+                     # ceiling, not a quota, so this is not a Definition of Done failure — but it is
+                     # the first ticket to map every AC through one suite, and GRP-01 mapped each
+                     # through two.
+                     #
+                     # `src/lib/data/prisma/members.ts` IS WRITTEN INTO A DIRECTORY ADR-007 DELETES,
+                     # exactly as GRP-01 wrote `prisma/groups.ts`. SYS-02 is now issued and seeded as
+                     # the cutover ticket; it inherits both.
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: QA. ADVANCED TO QA UPON QA VERDICT PASS ON 2026-08-26T06:43:59Z.
+                     # 04-review.md passed at 2026-08-26T04:28:20Z, 06-test-report.md passed at 2026-08-26T06:43:59Z.
+                     # All 11 ACs passed (14 e2e tests in tests/e2e/member-groups.spec.ts).
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: REVIEW. ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-26T04:02:11Z, gate PASS.
+                     # Eight of the ten `allowed_paths` are touched; the two absent are QA's test
+                     # files, which section 5 lists as `new — QA` and which are written at the QA
+                     # stage against section 6. `03-impl-log.md` records no deviation and no
+                     # consultation — section 1 was copy-pasteable as the design promised, and no
+                     # field name in the diff is absent from it (RULE-04).
+                     # state: IN_PROGRESS. ADVANCED FROM SPEC BY /design ON 2026-08-26T03:28:58Z, gate PASS.
+                     # THE TICKET NEVER SAT AT READY, and that is a fact about how it was run rather
+                     # than a defect: the operator invoked /design directly, so the orchestrator's
+                     # DoR evaluation was not performed. GRP-01 was advanced the same way and its
+                     # header says so. The four DoR items the story carried all hold and are
+                     # checkable here — `feature_ids` resolves to `.ai/registry/features.md:129`,
+                     # `invariants_touched` is explicit, out-of-scope is non-empty at twelve items,
+                     # and `size_estimate` is set. The DESIGN gate is what this transition rests on.
+                     #
+                     # ---- THE RECORD THIS REPLACES, KEPT ----
+                     # state: SPEC. ADVANCED FROM BACKLOG BY /spec ON 2026-08-26T03:07:43Z, gate PASS.
+                     # DoR is the orchestrator's to evaluate and this stage does not set READY.
+owner: "orchestrator"    # Taken at /ship, per MEM-01, SEA-01, SYS-01 and GRP-01. It was
+                         # "" from seed through QA — MD-36, fourth occurrence out of five.
+branch: "feat/GRP-02"   # cut from origin/main by /spec step 0, 2026-08-26.
+size_estimate: "M"    # SET BY ba AT SPEC. Grounds are in `01-story.md` under **Size**, and the
+                      # short form is that this is two halves rather than one field: a write path
+                      # that does not exist today, and a column MEM-01 removed *because no seam
+                      # function resolves a group id to a group name*. AC-1 requires the name, so
+                      # that resolution is the work. Not `S` for that reason; not larger than `M`
+                      # because the tree is built, the field exists, schema_delta is none and no
+                      # invariant is engaged.
+size: "M"             # VERDICT, 2026-08-26T03:28:58Z, counted from the ten paths enumerated
+                      # below against the sizing table in `.ai/01-operating-model.md` — M is up to 12.
+                      # IT AGREES WITH `size_estimate` AND NOTHING ROUTES BACK TO `ba`.
+                      #
+                      # NOT XL, and the row that would say otherwise is read with the paragraph under
+                      # it. The table's XL row names `types.ts`, which this ticket changes; the
+                      # paragraph fixes the test as "whether existing callers must change, not whether
+                      # the seam was touched at all", and adds that adding new functions to
+                      # `src/lib/data/` is ordinary feature work. One type is ADDED beside `Member`,
+                      # which does not change; one seam function is ADDED; no existing signature
+                      # moves and no existing caller is affected. GRP-01 and MEM-01 are both worked
+                      # precedents, additive in the same file and both sized M.
+                      #
+                      # THE ONE ALTERNATIVE THAT WOULD HAVE BEEN XL is recorded because it is the
+                      # obvious-looking one: putting `groupId` into `MemberPatch` and the existing
+                      # edit form changes the signature of a shipped seam function, which the table
+                      # sends to XL and to escalation. 02-design.md section 7 alternative A.
 depends_on: [GRP-01]  # SATISFIED — GRP-01 is DONE and merged as PR #42 on 2026-08-26T02:49:03Z, so
                       # DoR item 3 passes. Recorded rather than left empty because it is true and
                       # checkable: members cannot be assigned to groups until groups can be created,
@@ -63,11 +159,62 @@ invariants_touched: []   # PROVISIONAL, AND IT MATCHES THE REGISTRY ROW RATHER T
                          # the one worth reasoning through explicitly: it governs member DELETION, and
                          # nothing here deletes a member, but the file this ticket writes is the file
                          # INV-12 protects.
-allowed_paths: []
+                         #
+                         # CONFIRMED `[]` BY ba AT SPEC, 2026-08-26 — no longer provisional. All
+                         # eleven issued IDs were walked one at a time, not dismissed as a class, and
+                         # the table is in `01-story.md` under **Invariants touched**. INV-12 came
+                         # out where this note predicted. The finding that makes `[]` an argument
+                         # rather than an assumption is the absence of a cascade: INV-11's note is
+                         # the worked example of an invariant reached invisibly, and the equivalent
+                         # chain does not exist here because the glossary states group membership is
+                         # independent of seat occupancy — so there is no relation from a Group to a
+                         # Seat, a Device or a Room for one to travel along.
+allowed_paths:           # SET BY tech-lead-design AT DESIGN, 2026-08-26T03:28:58Z. Ten files,
+                         # enumerated and not globbed. 02-design.md section 5 carries the reason each
+                         # one is in reach, and — as load-bearing — the six a reader might expect and
+                         # which are deliberately absent. Two of those six were checked rather than
+                         # assumed: `tests/e2e/members.spec.ts` addresses every cell by testid and
+                         # counts no columns, so the new Group column does not break it (F-7).
+  - "src/app/(app)/members/page.tsx"
+  - "src/app/(app)/members/members-manager.tsx"
+  - "src/actions/members.ts"
+  - "src/actions/groups.ts"
+  - "src/lib/validation/member.ts"
+  - "src/lib/data/types.ts"
+  - "src/lib/data/mock/members.ts"
+  - "src/lib/data/prisma/members.ts"
+  - "tests/unit/member-groups.test.ts"
+  - "tests/e2e/member-groups.spec.ts"
+                         #
+                         # `src/actions/groups.ts` IS THREE LINES AND IT IS NOT SCOPE DRIFT. GRP-01
+                         # wrote the obligation into that file's own header: "/members is
+                         # deliberately not revalidated ... The ticket that restores a group column
+                         # to /members — GRP-02 — makes /members a second reader and must add the
+                         # path in the same change." All three group write actions gain
+                         # `revalidatePath("/members")`, not only the delete — a rename changes the
+                         # text the new column renders, and a create adds an option to a chooser
+                         # /members renders. That last one is MEM-01's finding F-6, which QA
+                         # measured rather than predicted.
+                         #
+                         # `src/lib/validation/group.ts` IS ABSENT ON PURPOSE and it is the path most
+                         # likely to be reached for at IN_PROGRESS. Its `groupParentIdSchema` maps
+                         # the empty string to null, which on this surface would silently build the
+                         # "remove from group" verb the story declined to grant (Q-4, out-of-scope
+                         # item 2) with no criterion to fail. 02-design.md F-4 and section 7
+                         # alternative E.
 schema_delta: none    # `Member.groupId` is already drafted and already written by GRP-01's delete
                       # path, so assignment adds no field. If DESIGN concludes the group column needs
                       # a DTO or schema change to resolve a group NAME, that is a finding to raise —
                       # not a decision to take (SYS-01 set this precedent and held `none` throughout).
+                      #
+                      # HELD AT `none` BY tech-lead-design AT DESIGN, AND VERIFIED RATHER THAN
+                      # ASSUMED. `prisma/schema.prisma:166-167` declares `groupId String?` and the
+                      # relation with `onDelete: SetNull`, and line 180 an `@@index([groupId])`.
+                      # The conditional this note raised did not fire: resolving a group id to a
+                      # group NAME needs no DTO and no schema change — `listGroups()` already exists
+                      # from GRP-01, and the members page composes it into a name map the way it
+                      # already composes three other seam reads. No seam READ is added at all.
+                      # 02-design.md F-1 and section 4.
 requires_adr: false
 rework_count: 0
 chat_budget:
@@ -77,10 +224,10 @@ chat_budget:
   qa->tech-lead-design:        { used: 0, max: 6 }
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
-  spec:   { passed: false, at: null }
-  design: { passed: false, at: null }
-  review: { passed: false, at: null }
-  qa:     { passed: false, at: null }
+  spec:   { passed: true,  at: "2026-08-26T03:07:43Z" }
+  design: { passed: true,  at: "2026-08-26T03:28:58Z" }
+  review: { passed: true,  at: "2026-08-26T04:28:20Z" }
+  qa:     { passed: true,  at: "2026-08-26T06:43:59Z" }
 
 # Notes on fields that are easy to get wrong:
 #

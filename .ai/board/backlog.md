@@ -121,12 +121,47 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
+| GRP-02 | 2026-08-26T07:18:01Z | *see the note below* | 0 |
 | GRP-01 | 2026-08-26T02:06:22Z | *see the note below* | 0 |
 | SYS-01 | 2026-08-25T03:14:52Z | *pending — opened at ship; see the note below* | 0 |
 | SEA-01 | 2026-08-25T01:52:41Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | MEM-01 | 2026-08-24T09:21:52Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | DEV-01 | 2026-08-23T08:35:53Z | *pending — see the note below* | 0 |
 | ROO-01 | 2026-08-23T05:29:36Z | [#1](https://github.com/didi-code0980/seatseat-aifw/pull/1) — merged 2026-08-23 | 0 |
+
+**GRP-02 shipped the same day GRP-01 did, and it is the first ticket to run the whole loop inside one
+working day with nothing routed back.** SPEC 03:07Z, DESIGN 03:28Z, IN_PROGRESS, REVIEW 04:28Z, QA
+06:43Z, ship 07:18Z. `rework_count: 0`, no escalation, and `size: M` matched `size_estimate: M` so
+nothing routed back to SPEC for a re-estimate.
+
+**It is also the first ticket to map every acceptance criterion through a single suite.**
+`tests/unit/member-groups.test.ts` is an enumerated `allowed_path` and QA left it empty — declared at
+`06-test-report.md:155` and raised as F-1 in `99-questions.md` *before* the gate, not discovered after
+it. The reason is structural rather than lazy: design section 6 is a `data-testid` contract that names
+no seam call, so a unit test has no function to target under RULE-05. All 11 ACs are covered by 14 e2e
+tests. `allowed_paths` is a ceiling and not a quota, so the Definition of Done holds — but GRP-01
+mapped each of its 17 ACs through both a unit and an e2e test, and this one does not. Whether that is
+a design gap or an acceptable shape for a pure-UI slice is worth deciding before it becomes the
+pattern.
+
+**MD-35 was checked by execution again and was inert again — two ships running.**
+`git diff feat/GRP-02...origin/main -- src tests package.json pnpm-lock.yaml prisma
+playwright.config.ts vitest.config.ts` is empty against a base seven commits behind. `pnpm verify`
+exit 0 and `pnpm test:e2e` 96/96 exit 0, both re-run on the branch at ship, and the 96 matches
+`06-test-report.md` exactly. The control still does not exist; this is the fourth ship to do it by
+hand.
+
+**Its `metrics.md` history was stranded on an unpushed local branch and this ship recovered it.**
+`/spec` wrote GRP-02's SPEC row — `.claude/commands/spec.md:87` instructs it to — and someone moved it
+onto `ops/metrics-ledger-append`, which was committed, never pushed and never opened as a pull
+request. `main` carried no GRP-02 row at all. That row is folded into this ship's commit, where it
+merges with the ticket instead of waiting behind a branch nobody could see. **The contradiction that
+produced it is still open**: `session-model.md:303` says *"One writer: `/ship`. Not one lane — one
+command"*, and `spec.md:87` tells the BA to write the same file. Neither cites the other.
+
+**`src/lib/data/prisma/members.ts` is written into a directory ADR-007 deletes**, exactly as GRP-01
+wrote `prisma/groups.ts`. The difference is that the cutover now has an owner: SYS-02 is issued,
+seeded, and inherits both.
 
 **GRP-01 is the first ticket whose stale base cost nothing, and it was checked rather than
 assumed.** The branch shipped seven commits behind `main`, and

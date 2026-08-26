@@ -35,12 +35,13 @@ import { revalidatePath } from "next/cache";
 import { members } from "@/lib/data";
 import type { Member, MemberReferences } from "@/lib/data";
 import {
+  assignMemberToGroupSchema,
   createMemberSchema,
   memberIdOnlySchema,
   updateMemberSchema,
 } from "@/lib/validation/member";
 
-export type MemberFieldName = "fullName" | "email" | "role";
+export type MemberFieldName = "fullName" | "email" | "role" | "groupId";
 
 /**
  * `REFERENCED` carries structure and no message string, and that is deliberate. `NOT_FOUND` carries
@@ -53,6 +54,10 @@ export type MemberFieldName = "fullName" | "email" | "role";
 export type MemberActionError =
   | { kind: "VALIDATION"; fields: Partial<Record<MemberFieldName, string>> }
   | { kind: "DUPLICATE_EMAIL"; fields: { email: string } }
+  // GRP-02, AC-6. A field map and not a bare message, so the refusal renders against the control
+  // the person used. This is GRP-01's `PARENT_NOT_FOUND` shape and the same reasoning: a refusal
+  // about a chosen value belongs where the value was chosen.
+  | { kind: "GROUP_NOT_FOUND"; fields: { groupId: string } }
   | { kind: "REFERENCED"; references: MemberReferences }
   | { kind: "NOT_FOUND"; message: string };
 
@@ -62,8 +67,9 @@ export type MemberActionResult<T> =
 
 const DUPLICATE_EMAIL_MESSAGE = "That email address is already in use.";
 const MEMBER_GONE_MESSAGE = "That member no longer exists.";
+const GROUP_GONE_MESSAGE = "That group no longer exists.";
 
-const MEMBER_FIELD_NAMES: readonly string[] = ["fullName", "email", "role"];
+const MEMBER_FIELD_NAMES: readonly string[] = ["fullName", "email", "role", "groupId"];
 
 function isMemberFieldName(value: PropertyKey | undefined): value is MemberFieldName {
   return typeof value === "string" && MEMBER_FIELD_NAMES.includes(value);
@@ -174,6 +180,45 @@ export async function updateMember(input: unknown): Promise<MemberActionResult<M
   revalidatePath("/members");
   // F-6: /devices renders the member list too. See the note on the import above.
   revalidatePath("/devices");
+  return { ok: true, data: outcome.member };
+}
+
+/**
+ * GRP-02 — AC-3, AC-4, AC-6, AC-7, AC-8.
+ *
+ * Five steps in the order `coding-standards.md` fixes: "use server", parse, check permission, call
+ * the seam, return a typed result. Step 3 is absent by specification, as it is on every other action
+ * in this file and in `actions/groups.ts` — see 02-design.md section 2.
+ *
+ * **The return payload is the `Member`, not the outcome.** `previousGroupId` is a seam-level fact
+ * that exists so AC-4 is assertable in a unit test; no rendered element needs it, and putting it in
+ * the success payload would be a field the client is expected to have a use for.
+ */
+export async function assignMemberToGroup(
+  input: unknown
+): Promise<MemberActionResult<Member>> {
+  const parsed = assignMemberToGroupSchema.safeParse(input);
+  if (!parsed.success) return validationError(parsed.error.issues);
+
+  // Step 3 — permission check. NOT IMPLEMENTED, by specification. There is no session and no role
+  // to compare (01-story.md, Permissions). The check belongs on this line, and WHICH check is
+  // itself open: `Q-2` asks whether a Manager may assign, and 02-design.md section 2 records both
+  // readings without choosing between them.
+
+  const outcome = await members.assignMemberToGroup(parsed.data.id, parsed.data.groupId);
+  if (!outcome.assigned) {
+    if (outcome.reason === "MEMBER_NOT_FOUND") return notFound();
+    return {
+      ok: false,
+      error: { kind: "GROUP_NOT_FOUND", fields: { groupId: GROUP_GONE_MESSAGE } },
+    };
+  }
+
+  // One path, and it is the exception to the two-path note at the head of this file. `/devices`
+  // renders member NAMES for the owner select and no group data, and this action changes no
+  // member's name — so F-6 does not extend here. `/groups` renders no member data at all,
+  // contractually (02-design.md F-2).
+  revalidatePath("/members");
   return { ok: true, data: outcome.member };
 }
 

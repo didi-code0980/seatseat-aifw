@@ -1,4 +1,5 @@
 import type {
+  AssignMemberToGroupOutcome,
   CreateMemberOutcome,
   DeleteMemberOutcome,
   Member,
@@ -32,6 +33,15 @@ export async function updateMember(id: string, patch: MemberPatch): Promise<Upda
   void id;
   void patch;
   return notWired("updateMember");
+}
+
+export async function assignMemberToGroup(
+  memberId: string,
+  groupId: string
+): Promise<AssignMemberToGroupOutcome> {
+  void memberId;
+  void groupId;
+  return notWired("assignMemberToGroup");
 }
 
 export async function getMemberReferences(id: string): Promise<MemberReferences | null> {

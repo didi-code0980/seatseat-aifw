@@ -1,4 +1,5 @@
 import type {
+  AssignMemberToGroupOutcome,
   CreateMemberOutcome,
   DeleteMemberOutcome,
   Member,
@@ -14,7 +15,14 @@ import type {
 // They are read as arrays rather than through `listSeats()` and `listDevices()`, because a seam
 // module calling another seam module's clone-returning read to answer a predicate is two structured
 // clones of the whole collection on every delete.
-import { devices, members, seats } from "./store";
+//
+// GRP-02 adds `groups` for the same reason and on the same terms: `assignMemberToGroup` has to
+// answer "does this group still exist" (AC-6), which is stored data the caller did not supply, and
+// reading it through `listGroups()` would be a structured clone of the whole collection on every
+// write. It is READ and never written — a write to `groups` from this module is a review finding
+// under R8 regardless of what it is used for (02-design.md section 3.1). There is no cycle: this
+// module and `mock/groups.ts` both import `./store` and neither imports the other.
+import { devices, groups, members, seats } from "./store";
 
 export async function listMembers(): Promise<Member[]> {
   return structuredClone(members);
@@ -86,6 +94,51 @@ export async function updateMember(id: string, patch: MemberPatch): Promise<Upda
   member.email = patch.email;
   member.role = patch.role;
   return { updated: true, member: structuredClone(member) };
+}
+
+/**
+ * AC-3, AC-4, AC-6, AC-7, AC-8.
+ *
+ * `groupId` is non-nullable, so this function cannot remove a member from a group. That is
+ * out-of-scope item 2 held by the signature rather than by a check (02-design.md F-4).
+ *
+ * Both refusals run before the write (rules 1, 2, 3). AC-8's "the member's name, email and role are
+ * unchanged" and AC-6's "the member's group is unchanged" are assertions about a refusal having
+ * written nothing.
+ *
+ * `MEMBER_NOT_FOUND` is checked before `GROUP_NOT_FOUND`: the member is the subject of the
+ * operation, so a request naming neither reports the missing subject rather than the missing
+ * argument.
+ *
+ * `GROUP_NOT_FOUND` is the seam's refusal and not the caller's (AC-6). Whether the chosen group
+ * still exists is stored data the caller did not supply, and the chooser was rendered from a read
+ * taken before the group was deleted.
+ *
+ * Exactly one field is written, on exactly one row. AC-8, AC-9, AC-10 and AC-11 are all the same
+ * claim about scope, and the strongest form of it is a function whose only assignment statement is
+ * that one.
+ *
+ * Assigning a member to the group they already belong to succeeds, with `previousGroupId` equal to
+ * `groupId`. Nothing makes that state illegal, which is why it does not reason the way
+ * `assignOccupant` does about INV-01 (02-design.md F-5).
+ *
+ * It touches no seat, no device and no room, and the mechanism is the import list: there is no path
+ * from this line to any of them. AC-11 is a property of the file (02-design.md section 3.1).
+ */
+export async function assignMemberToGroup(
+  memberId: string,
+  groupId: string
+): Promise<AssignMemberToGroupOutcome> {
+  const member = members.find((m) => m.id === memberId);
+  if (member === undefined) return { assigned: false, reason: "MEMBER_NOT_FOUND" };
+
+  if (!groups.some((g) => g.id === groupId)) {
+    return { assigned: false, reason: "GROUP_NOT_FOUND" };
+  }
+
+  const previousGroupId = member.groupId;
+  member.groupId = groupId;
+  return { assigned: true, member: structuredClone(member), previousGroupId };
 }
 
 /**

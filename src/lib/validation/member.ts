@@ -59,5 +59,27 @@ export const updateMemberSchema = z.object({
 // `getMemberReferences` and `deleteMember` both take an id and nothing else.
 export const memberIdOnlySchema = z.object({ id: memberIdSchema });
 
+/**
+ * GRP-02. A group id, required.
+ *
+ * It is NOT `groupParentIdSchema` from `./group`, and the difference is the whole of out-of-scope
+ * item 2. That schema maps `z.literal("")` to null because a top-level group legitimately has no
+ * parent; here the empty string arrives from the chooser's placeholder and mapping it to null would
+ * silently build the "remove from group" verb the story neither grants nor refuses (Q-4), with no
+ * criterion to fail. 02-design.md F-4 and section 7 alternative E.
+ *
+ * It carries its own message rather than reusing `groupIdSchema`, which has none: the action's
+ * `fieldErrors` helper renders the first message per field, and Zod's default for `.min(1)` is not
+ * a sentence anyone should read.
+ */
+export const memberGroupIdSchema = z.string().trim().min(1, "A group is required.");
+
+/** AC-3, AC-4. The id comes from a rendered row; the group id comes from the chooser. */
+export const assignMemberToGroupSchema = z.object({
+  id: memberIdSchema,
+  groupId: memberGroupIdSchema,
+});
+
 export type CreateMemberInput = z.infer<typeof createMemberSchema>;
 export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
+export type AssignMemberToGroupInput = z.infer<typeof assignMemberToGroupSchema>;
