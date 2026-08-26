@@ -118,11 +118,41 @@ for (const id of tableIds(invSections.get("Ledger"))) {
   }
 }
 
+// --- Feature ledger ---------------------------------------------------------------------------
+//
+// ADR-008 (2026-08-26) made this file the single register for every feature the project knows about,
+// issued or not, and the column order became `ID | Status | Title | ...`. Two of the six statuses —
+// TRIAGE and RECOMMEND — carry NO id, deliberately: an id is what makes a feature citable, and an
+// unverified proposal must not be citable. So a row is parsed for both cells and the id may be blank.
+//
+// The regex accepts the pre-ADR-008 column order too (`| ID | Title | Group | Status |`) by taking
+// the first cell as the id and searching the row for a status word, rather than by position. A parser
+// that hard-codes column order turns a table edit into a silent empty ledger, and an empty `features`
+// set makes D1 pass on everything.
+
+const FEATURE_STATUSES = ["TRIAGE", "RECOMMEND", "PLANNED", "IN_PROGRESS", "DONE", "OUTDATED"];
+
+/** One parsed row per feature-table line: `{ id, status, line }`. `id` is "" when the cell is empty. */
+const featureRows = (featText ?? "")
+  .split(/\r?\n/)
+  .map((l, i) => {
+    // A table row whose first cell is an id or empty, and which names exactly one status word.
+    const m = /^\|\s*([A-Z]{3}-\d{2})?\s*\|(.*)$/.exec(l);
+    if (!m) return null;
+    const found = FEATURE_STATUSES.filter((s) => new RegExp(`\\|\\s*${s}\\s*\\|`).test(l));
+    // The header separator and the prose tables above have no status cell.
+    if (found.length !== 1) return null;
+    return { id: m[1] ?? "", status: found[0], line: i + 1, raw: l };
+  })
+  .filter(Boolean);
+
+const featureStatus = new Map(featureRows.filter((r) => r.id).map((r) => [r.id, r.status]));
+
+// D1 resolves against this. An OUTDATED row is deliberately absent: ADR-008 clause 5 makes retiring a
+// feature stop its citations resolving, so a ticket cannot pass Definition of Ready against something
+// the project has abandoned. Without that, retirement would be invisible to every check.
 const features = new Set(
-  (featText ?? "")
-    .split(/\r?\n/)
-    .map((l) => /^\|\s*([A-Z]{3}-\d{2})\s*\|/.exec(l)?.[1])
-    .filter(Boolean)
+  [...featureStatus].filter(([, s]) => s !== "OUTDATED").map(([id]) => id)
 );
 
 // --- D1 / D2 / D3 ---------------------------------------------------------------------------
@@ -138,7 +168,15 @@ for (const file of allDocs) {
 
   if (!skipD1) {
     for (const id of new Set(text.match(FEATURE_RE) ?? [])) {
-      if (!features.has(id)) err("D1", r, `references feature ${id}, absent from features.md`);
+      if (features.has(id)) continue;
+      // Distinguishing the two cases matters to whoever reads the finding: a missing row is a typo or
+      // an invention, and an OUTDATED row is a citation of something deliberately retired. The second
+      // has a different fix and would otherwise read as the first.
+      if (featureStatus.get(id) === "OUTDATED") {
+        err("D1", r, `references feature ${id}, which is OUTDATED in features.md (ADR-008)`);
+      } else {
+        err("D1", r, `references feature ${id}, absent from features.md`);
+      }
     }
   }
   for (const id of new Set(text.match(/\bINV-\d{2}\b/g) ?? [])) {
@@ -802,6 +840,85 @@ const byCheck = (list) => {
   }
   return [...m.entries()].sort(([a], [b]) => a.localeCompare(b));
 };
+
+// --- D14: the feature ledger's status and id agree ---------------------------------------------
+//
+// ADR-008 made `features.md` the single register for every feature, at every stage of certainty. Six
+// statuses, and the id column may be empty. **The whole safety of that arrangement rests on one
+// pairing: TRIAGE and RECOMMEND rows have no id.**
+//
+// An id is what makes a feature citable. D1 resolves it, Definition of Ready accepts it, and a story
+// may be written against it — and all three ask only whether a row EXISTS, never whether a human
+// agreed with it. Give an AI's own proposal an id and an agent can specify, design, build and ship it
+// with every check in this file passing. That is the failure this check exists to make impossible,
+// and it is why the id rule is enforced here rather than left as a convention in the prose.
+//
+// The converse matters less but is still a defect: a PLANNED row with no id cannot be built, because
+// nothing can cite it. It is a wish, filed where decisions live.
+//
+// What this does NOT check, stated so it is a known limit rather than an assumed coverage: whether a
+// row's status matches reality. A feature merged into `main` and still reading PLANNED passes here.
+// That is MD-29's column and MD-41's missing writer, and catching it means reading `ticket.yaml`
+// files that live on branches this script cannot see.
+
+if (featText) {
+  const seen = new Map();
+  // Section headings give the group; a row's id must belong to the table it sits in.
+  let group = "";
+  const lines = featText.split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i++) {
+    const heading = /^##\s+([A-Z]{3})\s+—/.exec(lines[i]);
+    if (heading) group = heading[1];
+
+    const row = featureRows.find((f) => f.line === i + 1);
+    if (!row) continue;
+
+    const where = `${group || "?"} table, line ${row.line}`;
+
+    if (row.status === "TRIAGE" || row.status === "RECOMMEND") {
+      if (row.id) {
+        err(
+          "D14",
+          ".ai/registry/features.md",
+          `${where}: ${row.id} is ${row.status} and carries an id — ADR-008 clause 3 requires none, ` +
+            `because an id makes an unverified proposal citable by D1 and by Definition of Ready`
+        );
+      }
+      continue;
+    }
+
+    if (!row.id) {
+      err(
+        "D14",
+        ".ai/registry/features.md",
+        `${where}: a ${row.status} row has no id, so nothing can cite it and no ticket can be seeded ` +
+          `against it`
+      );
+      continue;
+    }
+
+    if (group && !row.id.startsWith(`${group}-`)) {
+      err("D14", ".ai/registry/features.md", `${where}: ${row.id} sits in the ${group} table`);
+    }
+
+    const prior = seen.get(row.id);
+    if (prior) {
+      err("D14", ".ai/registry/features.md", `${row.id} appears twice, at lines ${prior} and ${row.line}`);
+    } else {
+      seen.set(row.id, row.line);
+    }
+  }
+
+  // The prose table under `## Status` is the enum's declaration. If a row uses a value the prose does
+  // not list, one of the two is wrong and a reader has no way to tell which.
+  const statusSection = sections(featText).get("Status") ?? "";
+  for (const s of FEATURE_STATUSES) {
+    if (!statusSection.includes(`\`${s}\``)) {
+      err("D14", ".ai/registry/features.md", `the Status section does not document \`${s}\``);
+    }
+  }
+}
 
 console.log("docs-audit");
 console.log(SCAFFOLD_EXISTS ? "mode: strict (package.json present)" : "mode: pre-scaffold (D6 defers Phase B paths)");

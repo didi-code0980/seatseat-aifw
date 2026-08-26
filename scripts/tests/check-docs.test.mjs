@@ -894,3 +894,113 @@ test("D5, D6 and D9 agree on what is out of scope", () => {
     );
   }
 });
+
+// --- D14: the feature ledger's status and id agree (ADR-008) ------------------------------------
+//
+// ADR-008 made `features.md` the single register for every feature at every stage of certainty, with
+// six statuses and an id column that may be empty. The safety of that rests on one pairing, and it is
+// what these tests are about: **TRIAGE and RECOMMEND rows have no id.**
+//
+// An id is what makes a feature citable — D1 resolves it, Definition of Ready accepts it — and both
+// ask only whether a row exists, never whether a human agreed with it. An id on an unverified
+// proposal means an agent can specify, build and ship its own idea with every check passing.
+
+const STATUS_SECTION = [
+  "## Status",
+  "",
+  "`TRIAGE` `RECOMMEND` `PLANNED` `IN_PROGRESS` `DONE` `OUTDATED`",
+  "",
+].join("\n");
+
+/** A minimal but valid features.md: the documented enum, then one ROO table holding `rows`. */
+const ledger = (...rows) =>
+  FRONT +
+  "# Feature registry\n\n" +
+  STATUS_SECTION +
+  "\n## ROO — Rooms\n\n" +
+  "| ID | Status | Title | Description | Group | Invariants touched | Notes |\n" +
+  "|----|--------|-------|-------------|-------|--------------------|-------|\n" +
+  rows.join("\n") +
+  "\n";
+
+test("the ledger fixture itself is clean, so the tests below prove something", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/features.md": ledger(
+      "| ROO-01 | DONE | Room CRUD | Rooms. | ROO | [] | — |",
+      "| | TRIAGE | An idea | Proposed. | ROO | [] | — |"
+    ),
+  }));
+  assert.deepEqual(r.findings("D14"), [], `fixture must be clean, got:\n${r.stdout}`);
+});
+
+test("a TRIAGE row carrying an id is a D14 finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/features.md": ledger("| ROO-02 | TRIAGE | An idea | Proposed. | ROO | [] | — |"),
+  }));
+  assert.equal(r.findings("D14").length, 1, `expected one finding, got:\n${r.stdout}`);
+  assert.match(r.findings("D14")[0], /ROO-02 is TRIAGE and carries an id/);
+});
+
+test("a RECOMMEND row carrying an id is a D14 finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/features.md": ledger("| ROO-03 | RECOMMEND | Dropped | Out of scope. | ROO | [] | — |"),
+  }));
+  assert.match(r.findings("D14")[0] ?? "", /ROO-03 is RECOMMEND and carries an id/);
+});
+
+test("a PLANNED row with no id is a D14 finding — nothing could cite it", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/features.md": ledger("| | PLANNED | Wanted | Agreed. | ROO | [] | — |"),
+  }));
+  assert.match(r.findings("D14")[0] ?? "", /a PLANNED row has no id/);
+});
+
+test("an id in the wrong group table is a D14 finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/features.md": ledger("| SEA-01 | DONE | Seats | Seats. | SEA | [] | — |"),
+  }));
+  assert.match(r.findings("D14")[0] ?? "", /SEA-01 sits in the ROO table/);
+});
+
+test("a duplicated id is a D14 finding", () => {
+  // Model-debt ids collided four times before anyone checked (MD-34). Feature ids get the check.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ".ai/registry/features.md": ledger(
+      "| ROO-01 | DONE | Rooms | Rooms. | ROO | [] | — |",
+      "| ROO-01 | PLANNED | Rooms again | Rooms. | ROO | [] | — |"
+    ),
+  }));
+  assert.match(r.findings("D14").join("\n"), /ROO-01 appears twice/);
+});
+
+// --- D1: an OUTDATED feature stops resolving (ADR-008 clause 5) ---------------------------------
+
+test("citing an OUTDATED feature is a D1 finding, and says so", () => {
+  // Retiring a feature has to stop its citations resolving, or Definition of Ready keeps accepting
+  // tickets against something the project abandoned. The message distinguishes this from a typo,
+  // because the two have different fixes.
+  const r = run(project(LEDGER + UNISSUED, "See ROO-01.", {
+    ".ai/registry/features.md": ledger("| ROO-01 | OUTDATED | Rooms | Retired. | ROO | [] | — |"),
+  }));
+  const d1 = r.findings("D1").filter((l) => l.includes("probe.md"));
+  assert.equal(d1.length, 1, `expected one D1 finding, got:\n${r.stdout}`);
+  assert.match(d1[0], /ROO-01, which is OUTDATED/);
+});
+
+test("citing a live feature is not a D1 finding — the OUTDATED rule is not a blanket refusal", () => {
+  const r = run(project(LEDGER + UNISSUED, "See ROO-01.", {
+    ".ai/registry/features.md": ledger("| ROO-01 | DONE | Rooms | Live. | ROO | [] | — |"),
+  }));
+  assert.deepEqual(r.findings("D1").filter((l) => l.includes("probe.md")), [], r.stdout);
+});
+
+test("a TRIAGE row's title is not citable, because it has no id to cite", () => {
+  // The point of clause 3, expressed as the behaviour that matters: an agent writing a story cannot
+  // name an unverified proposal, because there is no id in the file for D1 to resolve.
+  const r = run(project(LEDGER + UNISSUED, "See ROO-02.", {
+    ".ai/registry/features.md": ledger("| | TRIAGE | An idea | Proposed. | ROO | [] | — |"),
+  }));
+  const d1 = r.findings("D1").filter((l) => l.includes("probe.md"));
+  assert.equal(d1.length, 1, `expected the citation to fail, got:\n${r.stdout}`);
+  assert.match(d1[0], /ROO-02, absent from features\.md/);
+});
