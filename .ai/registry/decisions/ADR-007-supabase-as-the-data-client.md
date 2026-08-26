@@ -232,15 +232,21 @@ absorbed.
 
 ## Open questions
 
-Five, none answered here. **OQ-4 blocks implementation regardless of the rest.**
+Five. **All five are now answered** — OQ-4 by the operator on 2026-08-25, the other four on 2026-08-26 after review with a technical lead. Each answer is recorded above its original recommendation rather than replacing it, so where an answer went further than the recommendation the difference stays readable.
 
-### OQ-1 — Does `prisma` survive as a dev-only tool, or leave entirely?
+### OQ-1 — Does `prisma` survive as a dev-only tool, or leave entirely? **ANSWERED**
+
+**Answered by the operator, 2026-08-26, after review with a technical lead: leave entirely.** Removed are `prisma` and `@prisma/client` from `package.json`, the directories `src/lib/data/prisma/` and `prisma/`, the file `prisma.config.ts`, the three scripts `db:push` `db:studio` `db:seed`, and the two `onlyBuiltDependencies` entries. Not kept as a dev tool. The operator's reason, recorded in their words: *there is no query to port, and keeping it rebuilds exactly the two-owners problem.*
 
 **Recommended: leave entirely.** Keeping it for introspection or type generation reintroduces the
 two-owners problem the hybrid alternative was rejected for, at a smaller scale but with the same
 failure. If the schema is SQL, the schema is SQL.
 
-### OQ-2 — What generates the TypeScript types for the tables?
+### OQ-2 — What generates the TypeScript types for the tables? **ANSWERED**
+
+**Answered 2026-08-26: commit the generated file, and generate it from local, not from the cloud project.** `supabase/types.generated.ts` is committed. It is produced by `supabase db reset` against `supabase/migrations/` followed by `supabase gen types typescript --local`. A CI job regenerates and diffs, and fails on a mismatch. `pnpm typecheck` therefore runs offline and CI needs no cloud credential.
+
+**This goes further than the recommendation below and the difference is the point.** The recommendation named the command but not its source; generating from the cloud project would make the committed types describe whatever that project currently holds, which is not necessarily what the migrations say. Generating from a local reset makes the migrations the only source, and the CI diff is what stops the file drifting from them.
 
 **Recommended: `supabase gen types typescript`, output committed to the repository, regenerated as
 part of any migration and diffed in review.** Committing the generated file is what keeps
@@ -248,7 +254,11 @@ part of any migration and diffed in review.** Committing the generated file is w
 requirement from every type-check to every schema change, which is the correct place for it. The
 alternative, generating at build time, makes CI depend on a live database and is not recommended.
 
-### OQ-3 — Where does the seed live, and does `src/lib/data/fixtures.ts` stay the source?
+### OQ-3 — Where does the seed live, and does `src/lib/data/fixtures.ts` stay the source? **ANSWERED**
+
+**Answered 2026-08-26: `fixtures.ts` stays the single source.** The seed is a TypeScript script at `scripts/seed.ts`, run by `pnpm db:seed`. It imports `fixtures.ts` and calls the adapter modules in the new `supabase/` sibling under `src/lib/data/` **directly, not the wrapped entry point** — a seed has no session, so it cannot pass through the authorization the entry point applies. Writes are upserts keyed on the fixture `id`, so the script is idempotent. `supabase/seed.sql` is not used; the cost is that `db reset` no longer seeds by itself, accepted to keep one source of data.
+
+**The adapter-not-entry-point clause is the load-bearing one and it is not a shortcut.** RULE-02 makes `src/lib/data/` the only path to data *and the single authorization point*; a script with no session calling the authorizing entry point would either be refused or would need a synthetic session, and inventing one is worse than declaring the seed a privileged path. The ticket states it explicitly so review reads it as a declared exception rather than a violation.
 
 **Recommended: fixtures stay the single source, and the seed becomes a script that writes them
 through the seam.** `.ai/standards/data-model.md` §Seeding requires mock and real to render
@@ -282,13 +292,98 @@ discovering them:
    CLI's own documentation, not from memory — the two-URL split is a pooler property and survives, but
    the wiring does not.
 
-### OQ-5 — Is INV-05's constraint trigger written with the first migration, or deferred?
+### OQ-5 — Is INV-05's constraint trigger written with the first migration, or deferred? **ANSWERED**
+
+**Answered 2026-08-26: written with it, and as a `CREATE CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY IMMEDIATE`, not an ordinary trigger.** Three constraints enter the first migration together:
+
+| Invariant | Instrument |
+|---|---|
+| INV-04 | partial unique index |
+| INV-05 | constraint trigger on `Device` |
+| INV-06 | downgrade trigger on `Seat` |
+
+**They go together because INV-06 closes the `Seat` side of INV-05.** A constraint trigger on `Device` alone leaves the other direction open: the device can stop being owned by the occupant because the *occupant* changed, and nothing on `Device` fires. `prisma/constraints.draft.sql` recorded that gap and left the `Seat`-side trigger unwritten pending this decision.
+
+**INV-10 does not enter.** It is still a sketch needing `btree_gist` and a generated column, and nobody has decided the shape. It stays enforced at the seam as it is today, and the gap is recorded as debt rather than carried silently.
 
 **Recommended: written with it.** `.ai/standards/data-model.md` states INV-05 *"needs more than an
 index because it relates two rows in different tables"* and that a constraint trigger is the usual
 instrument. Deferring it means the first real database accepts data that violates an invariant, and
 INV-05 has no application-level enforcement recorded anywhere. Drafting it is a design activity;
 applying it is a RULE-09 human one.
+
+## Implementation decisions, 2026-08-26
+
+Taken by the operator after review with a technical lead, in the same session that answered the four
+open questions. They are recorded here rather than in a new ADR because each one implements a
+semantics this ADR or an earlier one already decided — with **one exception, which says so**.
+
+### `Account.auth_user_id` links the product to `auth.users`
+
+`ALTER TABLE "Account" ADD COLUMN auth_user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL`,
+nullable, in the first migration. Nullable because ADR-003 holds that a Member exists without a login;
+`ON DELETE SET NULL` because ADR-003 holds that deleting a login must not delete the Member. The
+existing `Account -> Member` cascade is unchanged — that direction was already right.
+
+**This supersedes ADR-006 OQ-3, which put the key on `Member` as `Member.authUserId`.** The operator's
+position is that ADR-003 and ADR-006 already settled the semantics and this is implementation. That is
+true of the cardinality, the nullability and the delete behaviour, and it is **not** true of which
+table holds the column, which is a change of decision and is marked as one here so it does not read
+later as a drift nobody noticed.
+
+The reason the new placement is better is worth keeping: `Account` already holds `email` and already
+has `memberId @unique` cascading to `Member`, so it is the row that represents *a way of signing in*.
+`Member` is the person, and ADR-003's whole argument is that the person outlives the login.
+
+**No new ADR, by the operator's determination.** The RULE-09 signature this needs is the one the first
+migration needs anyway, and it is the same signature.
+
+### The seed creates `auth.users` rows
+
+The three fixture accounts produce three Supabase auth users through the admin API using the
+service-role key, with passwords read from `.env.local`. The script refuses to run when
+`NODE_ENV=production`.
+
+**Without this the cutover produces a full database that nobody can sign in to** — which would look
+like a successful cutover and be discovered at the first attempt to use it.
+
+`SUPABASE_SERVICE_ROLE_KEY` joins `.env.example` and the ticket's precondition list. It is the key that
+bypasses RLS entirely; with RLS off by ADR-002 it is simply full access, so it belongs to the seed
+script and to nothing else.
+
+### Two Supabase projects, `dev` and `prod`
+
+This answers the second precondition recorded under OQ-4, which this ADR left to the operator *at the
+point it costs something*.
+
+**Clause 7 is what forces it.** With `DATA_SOURCE` defaulting to `supabase`, every `pnpm dev` and every
+`pnpm verify` reaches a database. One project for both means every test run touches production data.
+The operator's note stands as recorded: this is the technical answer, and if a second project costs
+money that is the one place the decision is theirs rather than the tech lead's.
+
+### D12 becomes a two-package map
+
+```
+{ "@supabase/ssr": "src/lib/auth/", "@supabase/supabase-js": "src/lib/data/supabase/" }
+```
+
+An error if any `@supabase/*` package appears outside the map, and an error if package `P` is imported
+outside `map[P]`. The `exemptsSeam` branch narrows to one case: *a `lib/data` exemption naming
+`@supabase/ssr` is an error*.
+
+**The ten failing D12 tests recorded as MD-16 are rewritten in this same ticket**, which is what MD-16
+asked for — it declined to add further checks to a suite nobody could run green, and named this
+rewrite as the moment to clear it.
+
+### One ticket, not two
+
+`allowed_paths` must include `src/lib/auth/supabase.ts`. That file carries a comment block forbidding
+the package to be named there, which **this ADR reverses** — and RULE-03 would refuse the edit to the
+one file that has to change if the path were left off the list.
+
+**The work is not split.** D12 is red from the first commit until it is rewritten, and splitting the
+ticket would deliberately leave a red pull request in the middle. There is one signing point for a
+human and it is the first migration, under RULE-09.
 
 ## Affected documents
 
