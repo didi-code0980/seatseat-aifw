@@ -208,6 +208,86 @@ export interface Group {
   parentId: string | null;
 }
 
+/**
+ * Input to `createGroup`. `id` is minted by the seam. `parentId` is null for a top-level group —
+ * AC-2 — and a group id for a child — AC-3. There is no third state: the create form's parent
+ * placeholder carries `value=""` and `groupParentIdSchema` maps it to null before it reaches here.
+ */
+export interface NewGroup {
+  name: string;
+  parentId: string | null;
+}
+
+/**
+ * Input to `updateGroup`. One patch carries both editable fields, and that is the whole reason AC-6a
+ * cannot be passed by accident: a rename (AC-5) and a move (AC-6, AC-7) reach the same function and
+ * the same sibling-uniqueness check. An implementation that checked uniqueness only where a name was
+ * typed would need two functions to do it, and this shape does not offer the second one.
+ */
+export interface GroupPatch {
+  name: string;
+  parentId: string | null;
+}
+
+/**
+ * What refers to a group, read together rather than one at a time — `MemberReferences`' shape and
+ * its reasoning. AC-12 requires the refusal to name what is blocking it, and ADR-005's ground is
+ * that a bare "cannot delete" sends the operator hunting.
+ *
+ * `childGroupNames` — the names of this group's DIRECT children, sorted ascending. Empty when it has
+ *                     none. Names and not ids, because a cuid names nothing to a person.
+ * `memberCount`     — how many members belong to this group. A count and not a list: out-of-scope
+ *                     item 2 forbids a group-scoped view of members, and this is the one place any
+ *                     member fact reaches this surface at all (AC-13's confirmation names it).
+ */
+export interface GroupReferences {
+  childGroupNames: string[];
+  memberCount: number;
+}
+
+/**
+ * AC-2, AC-3, AC-4a. Both refusals are the seam's, because both turn on stored data the caller did
+ * not supply — whether the chosen parent exists, and what already sits beneath it.
+ *
+ * `DUPLICATE_NAME_IN_PARENT` is one reason code covering the top-level case as well, because "no
+ * parent" is a parent value and not a separate rule (02-design.md F-2).
+ */
+export type CreateGroupOutcome =
+  | { created: true; group: Group }
+  | { created: false; reason: "PARENT_NOT_FOUND" | "DUPLICATE_NAME_IN_PARENT" };
+
+/**
+ * AC-5, AC-5a, AC-6, AC-6a, AC-7, AC-8. Four distinct refusals, and they are separate members rather
+ * than one `ILLEGAL`, for the reason `DesignatePrimaryOutcome` gives: a shared reason code makes two
+ * failures indistinguishable in a test, which is how the bug survives. Here the pair that must stay
+ * distinguishable is `ANCESTOR_CYCLE` and `DUPLICATE_NAME_IN_PARENT` — AC-8 and AC-6a are both a
+ * refused move, and an implementation that reported either for both would pass one criterion by
+ * accident.
+ */
+export type UpdateGroupOutcome =
+  | { updated: true; group: Group }
+  | {
+      updated: false;
+      reason: "NOT_FOUND" | "PARENT_NOT_FOUND" | "DUPLICATE_NAME_IN_PARENT" | "ANCESTOR_CYCLE";
+    };
+
+/**
+ * AC-11, AC-12, AC-13.
+ *
+ * `membersDetached` is returned rather than inferred, for the reason `DeleteRoomOutcome` returns its
+ * counts: after the group is gone there is nothing left to read the membership off, and AC-13 is
+ * then assertable at the seam and not only through two rendered surfaces.
+ *
+ * The `HAS_CHILDREN` arm carries the same `references` the pre-delete read returns, so the refusal
+ * names the children (AC-12) without a second query. There is no `cascaded` arm and there never was
+ * one: Q-1 rejected the cascade and Q-1 rejected the reparent, and 02-design.md F-5 records that the
+ * draft schema would perform the reparent if the seam ever let it reach the database.
+ */
+export type DeleteGroupOutcome =
+  | { deleted: true; groupId: string; membersDetached: number }
+  | { deleted: false; reason: "NOT_FOUND" }
+  | { deleted: false; reason: "HAS_CHILDREN"; references: GroupReferences };
+
 export interface Device {
   id: string;
   assetTag: string;

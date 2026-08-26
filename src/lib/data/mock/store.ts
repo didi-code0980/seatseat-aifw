@@ -32,11 +32,12 @@
 
 import {
   devices as seedDevices,
+  groups as seedGroups,
   members as seedMembers,
   rooms as seedRooms,
   seats as seedSeats,
 } from "../fixtures";
-import type { Device, Member, Room, Seat } from "../types";
+import type { Device, Group, Member, Room, Seat } from "../types";
 
 export const rooms: Room[] = seedRooms;
 
@@ -51,3 +52,14 @@ export const devices: Device[] = seedDevices;
  * look. Aliased, like every binding above: same array object as `fixtures.ts`, no clone.
  */
 export const members: Member[] = seedMembers;
+
+/**
+ * GRP-01, and the same reason MEM-01 added `members` above. `mock/groups.ts` read `groups` from
+ * `../fixtures` directly while it only read, which was harmless; it becomes a writing module in this
+ * ticket, and a writing module that bypasses the store makes this file's first sentence false.
+ *
+ * Aliased, like every binding above: same array object as `fixtures.ts`, no clone. That identity is
+ * what lets `deleteGroup` detach a member through `members` here and have `/members` agree about
+ * what happened — AC-13 is one write seen by two surfaces, not two writes that must be kept in step.
+ */
+export const groups: Group[] = seedGroups;
