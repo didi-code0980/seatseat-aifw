@@ -39,7 +39,6 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
-| 1 | GRP-01 | Group CRUD UI | BACKLOG | nothing — next for `/spec` |
 
 `DEV-01` returned to the board on 2026-08-23 as the first ticket seeded under the normal path
 rather than by Phase C, ran the full loop the same day, and is `DONE`.
@@ -63,6 +62,17 @@ the seeded `BACKLOG`.
 paragraph used to explain moved to ARCHIVE, leaving the table empty for the first time — every ticket
 ever issued was `DONE`, WIP was 0 against a limit of 1, and all three worktrees were parked. Nothing
 could enter until a feature row existed to seed against.
+
+**Emptied again 2026-08-26 by `/ship GRP-01`.** The row this table carried moved to ARCHIVE, and
+the paragraphs below it are kept rather than corrected — they explain a choice that was made, and the
+choice held. GRP-01 ran the full loop and is the fifth ticket to reach DONE with `rework_count: 0`.
+
+**REG-01 is not a row here, and its absence is the accurate reading.** A `ticket.yaml` for it exists
+at `.ai/board/tickets/REG-01/` at `state: BACKLOG`, its feature row was seeded on 2026-08-25, and its
+`feature_ids` now resolve — but it was seeded outside the loop and belonged to no branch at all until
+this ship put it on an `ops/` branch. It also carries `invariants_touched: [INV-01, INV-02, INV-03,
+INV-06]`, which its own registry row rejects as having no source. It becomes a row here when a human
+confirms the 🟡 on that row: whether self-release and the request workflow are one feature or two.
 
 **GRP-01 is the first slice chosen rather than inherited.** Every earlier ticket came from Phase C's
 seeding or from an ADR. This one was picked by reading what was actually startable: of the five bare
@@ -151,11 +161,35 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
+| GRP-01 | 2026-08-26T02:06:22Z | *see the note below* | 0 |
 | SYS-01 | 2026-08-25T03:14:52Z | *pending — opened at ship; see the note below* | 0 |
 | SEA-01 | 2026-08-25T01:52:41Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | MEM-01 | 2026-08-24T09:21:52Z | *pending — `gh` unauthenticated; a prefilled compare URL was handed to the operator at ship time* | 0 |
 | DEV-01 | 2026-08-23T08:35:53Z | *pending — see the note below* | 0 |
 | ROO-01 | 2026-08-23T05:29:36Z | [#1](https://github.com/didi-code0980/seatseat-aifw/pull/1) — merged 2026-08-23 | 0 |
+
+**GRP-01 is the first ticket whose stale base cost nothing, and it was checked rather than
+assumed.** The branch shipped seven commits behind `main`, and
+`git diff feat/GRP-01...main -- src tests package.json pnpm-lock.yaml prisma playwright.config.ts
+vitest.config.ts` is empty — all seven touch `.ai/**`, `.claude/**`, `scripts/**` and `CLAUDE.md`.
+The QA gate's base therefore differs from `main` in no file either suite executes, so
+`06-test-report.md`'s 126 unit and 82 e2e still describe the tree that will merge. `pnpm verify` and
+`pnpm test:e2e` were both re-run on the branch at ship and returned exit 0 with the same 82 e2e —
+MD-35's second half is still unfixed, and this is the third ship in a row to handle it by hand.
+
+**It also carries a file that ADR-007 deletes, and that is recorded rather than repaired.**
+`src/lib/data/prisma/groups.ts` is in `allowed_paths` and holds four `notWired` bodies. ADR-007 was
+accepted 2026-08-25 — *after* this ticket's DESIGN gate — and replaces `src/lib/data/prisma/**` with a
+`supabase/` sibling, module for module. Nothing here is wrong: the cutover ticket has never been
+issued, so the adapter this ticket writes is still the one in the tree. The cutover inherits four more
+`notWired` bodies than it would have.
+
+**Its `metrics.md` history is one row, not six, and the gap is the orchestrator's absence rather than
+the ticket's.** SPEC, DESIGN, IN_PROGRESS, REVIEW and QA all ran by direct operator invocation, and
+`metrics.md` is appended by `orchestrator` on every transition — which never ran. The five gate
+timestamps survive in the artifacts' front-matter and in `ticket.yaml`; backfilling them is a decision
+for a human, because a row appended by a command that did not witness the transition is a different
+kind of record from one that did.
 
 **SYS-01 shipped on the first attempt, and it is the first ticket to replace infrastructure rather
 than add a screen.** Better Auth is gone from the dependency tree; `@supabase/ssr` is constructed
