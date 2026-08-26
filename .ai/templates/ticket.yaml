@@ -8,13 +8,18 @@ group: ROO
 state: BACKLOG
 owner: ""
 branch: ""
-size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
+size_estimate: ""     # S|M|L — set by ba at SPEC; gates DoR. L does not fail DoR; it tells
+                      # DESIGN that splitting is on the table.
 size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
 depends_on: []
 invariants_touched: []
 allowed_paths: []
 schema_delta: none
 requires_adr: false
+# DoR item 4 reads this. Name the ADR that approved a non-`none` schema_delta — e.g. ADR-007 — and
+# leave it empty when schema_delta is `none`. `requires_adr` is a different question: it asks whether
+# this ticket still needs a decision, not whether one has already been made.
+adr: ""
 rework_count: 0
 chat_budget:
   developer->tech-lead-design: { used: 0, max: 6 }

@@ -351,9 +351,20 @@ Checked mechanically by the orchestrator.
 | 1 | `feature_ids` non-empty, and every ID present in `.ai/registry/features.md` | BACKLOG | a human, when promoting the idea |
 | 2 | `invariants_touched` explicit — may be `[]`, never absent | SPEC | `ba` |
 | 3 | Every ticket in `depends_on` is `DONE` | BACKLOG | a human, when ordering the backlog |
-| 4 | `schema_delta` is `none`, or an approved ADR is linked | BACKLOG | a human; a schema change needs its ADR before the ticket exists (RULE-09) |
-| 5 | `size_estimate` is S or M | SPEC | `ba`, from the story's scope and its Out-of-scope section |
+| 4 | `schema_delta` is `none`, or `adr:` names an ADR whose `Status` is `ACCEPTED` | BACKLOG | a human; a schema change needs its ADR before the ticket exists (RULE-09) |
+| 5 | `size_estimate` is S, M or L | SPEC | `ba`, from the story's scope and its Out-of-scope section |
 | 6 | Exactly one feature group, or a stated split rationale | BACKLOG | a human, or `ba` at SPEC if the story reveals a second group |
+
+**`size_estimate` gained `L` on 2026-08-26 and item 4 gained a field to check.** Both come from
+SYS-02's SPEC, and both are the same defect seen twice: the gate asked for something the ticket had no
+way to say. `size_estimate` was `S|M`, so a BA who correctly judged a ticket large had to write a
+number they knew was false or write nothing — SYS-02's `ba` wrote nothing and said why, which is the
+behaviour the model wants and the model then had no room for. An `L` estimate does **not** fail this
+gate; it tells DESIGN that splitting is on the table, and DESIGN decides with `size`.
+
+Item 4 said *an approved ADR is linked* while `ticket.yaml` had no field to link one — `requires_adr`
+is a boolean and answers a different question. `adr:` is new in `.ai/templates/ticket.yaml` and is
+what item 4 now reads.
 
 `[]` and absent are different answers. `[]` says the BA considered the invariants and found none
 engaged. Absent says nobody looked, and check R8 has nothing to reason through.
@@ -380,7 +391,18 @@ than the gate.
 | S | up to 6 | proceed |
 | M | up to 12 | proceed |
 | L | more than 12 | must split at DESIGN |
-| XL | any size, if it changes the schema, or changes the signature of an existing `src/lib/data/` function, or changes `types.ts` | escalate |
+| XL | any size, if it changes the schema **with no approved ADR linked**, or changes the signature of an existing `src/lib/data/` function, or changes `types.ts` | escalate |
+
+**A schema change with an approved ADR linked is not XL on that ground.** Amended 2026-08-26, from
+SYS-02's SPEC. The row previously read *any size, if it changes the schema*, which contradicted
+Definition of Ready item 4 — item 4 says a ticket passes with `schema_delta` non-`none` **or an
+approved ADR linked**, so it opened a door this row bricked up. Both sentences were in this file and
+only one could operate.
+
+Escalation means *a human decides*. For a planned schema change that human has decided already: the
+ADR is the decision, and RULE-09 puts a second signature on the migration itself. Escalating asks the
+same person the same question a third time and stalls the ticket that makes the product real. What XL
+still catches is the case it was written for — a schema change nobody approved in advance.
 
 Adding new functions to `src/lib/data/` is ordinary feature work, not XL — every feature
 ticket does it. XL is for changes that break the seam's existing contract: a schema
@@ -388,6 +410,13 @@ migration, a changed signature that existing callers must follow, or a DTO shape
 ripples outward. The test is whether existing callers must change, not whether the seam
 was touched at all. An earlier wording read "touches the seam", under which every feature
 ticket escalated and the table meant nothing.
+
+**A registry row may forbid the split that `L` prescribes, and then it is not split.** The row states
+the reason and DESIGN records it rather than overriding it — `.ai/registry/**` is RULE-01 and outranks
+a handling default here. Added 2026-08-26: `features.md` forbids splitting SYS-02 because check D12 is
+red from its first commit until it is rewritten, so a split would place a red pull request in the
+middle of the sequence on purpose. That is a CI fact the sizing table cannot see, which is exactly the
+kind of thing the registry exists to record.
 
 Split by operation first (read path, then write path), then by surface, then by role. **Never split
 backend from frontend alone.** That produces a ticket that cannot be exercised end to end, which
