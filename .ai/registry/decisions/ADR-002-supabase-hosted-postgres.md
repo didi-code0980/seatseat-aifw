@@ -1,6 +1,6 @@
 ---
-doc_version: 3
-last_updated: 2026-08-24
+doc_version: 4
+last_updated: 2026-08-25
 governed_by: [RULE-01, RULE-02, RULE-09]
 ---
 
@@ -8,18 +8,38 @@ governed_by: [RULE-01, RULE-02, RULE-09]
 
 ## Status
 
-`ACCEPTED` — 2026-08-11, by the operator. **PARTIALLY SUPERSEDED by ADR-006 — 2026-08-24.**
+`ACCEPTED` — 2026-08-11, by the operator. **PARTIALLY SUPERSEDED by ADR-006 — 2026-08-24, and again
+by ADR-007 — 2026-08-25.**
 
-**The auth clause is struck.** "Authentication stays on Better Auth, unchanged. Supabase Auth is not
-adopted." is no longer true: ADR-006 removes Better Auth and adopts Supabase Auth. The paragraph
-headed *"Why not Supabase Auth, the obvious alternative"* under Rationale is kept verbatim rather
-than deleted — it is the argument that lost, and an ADR that erases the losing argument stops being a
-record of a decision and becomes an advertisement for one.
+**The auth clause is struck by ADR-006.** "Authentication stays on Better Auth, unchanged. Supabase
+Auth is not adopted." is no longer true: ADR-006 removes Better Auth and adopts Supabase Auth. The
+paragraph headed *"Why not Supabase Auth, the obvious alternative"* under Rationale is kept verbatim
+rather than deleted — it is the argument that lost, and an ADR that erases the losing argument stops
+being a record of a decision and becomes an advertisement for one.
 
-**Everything else stands.** Postgres is hosted on Supabase; Prisma is the only database client; Row
-Level Security is off; the pooled/direct connection split is unchanged. In particular the RLS clause
-is *not* superseded — ADR-006's OQ-1 exists to keep it true, and if OQ-1 is answered (b) then this
-ADR's revert condition fires and the RLS clause is reopened on its own terms.
+**The Prisma clause is struck by ADR-007.** "Prisma is the only database client. No Supabase SDK is
+added." is no longer true: ADR-007 replaces the Prisma adapter behind `src/lib/data/` with
+`@supabase/supabase-js` and removes Prisma from the tree. The escape-hatch sentence under Consequences
+— *"A tempting escape hatch is now one `pnpm add` away"* — is kept, and ADR-007 §Rationale records that
+after that decision the hatch is not one `pnpm add` away but already installed.
+
+**The title of this document is now wrong and is deliberately not changed.** "Supabase as hosted
+Postgres only" was the decision on 2026-08-11. Renaming the file would break every citation of
+ADR-002 in the repository and would make the record read as though the narrow decision was never
+taken. What the title asserted is superseded by the two ADRs named above; the title itself is history.
+
+**What still stands, and one of the two now stands conditionally.**
+
+- **Postgres is hosted on Supabase, and the pooled/direct connection split is unchanged.**
+  Unconditional. ADR-007 changes which client dials the connection, not that there are two URLs or
+  why.
+- **Row Level Security is off — now held up by a single clause in another document.** ADR-006's OQ-1
+  and ADR-007 §4 both answer *server-side only*, and that answer is the entire reason this clause
+  survives: the premise it rests on is that `src/lib/data/` is the only path in. ADR-007 removed the
+  accidental guard that made a browser import fail at build time — `@prisma/client` could not run in a
+  browser and `@supabase/supabase-js` can — so the premise is now held by lint and by check D12 rather
+  than by the compiler. **The revert condition below is unchanged in wording and stronger in
+  importance.** ADR-007 restates it as its own first revert condition for that reason.
 
 ## Context
 
@@ -53,6 +73,11 @@ single place authorization is enforced.
 **Prisma is the only database client.** No Supabase SDK is added. If a future ticket genuinely needs
 one, it goes on the `no-restricted-imports` allow-list beside `@prisma/client`, importable only from
 `src/lib/data/prisma/**` — the same exception path, decided in `02-design.md` section 3.
+
+> **Struck by ADR-007 — 2026-08-25.** Kept verbatim rather than edited, because the mechanism it
+> describes is the one ADR-007 used: the SDK went on the allow-list, importable from one directory
+> under the seam. The clause anticipated its own reversal and named the shape it would take. What it
+> did not anticipate is that the arriving SDK would also be able to run in a browser.
 
 Supabase's pooler requires two connection strings: `DATABASE_URL` (port 6543, `?pgbouncer=true`) for
 the running application, and `DIRECT_URL` (port 5432) for Migrate. Prisma 7 expresses this by which
@@ -112,6 +137,11 @@ backups become someone else's operational problem.
 - **Vendor coupling**, though limited: the schema is plain Postgres and Prisma is the only client, so
   moving to another host is a connection-string change rather than a rewrite. That is a direct
   consequence of using none of the rest of Supabase.
+
+  **Inverted by ADR-006 and ADR-007.** Identity is not portable — `auth.users` rows and provider links
+  are Supabase's — and PostgREST-shaped queries are not portable either. Moving off Supabase is now a
+  rewrite of both the auth layer and the data layer. The clause is kept because *"though limited"* was
+  the honest reading in August 2026 and it stopped being true by decision, not by discovery.
 
 ## Revert condition
 

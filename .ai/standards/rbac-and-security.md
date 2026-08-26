@@ -1,6 +1,6 @@
 ---
-doc_version: 2
-last_updated: 2026-08-24
+doc_version: 3
+last_updated: 2026-08-25
 governed_by: [RULE-02, RULE-09]
 ---
 
@@ -68,7 +68,23 @@ memory; anything unverified carries `TODO(verify):`.
 and server actions. No Supabase client in a `"use client"` file. This is what keeps `src/lib/data/`
 the only path to data, and it is why Row Level Security stays off — ADR-002's argument survives ADR-006
 only because of this constraint. `no-restricted-imports` enforces it and check D12 re-checks it;
-`src/lib/auth/**` is the single exempted path and `src/lib/data/` is deliberately not exempted.
+`src/lib/auth/**` is the single exempted path for `@supabase/ssr`.
+
+**As of ADR-007 there is a second Supabase client and a second exemption, and the sentence above is
+about the auth one only.** ADR-007 (2026-08-25) replaced Prisma with `@supabase/supabase-js` as the
+implementation behind `src/lib/data/`, exempted for the `supabase/` adapter directory under
+`src/lib/data/` and nowhere else. The two exemptions do not overlap: `src/lib/auth/**` may not import
+the data client, and the data adapter may not import the auth client. ADR-006 §6's reason survives
+verbatim — the data seam has no reason to hold an auth client.
+
+**What changed for security, stated plainly because nothing else announces it.** Under Prisma, an
+import of the database client from a client component failed at build time: `@prisma/client` cannot
+run in a browser. That was an accident of the library, never a designed control, but it was the one
+guard on RULE-02 that a pull request could not edit away. `@supabase/supabase-js` is isomorphic. After
+ADR-007 the guards on the seam are ESLint and check D12, both editable in the same commit as the
+breach — so review check R4 is now the only human in that path. Recorded as MD-33. **If a Supabase
+client or key ever does reach the browser, Row Level Security stops being redundant and becomes the
+only enforcement there is: ADR-007 §Revert condition makes turning it on automatic, not a discussion.**
 
 **Authorization did not move.** `src/lib/auth/permissions.ts` never depended on Better Auth — it
 imports `type Role` from the seam and nothing else. `ROLE_RANK`, `can()` and the role helpers are
@@ -78,12 +94,21 @@ they do*.
 **Identity link.** `Member.authUserId` is a nullable unique string holding the Supabase user UUID,
 with no foreign key — `auth.users` lives in the `auth` Postgres schema and is not modelled by Prisma.
 ADR-003 governs the meaning: a Member without that link is a person the organization tracks who
-cannot sign in.
+cannot sign in. ADR-007 §6 moves where that column is *declared* — SQL migrations under
+`supabase/migrations/` rather than `schema.prisma` — and changes nothing about what it is or what it
+means.
 
 ## Secrets
 
 Never in the repository. `.env` and `.env.local` are gitignored. No credentials in `.mcp.json`; the
 ClickUp MCP server is declared by URL and authenticates out of band.
+
+**No Supabase key in a `NEXT_PUBLIC_*` variable, of either kind.** Next.js inlines those into the
+client bundle, which puts the key on the far side of the network from every control this document
+describes — and it is the half a `no-restricted-imports` rule cannot see, because no import statement
+is involved. ADR-002's revert condition names the key alongside the import for exactly this reason,
+and ADR-007 restates it as its second revert condition. **Nothing currently checks for it**; the
+extension to D12 is authorised by ADR-007 and not yet written.
 
 `disableClaudeAiConnectors` is set to `true` in `.claude/settings.json`. This is load-bearing, not
 cosmetic: without it a coding agent inherits whatever mail, calendar, drive, and design connectors are

@@ -119,8 +119,20 @@ record, this is the index.
   is the single authorization point and two layers enforcing permissions is a drift source. Revisit
   the moment anything needs direct client-to-database access — at that point the seam stops being the
   only path in and RLS stops being redundant.
-- **ADR-003 — Member is a separate table from the Better Auth user.** A Member can exist without a
-  login; deleting a `user` must not delete the `Member`.
+- **ADR-006 — Supabase Auth replaces Better Auth** (2026-08-24). Strikes ADR-002's auth clause. The
+  client is server-side only, which is what stops ADR-002's revert condition from firing. INV-08's
+  enforcement moved to a `localStorage` flag against the steward's recommendation — MD-14 carries what
+  that does not enforce.
+- **ADR-007 — Supabase is the data client too, and mock stops being the default** (2026-08-25).
+  Strikes ADR-002's *"Prisma is the only database client"*. **The thing to remember about it:** RLS
+  stays off on one clause and one clause only — every Supabase client is constructed server-side. Under
+  Prisma a browser import failed at build time; `@supabase/supabase-js` runs in a browser fine, so the
+  compiler no longer backs RULE-02 up and only ESLint, D12 and R4 do. MD-33 carries the gap. Five
+  questions inside the ADR are unanswered and OQ-4 — does a Supabase project exist, and who provisions
+  it — blocks implementation regardless of the rest.
+- **ADR-003 — Member is a separate table from the identity provider's user.** A Member can exist
+  without a login; deleting the login must not delete the `Member`. The referent moved from Better
+  Auth's `user` to Supabase's `auth.users` with ADR-006; the substance did not change.
 - **Two fields for sizing.** `size_estimate` is the BA's at SPEC and gates DoR; `size` is the Tech
   Lead's at DESIGN and decides splitting. One field carrying both judgements made DoR unsatisfiable
   **twice** — first requiring a value only DESIGN could produce, then only SPEC.
@@ -907,3 +919,175 @@ records, untouched by this change.
 
 **Not done, deliberately:** `/ship` still runs as `orchestrator` in `aiw-design`; the instruction
 named the two hand-offs and not the ship. Nothing under `src/`, `prisma/`, or `.ai/registry/**`.
+
+### 2026-08-25 — Supabase becomes the data client too (ADR-007), and the Auth docs are reconciled
+
+**What was asked, in two lines.** `/idea` ran on *"thay đổi cơ chế Auth hiện tại và database đang dùng
+sang dùng hẳn trên supabase"*; `product` wrote the idea and, correctly, refused to resolve the second
+half — Postgres has been on Supabase since ADR-002, so *"dùng hẳn"* had three readings with wildly
+different costs. It asked for a letter. The operator answered **"B và C"** plus *"sửa hết các docs
+liên quan Auth"*.
+
+**Disagreed once, in chat and again inside the ADR, and complied fully.** B removes a guard nobody
+chose to remove: `@prisma/client` cannot run in a browser, so a component importing the database
+client failed at *build time*. That was an accident of Prisma being a Node library, never a designed
+control — but it was the only guard on RULE-02 that a pull request could not edit away.
+`@supabase/supabase-js` is isomorphic. ADR-002's sharpest warning was *"a tempting escape hatch is now
+one `pnpm add` away"*; after ADR-007 it is already installed. The operator had chosen B from a table
+that stated its cost, so this is answered rather than overruled, and it is recorded in ADR-007
+§Rationale and as **MD-33** with two D12 extensions as the fix shape.
+
+**The argument that changed the steward's own reading, and it came from a file rather than from the
+instruction.** `.ai/standards/data-model.md` §"The raw-SQL boundary" has said since 2026-08-11 that
+INV-04 and INV-05 *cannot be expressed in Prisma* and live in `prisma/constraints.draft.sql`, with the
+consequence that `db push` produces a schema accepting data production rejects. **The project already
+carried two schema artefacts that must agree and that no tool reconciles.** SQL migrations are one
+artefact in the language the constraints always needed. That is not trading a tool for an equivalent
+tool — which is exactly what ADR-002 said Supabase Auth would be — and it is why the same objection
+does not land the same way twice.
+
+**RLS stays off on one clause.** ADR-007 §4: every Supabase client, data and auth, is constructed
+server-side. ADR-002's revert condition is about *client-to-database* access, and replacing the
+server-side client is not that. It is a narrow escape and the ADR says so in those words.
+
+**Five questions left unanswered, deliberately, and OQ-4 blocks the work.** Does a Supabase project
+exist and who provisions it — nothing in `.ai/board/` or `.ai/registry/` records it, and under §7 the
+application no longer starts without one. Recommendations are on record for the other four.
+
+**The second instruction turned out to be mostly a reconciliation, not a rewrite.** ADR-006's
+`Affected documents` table said *"Nothing below has been changed yet"* — and had been false for a day.
+`integrations.md`, `rbac-and-security.md` and `invariants.md` were all at the exact target versions the
+table asked for, with matching content. `product` found it while writing the idea, as its OQ-2. **The
+audit never had a chance of catching it:** D9 compares a document's `doc_version` to the rules it
+cites and has no opinion about any ADR's table, so the one artefact saying *what a decision still owes
+the repository* is the one with no verification behind it. **MD-32**, with a check shape.
+
+**MD-34 — the ID collision is live in `model-debt.md` right now.** MD-29, MD-30 and MD-31 each appear
+twice with different content: one set from the SEA-01 ship lane, one from a steward run the same day
+(`440b52c`). MD-29's own body records the previous three collisions. The cause is structural — the
+next ID is chosen by reading the highest number in a file two unmerged branches are both appending to
+— and nothing detects it, because no check reads this file. **Deliberately not renumbered:** the
+duplicates are cited from commit messages and from MD-31's own body, and a silent renumber by an agent
+is how MD-23 became MD-29. Cite these three by number *and* `Found` column until a human fixes it.
+
+**Nine documents beyond the two named.** The sweep for stale claims found more than the Auth surface:
+`CLAUDE.md` §Stack, `.ai/01-operating-model.md` R4 (*"No component imports Prisma"* — the check named a
+vendor, which is why it went stale; it now names none), `architecture.md`, `testing-standards.md`,
+`glossary.md`, `data-model.md`, and `.claude/agents/steward.md`. Each is listed in ADR-007's affected
+table with what changed.
+
+**Verified before publishing:** `check-docs` 0 errors, 3 advisory D8 warnings — two pre-existing on
+MEM-01, one on the new idea file. D7's three verbatim RULE copies in `CLAUDE.md` still match.
+
+**Not done, deliberately:** no code, no `package.json`, no `eslint.config.mjs`, no D12 rewrite, no
+migration. All of it belongs to the ticket ADR-007 authorises, and D12 will fail on that ticket's first
+commit by design. No feature ID was created — that is RULE-01 and it is the operator's.
+
+### 2026-08-25 — OQ-4 answered, the IDs renumbered, and the previous entry was written on a stale tree
+
+**Correcting the entry above rather than editing it, per the rule at the top of this file.** The
+2026-08-25 ADR-007 entry says Better Auth is still in the tree and SYS-01 unimplemented. **That was
+false when it was written.** Local `main` was at `963e84f`; `origin/main` was at `5793d39`, eight
+commits ahead, and SYS-01 had merged as PR #32 and #33 — Better Auth gone, `@supabase/ssr` 0.12.5 in,
+`src/app/api/auth/` deleted. Every fact in ADR-007's Context table had been read from a real file and
+every one of them was stale. `pwd`, `git branch --show-current` and `git status` all report a stale
+checkout exactly as confidently as a current one, and the standing instruction *"on resuming after a
+gap, read the board first"* did not fire because the session did not feel resumed — it opened with a
+`/idea` dispatch. **MD-39**, with a three-line preflight as the fix shape: `git fetch --quiet`, then
+`git rev-list --count HEAD..@{u}`, and say the number when it is not zero.
+
+Corrected in place, with the wrong version quoted rather than deleted, in: ADR-007 §Context, ADR-006
+§Affected documents, `CLAUDE.md` §Stack, `.claude/agents/steward.md` §Research. The rebase onto
+`origin/main` was clean — no conflicts.
+
+**OQ-4 answered: *"tôi đã tạo supabase project"*.** ADR-007's blocking question is closed and the work
+can be ticketed. Three preconditions were recorded on the implementing ticket rather than left as
+questions: which credentials exist and where (`.env.local` is unverifiable from the repository, and
+under §7 the app does not start without it), whether it is one project or one per environment, and
+that `.env.example` still names Prisma's field layout with a live `TODO(verify):` on it.
+
+**MD-34 decided by the operator: *"agent tự đánh số lại"*.** Four IDs were duplicated, not three —
+`MD-32` was the fourth, and it was the steward's own, written against the stale `main` while
+`origin/main` already carried a different MD-32 from SYS-01's ship. **The rule applied, and it is
+written into the file so nobody re-derives it: the block with fewer external citations moves.**
+MD-29→35, MD-30→36, MD-31→37, MD-32→38; three citations rewritten in `.ai/board/backlog.md`, one of
+which already read `MD-29(a)` — a hand-invented disambiguator, and the clearest evidence the collision
+was being worked around rather than reported. Old numbers are dead and not reused. **The allocator is
+not fixed**: MD-34 part (1), a check that fails on a duplicate ID, is still open and is the half that
+stops this happening a fifth time.
+
+**MD-38 taken rather than left, because it named the steward as the decider.** SYS-01's ship recorded
+that D6 cannot tell a stale reference from a deliberate deletion, so `/docs-audit` went red on `main`
+the moment SYS-01 merged and would stay red — with the tempting repair being to edit an accepted ADR
+until the checker passes. D6 now skips `.ai/registry/decisions/**` outright. The narrower
+`removed_paths:` front-matter alternative was rejected in the code comment: it keeps coverage but
+costs every future ADR author a field they must remember, and forgetting it reproduces the same red
+audit. What is given up — a mistyped `src/` path inside an ADR is no longer caught by anything — is
+stated at the exemption rather than discovered later. Two tests, including one asserting the exemption
+does **not** extend one directory up.
+
+**Verified before publishing:** `check-docs` 0 errors, 3 advisory D8 warnings. `pnpm hooks:test` — the
+two new D6 tests pass; the ten failures are MD-16's D12 set, unchanged and untouched by this work.
+
+**Not done, deliberately:** MD-34's check, MD-33's two D12 extensions, and MD-39's preflight are all
+recorded with fix shapes and none is built — three checks in one session is how a guard gets written
+against a defect that has not been understood yet. No code, no `package.json`, no `eslint.config.mjs`,
+no migration, no feature ID.
+
+### 2026-08-25 — the pull request, and CI turns out to have been red on `main` for three runs
+
+**Opened PR #36** on `ops/adr-007-supabase-data-client`, under the direct-instruction exception in
+`.ai/standards/git-conventions.md` — *"any agent may commit and push when the operator instructs it
+to, in that session, for that work."* One `ops/` branch: none of this is ticket work.
+
+**MD-39 fired again inside the same session it was written in.** `main` had moved five more commits
+between the rebase an hour earlier and the push — including `2e918ca`, *another* D6 fix by another
+lane, teaching it that `:123` is a line citation rather than part of a filename. Rebased again, clean,
+no conflict with the D6 exemption from this run. **Two sessions edited the same check within an hour
+without either knowing**, which is the argument for MD-39's preflight stated better than MD-39 states
+it.
+
+**Then CI failed, and the failure was older than this branch.** `verify` was red on `main` for its
+last three runs — `5793d39`, `3b49436`, `9550a2f` — and PRs #32 and #33 were both merged through it.
+Six of the nine findings were the `decisions/` ones MD-38 records and this branch fixes. The remaining
+three are **MD-40**: `node_modules/`, cited by `architecture.md` and `rbac-and-security.md` because
+both tell an agent to read installed types rather than recall them, and `.claude/settings.local.json`,
+cited by `session-model.md` *because* it is gitignored. `docs-audit` runs before `pnpm install`. **All
+three documents were correct and D6 was wrong**, and the finding was unreproducible for whoever
+received it — it passes on every developer's machine.
+
+Fixed by asking git: D6 skips any candidate `git check-ignore` reports as ignored. A skip list would
+have needed maintaining; the ignore rules already are the list. Falls back to checking nothing without
+git, and `check-ignore` exiting 1 means *none were ignored* rather than *the check broke*.
+
+**The thing worth carrying out of this: MD-38 predicted it and the prediction was ignored for a day.**
+It said an audit red for the length of a release stops being read. Two pull requests then merged
+through a red `verify` without comment. `verify` is not in the Definition of Done — that names
+typecheck, lint, unit and e2e — which is exactly why it could rot in the open.
+
+**Verified before pushing:** `check-docs` 0 errors. `pnpm hooks:test` — four new D6 tests pass, two for
+MD-38 and two for MD-40, one of each being a negative control that the exemption is not wider than it
+reads. The ten failures are MD-16's D12 set, untouched by any of this.
+
+**Postscript, same day — the D6 repair turned `docs-audit` green in CI and immediately exposed what
+was behind it.** PR #37's `verify` job now reports `docs-audit: success`, the first pass in three-plus
+runs, and fails one step later at `hook guards`: 179 tests, 169 pass, 10 fail — MD-16's D12 set.
+
+**The finding that matters is not that MD-16 is still open. It is what the steps being sequential
+means.** `docs-audit` and `hook guards` are two steps of one job, and everything after a failing step
+is skipped. So while `docs-audit` was red — since SYS-01 merged — **`pnpm verify` never ran in CI at
+all.** Typecheck, lint, unit and e2e were not executed on `main` for at least three commits, PRs #32
+and #33 included. `.ai/board/backlog.md` says of MD-16 *"it gates no gate: the Definition of Done names
+typecheck, lint, unit and e2e, and `hooks:test` is none of those"* — true about the Definition of Done,
+false about CI, and it is the CI half that blocks a merge. Corrected in both files.
+
+**MD-16 deliberately left unfixed on this PR.** ADR-007 §8 rewrites D12 a second time; pinning ten
+tests to ADR-006's semantics days before that is work that gets undone. It belongs to ADR-007's
+implementing ticket, where the affected-documents table already puts `scripts/check-docs.mjs`.
+
+**On the push.** The branch was pushed, then rebased, which made the push non-fast-forward.
+`git push --force` is denied in settings, and the two non-destructive merges that would have made it
+fast-forward were both refused by the harness classifier. Rather than reach for a near-synonym of a
+denied command, the work went to `ops/adr-007-supabase-data-client-v2` and #36 was closed pointing at
+#37. A wasted branch name is cheaper than a bent rule, and the reason is written on the closed PR so
+it does not read as a mistake later.

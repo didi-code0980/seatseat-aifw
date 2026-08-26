@@ -23,7 +23,14 @@ git status --porcelain
 - Elsewhere or detached, tree clean, the branch exists on `refs/heads` or `refs/remotes/origin` —
   `git switch feat/$ARGUMENTS` (add `-c feat/$ARGUMENTS origin/feat/$ARGUMENTS` when it is
   remote-only), then `git pull --ff-only`.
-- Tree dirty — **stop.** Print the paths and say which ticket they belong to.
+- **Tree dirty — classify before you decide.** Sort every dirty path against this ticket's
+  `allowed_paths` plus `.ai/board/tickets/$ARGUMENTS/**`.
+  - **Inside** — this ticket's own work. **Not a stop.** A re-run after REWORK finds exactly this, and
+    the `developer` session is deliberately kept alive across rework cycles; stopping there would make
+    the operator adjudicate an agent's own work in progress.
+  - **Outside** — one file is enough. **Stop**, name those paths and the ticket they belong to, and
+    say what the two possibilities are: a lane that did not `/handoff`, or a session that wrote in the
+    wrong folder. Do not switch branch, and do not clean them up — a stray artifact is evidence.
 - **The branch does not exist — stop and report to the operator.** Do not create it. Only `/spec`
   creates a `feat/` branch. Arriving here with no branch means SPEC never ran, a `/handoff` never
   pushed, or the ID is wrong, and the three need different answers. Say which you cannot rule out.

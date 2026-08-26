@@ -802,6 +802,81 @@ test("D6 is scoped by path, not switched off: the same bytes under .ai/standards
   assert.match(d6[0], /src\/lib\/data\/nonexistent\.ts, which does not exist on disk/);
 });
 
+// --- D6: a gitignored path is absent by design (MD-40) ------------------------------------------
+//
+// `verify` was red on `main` for three runs, and two of the three findings were `node_modules/` —
+// cited by two standards documents that tell an agent to inspect installed types there. `docs-audit`
+// runs before `pnpm install`. The documents were correct and the check was asking the wrong question.
+//
+// These two tests need a real git repository, because the answer comes from `git check-ignore`. In a
+// non-repository the helper falls back to checking nothing, which is why every other test in this
+// file is unaffected by the change.
+
+function gitProject(extra) {
+  const root = project(LEDGER + UNISSUED, "x", extra);
+  const git = (...args) => spawnSync("git", args, { cwd: root, encoding: "utf8" });
+  git("init", "-q");
+  return { root, ok: git("rev-parse", "--git-dir").status === 0 };
+}
+
+test("a gitignored path named in a governed document is not a D6 finding", () => {
+  const { root, ok } = gitProject({
+    "package.json": "{}",
+    ".gitignore": "node_modules\n",
+    ".ai/standards/probe-d6-ignored.md": FRONT + "Inspect installed types under `node_modules/`.\n",
+  });
+  if (!ok) return; // no git on this machine; the fallback is tested by every other case here
+  const r = run(root);
+  assert.deepEqual(
+    r.findings("D6").filter((l) => l.includes("probe-d6-ignored.md")),
+    [],
+    `an ignored path is absent by design, got:\n${r.stdout}`
+  );
+});
+
+test("D6's gitignore exemption does not excuse a path git tracks", () => {
+  // The failure mode of "ask git" is answering yes too often. Same document, one ignored path and
+  // one that is simply missing; only the second is a finding.
+  const { root, ok } = gitProject({
+    "package.json": "{}",
+    ".gitignore": "node_modules\n",
+    ".ai/standards/probe-d6-both.md":
+      FRONT + "See `node_modules/next/package.json` and `src/lib/data/nonexistent.ts`.\n",
+  });
+  if (!ok) return;
+  const r = run(root);
+  const d6 = r.findings("D6").filter((l) => l.includes("probe-d6-both.md"));
+  assert.equal(d6.length, 1, `expected exactly one D6 finding, got:\n${r.stdout}`);
+  assert.match(d6[0], /src\/lib\/data\/nonexistent\.ts/);
+});
+
+// --- D6: ADRs are exempt (MD-38) ----------------------------------------------------------------
+//
+// A decision record describes what was true when the decision was taken, and decisions authorise
+// deletions. ADR-006 removed three auth files; SYS-01 carried it out; D6 then failed on ADR-002 and
+// ADR-006 forever, for correctly describing the deletion the repository had agreed to. The pressure
+// that creates is to edit an accepted ADR so a checker passes, which is why the exemption exists.
+
+test("a deleted path named in an ADR is not a D6 finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    "package.json": "{}",
+    ".ai/registry/decisions/ADR-002-probe.md":
+      FRONT + "Removed by this decision: `src/lib/auth/deleted-by-adr.ts`.\n",
+  }));
+  assert.deepEqual(r.findings("D6"), [], "an ADR may name a file the decision deleted");
+});
+
+test("D6's ADR exemption is scoped to decisions/, not to the registry", () => {
+  // The failure mode of an exemption is that it is wider than it reads. Same bytes, sibling path.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    "package.json": "{}",
+    ".ai/registry/probe-d6-adr.md":
+      FRONT + "Removed by this decision: `src/lib/auth/deleted-by-adr.ts`.\n",
+  }));
+  const d6 = r.findings("D6").filter((l) => l.includes("probe-d6-adr.md"));
+  assert.equal(d6.length, 1, `expected one D6 finding outside decisions/, got:\n${r.stdout}`);
+});
+
 test("D5, D6 and D9 agree on what is out of scope", () => {
   // One definition, three consumers. If they drift, a board artifact is exempt from one check and
   // not the others, which is worse than either policy applied consistently.

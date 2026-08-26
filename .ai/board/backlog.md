@@ -95,6 +95,16 @@ its owner and needs re-assigning rather than waiting. It gates no gate: the Defi
 typecheck, lint, unit and e2e, and `hooks:test` is none of those, which is exactly why it survived
 four ships unnoticed.
 
+**Corrected 2026-08-25 — "it gates no gate" is true of the Definition of Done and false of CI, and it
+is the CI half that blocks a merge.** `verify` runs `docs-audit` and then `hook guards` as sequential
+steps of one job. `docs-audit` had been red on `main` since SYS-01 merged, so **`hook guards` never
+ran, and neither did anything after it** — `pnpm verify` shows `skipped` on those runs, meaning
+typecheck, lint, unit and e2e were not executed in CI at all for at least three commits, PRs #32 and
+#33 among them. Repairing D6 (MD-38, MD-40) turned `docs-audit` green on PR #37 and the failure moved
+straight to MD-16: 179 tests, 169 pass, 10 fail. It is not fixed there deliberately — ADR-007 §8
+rewrites D12 a second time, so pinning those ten tests to ADR-006's semantics now is work that gets
+undone.
+
 `SYS-01` is the first `SYS` ticket and the first that replaces infrastructure rather than adding a
 screen. It exists because ADR-006 was accepted on 2026-08-24; the feature row and this row were
 written in the same change as the seed, so no ticket ever existed without its registry row.
@@ -230,7 +240,7 @@ server-side only, exempted in `no-restricted-imports` for `src/lib/auth/**` alon
 held at `none` the whole way, which is what let it run the loop without stopping mid-stage for a
 RULE-09 signature.
 
-**Its QA gate was measured 56 commits behind `main` — the widest stale base yet, and MD-29(a)'s second
+**Its QA gate was measured 56 commits behind `main` — the widest stale base yet, and MD-35(a)'s second
 occurrence out of two opportunities.** `06-test-report.md:23` records 76 unit and 42 e2e against a tree
 carrying neither `members.spec.ts` nor `seats.spec.ts`, and still reading `fullyParallel: true`, so it
 never saw the `workers: 1` fix that made the suite deterministic. Merging `origin/main` at ship and
@@ -244,7 +254,7 @@ merge changed dependencies and the design lane had never installed them. Repaire
 `src/**` imports `@prisma/client`, verified rather than assumed. It ends the moment the schema is
 approved.
 
-**MD-30 recurred.** `state: DONE` was written by the QA handoff commit `2202965`, not by `/ship`
+**MD-36 recurred** (renumbered from MD-30 on 2026-08-25 — see MD-34). `state: DONE` was written by the QA handoff commit `2202965`, not by `/ship`
 step 3, and `owner` was left empty so nothing named the stage owner. Second occurrence out of two.
 
 **SEA-01 took three `/ship` attempts, and the first two stopping is the result worth keeping.**
@@ -259,7 +269,7 @@ re-assignment moved `SEAT-B-06` between members mid-assertion, `playwright.confi
 stopped on the same failure and fixed it on `ops/e2e-worker-isolation` — `fullyParallel: false`,
 `workers: 1` — which the operator merged. Attempt 3 merged that base in and passed 61/61.
 
-**Both halves are MD-29, and only one is fixed.** The worker isolation is repaired; *a gate can pass
+**Both halves are MD-35** (renumbered from MD-29 on 2026-08-25 — see MD-34)**, and only one is fixed.** The worker isolation is repaired; *a gate can pass
 against a base the ticket will never merge into, and nothing re-checks it at ship* is not. It was
 handled by hand three times in one ship, and the next ticket cut before a merge reproduces it.
 `feat/SYS-01` is that ticket.

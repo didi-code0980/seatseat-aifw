@@ -63,6 +63,12 @@ Steps:
    your last commit. A FAIL here means the ticket branch carries a file outside `allowed_paths`, and
    the fix is to move that file to the second set, never to widen the list.
 
+   **`backlog.md` and `metrics.md` are exempt in the script and are not a FAIL.** They belong to the
+   orchestrator by the one-writer rule, not to any ticket, and step 3 puts them on the ticket branch
+   deliberately so the board and the ship merge together. Until 2026-08-25 this step told you to move
+   them to the second set — which is step 4 reversed, and obeying step 4 produced a branch this check
+   refused and branch protection then blocked. MD-20.
+
 7. **Open the pull request against `main`**, body linking `.ai/board/tickets/$ARGUMENTS/` and listing
    the four gate timestamps.
 

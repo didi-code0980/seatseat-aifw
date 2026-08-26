@@ -115,9 +115,17 @@ try {
   process.exit(1);
 }
 
+// The board files belong to the orchestrator by the one-writer rule, not to any ticket, and `/ship`
+// step 3 writes them on the ticket branch so the board and the ship merge together. No ticket's
+// `allowed_paths` names them and none should — exempting them here is not a RULE-03 widening, it is
+// naming an owner the list was never meant to cover. Before this, step 4 of `/ship` and step 6
+// contradicted each other and obeying step 4 produced a branch this check refused. MD-20.
+const BOARD_FILES = new Set([".ai/board/backlog.md", ".ai/board/metrics.md"]);
+
 const matchers = allowed.map(globToRegExp);
 const violations = changed.filter((f) => {
   if (f === ticketDir || f.startsWith(`${ticketDir}/`)) return false;
+  if (BOARD_FILES.has(f)) return false;
   return !matchers.some((re) => re.test(f));
 });
 
