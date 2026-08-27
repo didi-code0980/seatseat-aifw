@@ -62,6 +62,20 @@ was only ever asserted once.
   narrower than it used to read: it forbids changing a rule under a ticket that is being judged by
   it, not fixing a defect that is blocking the loop. MD-07 was found and fixed the same day
   precisely because it blocked `/ship`.
+- **Run it. Do not print it.** *Added 2026-08-27, on the operator's instruction: "tại sao tôi phải tự
+  chạy command? từ đầu config tôi là sếp, sẽ chỉ giao tiếp vs cô để cô tự run."* A command that runs
+  in this folder, that this role owns, is not a line for the sign-off — it is work not yet done. The
+  operator talks to the agent; the agent operates the repository. Only three things come back to
+  them: another folder, a loop stage that must start as a fresh session (`.ai/01-operating-model.md`
+  §*Orchestrator loop*, RULE-13), and a human-only act — a merge (RULE-09), an `ESCALATED` verdict
+  (RULE-06), an ADR they accept in their own words. `CLAUDE.md` §*If you can run it, run it* carries
+  the full form.
+
+  **This is the same preference as *decide and report, do not ask*, arriving by a second route.** The
+  autonomy item above governed *deciding*; nothing governed *executing*, so a session could obey it
+  in full — decide, announce, act — and still end by handing over a queue of chores it was equipped
+  to run. Announcing intent and then printing the command is asking for permission with the question
+  mark removed.
 
 ### How to answer
 
@@ -1156,3 +1170,54 @@ failures, MD-16's D12 set, untouched.
 **Not done:** MD-41's writer for `IN_PROGRESS` — `GRP-01` is still set by hand. MD-34's duplicate-id
 check. MD-33's two D12 extensions. Three checks in one session is how a guard gets written against a
 defect nobody understands yet.
+
+### 2026-08-27 — the sign-off had been handing the operator their own project to run
+
+The operator asked why their folder was not on `main`, which is a question with a boring answer —
+no lane checks `main` out, by design, `git-conventions.md` §*Branches*. Then they asked for the pull
+request on `ops/adr-affected-tests`, which had been committed and pushed the day before and never
+proposed: PR #58, opened and merged in the same session. `verify` was red on it, and red on the three
+merges before it, all ten failures the same MD-16 D12 set. **CI being red has stopped being an event
+here, which is the whole value of CI gone**, and it is now the second entry to say so — 2026-08-25
+said it first.
+
+Then the real one. The sign-off closed with *"Tiếp theo: ở folder `aiw-steward` chạy `git switch -c
+ops/<slug> origin/main` — hoặc `/thuki MD-16`."* The operator's reply: **"tại sao tôi phải tự chạy
+command? từ đầu config tôi là sếp, sẽ chỉ giao tiếp vs cô để cô tự run."**
+
+They are right, and the interesting part is that the reply broke no rule. Both commands run in
+`aiw-steward`; the session was in `aiw-steward`, with `Bash`, owning both. `CLAUDE.md` §*Tiếp theo is
+for the folder you are standing in* was obeyed exactly — because that section only ever answered
+**which folder** a command belongs to, and never answered **who types it**. So the honest reading of
+the model was: name a command for the folder you are in, and stop. Fourteen command files inherit
+that section by citation. It made the operator the runtime.
+
+**The fix is a new section in `CLAUDE.md`, §*If you can run it, run it. Tiếp theo is what is left
+over.*** Before writing a command into the line, run it. Three exceptions, each with a citation
+rather than a judgement call: another folder (a session's folder is fixed at launch); a loop stage
+that must begin as a fresh session, because `.ai/01-operating-model.md` §*Orchestrator loop* has the
+orchestrator **print and not dispatch** on purpose — a subagent cannot open a top-level session, so
+RULE-13 would degrade into an agent's good behaviour; and a human-only act, RULE-09, RULE-06,
+RULE-07. Everything else — cutting the branch, running the audit, opening the pull request — is the
+agent's, and listing it for the operator turns a preference for being informed into a queue of
+chores. The `Tiếp theo` template line changes with it: *what is left that you cannot run*.
+
+**Worth keeping: the model already contained both halves of this argument and they had never been
+put side by side.** §*Orchestrator loop* explains at length why some commands must be typed by a
+human, and it is a good argument — RULE-13's isolation is real, and a nested call cannot fake a fresh
+session. The standing instructions say *decide and report, do not ask*, and *never hand back an ask
+that is not complete*. What was missing is the boundary between them, so the strongest reason to
+print a command — a genuine session boundary — silently licensed printing every other command too. A
+carve-out with no stated edge becomes the default.
+
+**Also added to the standing instructions**, §*Autonomy*: *run it, do not print it*, with the
+observation that it is *decide and report* arriving by a second route. That item governed deciding.
+Nothing governed executing — so a session could obey it in full and still end the turn by handing
+over work it was equipped to do. Announcing intent and then printing the command is asking for
+permission with the question mark removed.
+
+**Not done:** nothing checks this. `scripts/check-docs.mjs` cannot tell a *Tiếp theo* line the
+session should have run from one it could not — the input is a chat reply, and the audit reads the
+repository. It goes to `model-debt.md` as unenforceable-by-check, which is the honest classification
+and a small class: RULE-01 and RULE-09 are in it too, and both are held by CODEOWNERS rather than by
+a script. The guard here is that the section is read at the top of every session, by every agent.
