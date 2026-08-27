@@ -112,7 +112,7 @@ Vietnamese form because that is the conversation language today.
 **Tôi là `<agent>`.** Vừa <what you did> — <TICKET-ID>, gate <PASS | FAIL | BLOCKED | n/a>.
 **Xong lúc:** <output of `date '+%Y-%m-%d %H:%M %Z'`>
 **Ở:** <basename of `pwd`> — branch <output of `git branch --show-current`, or `detached @ <sha>`>
-**Tiếp theo:** <command to run in THIS folder>, or `không có — <what this folder is waiting on>`
+**Tiếp theo:** <what is left that you cannot run>, or `không có — <what this folder is waiting on>`
 ```
 
 - **Read the time, the folder and the branch. Never supply them from context.** `date`, `pwd` and
@@ -122,11 +122,47 @@ Vietnamese form because that is the conversation language today.
   this position today.
 - **Quote the gate from your artifact's front-matter.** If your reply completes no command, write
   `gate n/a` and say what you are waiting on in the *Tiếp theo* line.
-- **On a FAIL, *Tiếp theo* is the routed command**, per the routing table in
-  `.ai/01-operating-model.md` — not the next happy-path stage. On `ESCALATED`, it is a human decision
-  and there is no command; say so.
+- **On a FAIL, the routed command is the next thing you run** — per the routing table in
+  `.ai/01-operating-model.md`, not the next happy-path stage, and not a line for the operator to type
+  when it runs here. On `ESCALATED`, it is a human decision and there is no command; say so.
 - **Never put this block in an artifact.** It is conversation. Artifacts carry front-matter, and that
   is the record.
+
+#### If you can run it, run it. *Tiếp theo* is what is left over.
+
+**Added 2026-08-27 on the operator's instruction: *"tại sao tôi phải tự chạy command? từ đầu config
+tôi là sếp, sẽ chỉ giao tiếp vs cô để cô tự run."*** The section below answers *which folder* a
+command belongs to. It never answered *who types it* — so an agent standing in the right folder, with
+the right role, holding the tools, printed the command instead of running it, and the operator became
+the runtime for their own project.
+
+- **Before you write a command into *Tiếp theo*, run it.** If it runs in the folder on your *Ở* line
+  and your role owns it, the turn is not over until it has run. *Tiếp theo* then names what came
+  after — which, done properly, is usually something you genuinely cannot do.
+- **Three things you cannot do. They are the only reasons to hand a command back:**
+
+  | | Why it is not yours | Cite |
+  |---|---|---|
+  | **Another folder** | A session's folder is fixed at launch and it cannot see the others | the section below |
+  | **A loop stage in another session** | The orchestrator prints and does not dispatch, *by decision* — a subagent cannot open a fresh top-level session, so RULE-13 would become an agent's good behaviour instead of how sessions are actually started | `.ai/01-operating-model.md` §*Orchestrator loop* |
+  | **A human-only act** | A merge, an ADR the operator accepts in their own words, an `ESCALATED` verdict, an open question with no default | RULE-09, RULE-06, RULE-07 |
+
+- **Everything else is yours, including the unglamorous half.** Cutting the branch, running the
+  audit, opening the pull request, fixing the small defect you found on the way. None of that is a
+  stage dispatch and no rule reserves it for a human. An agent that lists these for the operator has
+  turned a preference for being informed into a queue of chores.
+- **A gate FAIL is not a stopping point.** Route it per `.ai/01-operating-model.md` and run the
+  routed command. RULE-06 already bounds this — two failed cycles escalate — so stopping early to
+  report a FAIL adds nothing the rule does not already guarantee.
+- **What you hand back arrives complete.** Never a branch name where a pull request URL belongs; the
+  link, the title and the body, every time. Where a rule or a permission means the operator presses
+  the key, the thinking is still yours. Standing instruction, `.ai/steward/context.md` §*How to
+  answer*.
+- **The failure this is written from is the reply directly above it.** On 2026-08-27 a `steward`
+  session in `aiw-steward`, having just opened PR #58, signed off with *"Tiếp theo: ở folder
+  `aiw-steward` chạy `git switch -c ops/<slug> origin/main` — hoặc `/thuki MD-16`."* Both run in
+  `aiw-steward`. The session was in `aiw-steward`. It had `Bash`. It owned both. Every word of the
+  section below was obeyed, and the reply was still homework.
 
 #### *Tiếp theo* is for the folder you are standing in. Only `steward` may answer for another.
 
