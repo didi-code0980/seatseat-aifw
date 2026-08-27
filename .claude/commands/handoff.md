@@ -1,5 +1,5 @@
 ---
-description: Commit and push a ticket's finished lane work, then release the branch for the next lane
+description: Commit and push a ticket's lane work, then release the branch for the lane that runs next
 argument-hint: <TICKET-ID>
 ---
 
@@ -10,6 +10,7 @@ session. Changed 2026-08-25 on the operator's instruction. Nothing is dispatched
 |---|---|---|
 | `aiw-design` | `tech-lead-design` | the `design` gate |
 | `aiw-implement` | `qa` | the `qa` gate |
+| either | whoever wrote the failing verdict | a gate that **failed**, to a role in the other folder |
 
 **The lane that finished the work now persists it.** The previous arrangement routed both hand-offs
 through `orchestrator`, on the stated grounds that it was the only role permitted to commit and that
@@ -32,8 +33,9 @@ worktree dirty, and git refuses one branch in two worktrees. Without a step that
 fatal: 'feat/<TICKET-ID>' is already checked out at '/Users/mpa/Desktop/<folder>'
 ```
 
-MD-15. Two hand-offs use this command — design→build, and build→ship — and the shape is the same
-both times.
+MD-15. Three hand-offs use this command — design→build, build→ship, and the **rework hand-off**, which
+carries a failed gate back to the folder the routed role lives in — and the shape is the same all three
+times. The third was added 2026-08-27; MD-46 is why it had to be.
 
 ## 0. Confirm the branch and the folder, before anything
 
@@ -54,22 +56,49 @@ an empty lane. If the branch does not exist, stop and report; there is nothing t
 A hand-off run from the wrong folder pushes the wrong lane's work, and since ADR-004 nothing stops it
 (`.ai/standards/session-model.md`, *What no longer protects this*).
 
-## 1. Decide which hand-off this is, from `ticket.yaml`
+## 1. Decide which hand-off this is, from `ticket.yaml` and from the verdict you just wrote
 
-Read the `gates` map. Do not infer it from which files exist.
+Read the `gates` map in `ticket.yaml`, **and** the `gate:` line in the front-matter of the artifact
+your stage produced. Neither alone is enough, and a FAIL never reaches the gates map at all. Do not
+infer either from which files exist.
+
+**Two of the three are forward, and the gates map decides them:**
 
 | Gates passed | You are | Hand-off | Next lane |
 |---|---|---|---|
 | `spec` and `design` | `tech-lead-design` | **design → implement** | `aiw-implement` — `/implement` |
 | `review` and `qa` | `qa` | **implement → ship** | `aiw-design` — `/ship` |
 
+**The third is backwards, and only the verdict decides it:**
+
+| Front-matter of the artifact you just wrote | Hand-off | Next lane |
+|---|---|---|
+| `gate: FAIL` with `routed_to` naming a role that does not sit in your folder | **rework** | the folder that role sits in |
+
+`routed_to` resolves to a folder through the roster in `.ai/standards/session-model.md`, *The three
+lanes*: `ba`, `tech-lead-design` and `orchestrator` are `aiw-design`; `developer`,
+`tech-lead-review` and `qa` are `aiw-implement`.
+
+**If `routed_to` names a role in your own folder, this is not a hand-off and you must not run one.**
+A QA failure routed to `developer` is fixed two feet away; the branch does not move, nothing is
+pushed, and the routed command runs here.
+
 **If the gates say one thing and your own role says the other, stop.** A `qa` session reading a tree
-whose `design` gate has just passed is in the wrong folder — the two hand-offs are not
+whose `design` gate has just passed is in the wrong folder — the two forward hand-offs are not
 interchangeable and neither is the working tree each one commits.
 
 Anything else is not a hand-off. If `design` passed and `review` did not while you are in the build
-lane, the ticket is mid-lane: stop and say which stage is unfinished. This command never persists a
-lane that has not completed — a pushed branch is a claim that a lane is done.
+lane and no verdict reads FAIL, the ticket is mid-lane: stop and say which stage is unfinished.
+
+**A forward hand-off's push claims a lane is done. A rework hand-off's does not, and that distinction
+is the whole reason the third case had to be written down.** Until 2026-08-27 this step refused
+everything that was not one of the two forward cases, on the stated ground that *a pushed branch is a
+claim that a lane is done* — which left the two rows of `.ai/01-operating-model.md`
+§*Failure routing* that point out of the implement lane with no way to reach the role they name. The lane holding `feat/<ID>` could
+not release it, the lane owning the fix could not check it out, `git switch` refuses a branch checked
+out elsewhere, and the ticket stopped between the two folders with no command able to move it. That
+is MD-46, found on SYS-02 at QA. What this push claims is narrower and still true: **this lane is
+finished with the ticket for now**, and what is on `origin` is what the receiving lane will fix.
 
 ## 2. Classify the working tree
 
@@ -86,6 +115,32 @@ Print only the paths that made you stop.
 **`.ai/board/metrics.md` and `.ai/board/backlog.md` are never in the ticket set, and never yours
 here.** They belong to `/ship` alone — see *The one surface that still collides* in
 `.ai/standards/session-model.md`. If a stage has left them dirty, that is the second set.
+
+## 2a. Rework hand-off only — transcribe the verdict into `ticket.yaml`
+
+**Skip this on both forward hand-offs.** `ticket.yaml` is not yours there; the stage owner has already
+set the state and you are only persisting it.
+
+On a rework hand-off nobody has set it. The role that wrote the failing verdict is forbidden to touch
+`ticket.yaml` — `.claude/commands/review.md` §*You do not touch `ticket.yaml`* and
+`.claude/commands/qa.md` §*You do not touch `ticket.yaml`*, both resting on RULE-13 — and the
+`orchestrator` those two sections hand the job to does not run in the implement lane any more (see
+the note under the table at the top of this file). So the FAIL is declared in front-matter and written
+into the board by no one, and the branch would reach the receiving folder still claiming to be
+mid-lane. Copy three fields across, exactly as the verdict states them:
+
+| From the verdict's front-matter | Into `ticket.yaml` |
+|---|---|
+| `next_state` | `state:` |
+| `routed_to` | `owner:` |
+| `increments_rework_count` | `rework_count:` — add 1 if `true`, leave untouched if `false` (RULE-08) |
+
+**This is transcription, not a transition.** You are not judging the state; the verdict judged it and
+named it in a field, and copying a named value is the same act as copying a `gate:` line. **If any of
+the three fields is absent, stop** — a hand-off that guesses a board state is worse than one that
+does not run, and the fix is a line in the artifact rather than a judgement here.
+
+Commit it with the rest of the ticket set in step 3.
 
 ## 3. Commit the ticket set on `feat/$ARGUMENTS`
 
@@ -182,6 +237,8 @@ folder in.
 ## What this command never does
 
 - **No `gh pr create`.** That is `/ship` step 7.
-- **No `state:` transition.** The stage owner sets it; you persist it.
+- **No `state:` transition of its own.** The stage owner sets it; you persist it. Step 2a is not an
+  exception to that — it copies a transition the verdict already named, in the one case where the
+  role that named it is forbidden to write it and no `orchestrator` runs in the lane.
 - **No write to `metrics.md` or `backlog.md`.** `/ship` owns both.
 - **No merge, and `main` is never a commit or push target.** RULE-09.

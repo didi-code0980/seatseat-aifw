@@ -57,9 +57,12 @@ the invariant, write `next_state: ESCALATED`, and halt.
 ## You do not touch `ticket.yaml`
 
 **Write the verdict into `04-review.md`'s front-matter and stop.** `gate`, `blocking_reason` and
-`next_state` are the whole of your output; the `orchestrator` reads them and moves the board
+`next_state` are the whole of your output; something downstream reads them and moves the board
 (`.ai/01-operating-model.md`, stage ownership — the REVIEW row writes `04-review.md` and nothing
-else).
+else). On PASS that is `/qa` and then `/ship`; on a FAIL routed to `ba` or `tech-lead-design` it is
+`/handoff` step 2a, which transcribes your `next_state` and `routed_to` into `ticket.yaml` on its way
+to releasing the branch. **`orchestrator` does not run in this lane** — `.ai/standards/session-model.md`,
+*The three lanes* — so a verdict that waits for one waits forever.
 
 This is not bookkeeping etiquette. **A verdict that advances the board it is judging has no separation
 left.** RULE-13 discards you after each verdict precisely so the next pass starts cold; a reviewer that
