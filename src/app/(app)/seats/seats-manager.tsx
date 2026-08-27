@@ -153,10 +153,12 @@ export function SeatsManager({
 
       <DataTable
         rows={rows}
-        // Keyed by seat `code`, not by seat id. Ids are `@default(cuid())` under Prisma, so a testid
-        // built from one is unaddressable the moment `DATA_SOURCE=prisma`; `Seat.code` is `@unique`
-        // (prisma/schema.prisma:73) and is the identifier this surface displays, which is what AC-1
-        // means by "the seat identifier the surface displays" (02-design.md section 6).
+        // Keyed by seat `code`, not by seat id. Ids default to `gen_random_uuid()::text` in the
+        // database, so a testid built from one is unaddressable the moment `DATA_SOURCE=supabase` —
+        // which since ADR-007 is the default rather than the exception. `Seat.code` is unique
+        // (`Seat_code_key` in `supabase/migrations/20260826094134_init.sql`) and is the identifier this
+        // surface displays, which is what AC-1 means by "the seat identifier the surface displays"
+        // (02-design.md section 6).
         rowKey={(r) => r.seat.code}
         testIdPrefix="seats"
         emptyMessage="No seats yet."

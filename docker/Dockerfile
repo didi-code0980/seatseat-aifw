@@ -1,8 +1,9 @@
 # Multi-stage. The runtime image carries no pnpm store, no dev dependencies, and no source.
 #
-# Node 24 rather than the 23.6.0 on the bootstrap machine: Prisma 7 supports 20.19+, 22.12+ and
-# 24.0+, and rejects odd-numbered releases. Pinning it here means the container is correct regardless
-# of what the host happens to have.
+# Node 24 rather than the 23.6.0 on the bootstrap machine. The floor it was originally pinned for was
+# Prisma 7's, and Prisma left with ADR-007; the pin stays because an even-numbered LTS line is what
+# `package.json`'s `engines.node` asks for, and pinning it here means the container is correct
+# regardless of what the host happens to have.
 
 FROM node:24-alpine AS base
 ENV PNPM_HOME="/pnpm"

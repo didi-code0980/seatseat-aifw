@@ -6,7 +6,9 @@
 
 /.ai/registry/    @didi-code0980
 /.ai/standards/   @didi-code0980
-/prisma/          @didi-code0980
+# RULE-09 lives here now. `supabase/migrations/` IS the schema since ADR-007, so this line is what
+# puts a human signature on every schema change mechanically rather than by memory.
+/supabase/        @didi-code0980
 /.claude/         @didi-code0980
 /.github/         @didi-code0980
 /.mcp.json        @didi-code0980

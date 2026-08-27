@@ -1,4 +1,4 @@
-// The single fixture set, shared by the mock seam and by `prisma/seed.ts`.
+// The single fixture set, shared by the mock seam and by `scripts/seed.ts`.
 //
 // Both modes render identically because both read from here. If the seed and the mock drifted, a
 // bug reproducible in `DATA_SOURCE=mock` would vanish against a seeded database, and the swap the

@@ -1,8 +1,9 @@
-// The test that makes the mock-to-Prisma swap safe.
+// The test that makes the mock-to-Supabase swap safe.
 //
 // It imports both implementations of every entity and asserts they expose the same exported names
 // with the same arity. Without it, the seam is a naming convention: a function added to the mock and
-// forgotten in the Prisma module fails only in production, in the mode nobody runs locally.
+// forgotten in the Supabase module fails only in production, in the mode nobody runs locally —
+// which, since ADR-007 flipped the default, is now every mode but the test suite's.
 //
 // Arity is checked as well as name because a signature that drifts by one parameter is the harder
 // bug — both modules export `getSeat`, both typecheck at their own call sites, and the mismatch
@@ -19,26 +20,26 @@ import * as mockRequests from "@/lib/data/mock/requests";
 import * as mockRooms from "@/lib/data/mock/rooms";
 import * as mockSeats from "@/lib/data/mock/seats";
 
-import * as prismaAccounts from "@/lib/data/prisma/accounts";
-import * as prismaDevices from "@/lib/data/prisma/devices";
-import * as prismaGroups from "@/lib/data/prisma/groups";
-import * as prismaLayout from "@/lib/data/prisma/layout";
-import * as prismaMembers from "@/lib/data/prisma/members";
-import * as prismaRequests from "@/lib/data/prisma/requests";
-import * as prismaRooms from "@/lib/data/prisma/rooms";
-import * as prismaSeats from "@/lib/data/prisma/seats";
+import * as supabaseAccounts from "@/lib/data/supabase/accounts";
+import * as supabaseDevices from "@/lib/data/supabase/devices";
+import * as supabaseGroups from "@/lib/data/supabase/groups";
+import * as supabaseLayout from "@/lib/data/supabase/layout";
+import * as supabaseMembers from "@/lib/data/supabase/members";
+import * as supabaseRequests from "@/lib/data/supabase/requests";
+import * as supabaseRooms from "@/lib/data/supabase/rooms";
+import * as supabaseSeats from "@/lib/data/supabase/seats";
 
 type Module = Record<string, unknown>;
 
-const PAIRS: Array<[name: string, mock: Module, prisma: Module]> = [
-  ["accounts", mockAccounts, prismaAccounts],
-  ["devices", mockDevices, prismaDevices],
-  ["groups", mockGroups, prismaGroups],
-  ["layout", mockLayout, prismaLayout],
-  ["members", mockMembers, prismaMembers],
-  ["requests", mockRequests, prismaRequests],
-  ["rooms", mockRooms, prismaRooms],
-  ["seats", mockSeats, prismaSeats],
+const PAIRS: Array<[name: string, mock: Module, supabase: Module]> = [
+  ["accounts", mockAccounts, supabaseAccounts],
+  ["devices", mockDevices, supabaseDevices],
+  ["groups", mockGroups, supabaseGroups],
+  ["layout", mockLayout, supabaseLayout],
+  ["members", mockMembers, supabaseMembers],
+  ["requests", mockRequests, supabaseRequests],
+  ["rooms", mockRooms, supabaseRooms],
+  ["seats", mockSeats, supabaseSeats],
 ];
 
 function exportedFunctions(mod: Module): string[] {
@@ -63,10 +64,10 @@ describe("seam parity", () => {
     ]);
   });
 
-  for (const [name, mock, prisma] of PAIRS) {
+  for (const [name, mock, supabase] of PAIRS) {
     describe(name, () => {
       it("exports the same function names on both sides", () => {
-        expect(exportedFunctions(prisma)).toEqual(exportedFunctions(mock));
+        expect(exportedFunctions(supabase)).toEqual(exportedFunctions(mock));
       });
 
       it("exports at least one function", () => {
@@ -76,8 +77,8 @@ describe("seam parity", () => {
       it("matches arity for every export", () => {
         for (const key of exportedFunctions(mock)) {
           const mockFn = mock[key] as (...args: unknown[]) => unknown;
-          const prismaFn = prisma[key] as (...args: unknown[]) => unknown;
-          expect(prismaFn.length, `${name}.${key} arity`).toBe(mockFn.length);
+          const supabaseFn = supabase[key] as (...args: unknown[]) => unknown;
+          expect(supabaseFn.length, `${name}.${key} arity`).toBe(mockFn.length);
         }
       });
     });

@@ -10,8 +10,9 @@
 // the citation reads as evidence that somebody decided.
 //
 // **D12, the second door.** ADR-002 left Row Level Security off because `src/lib/data/` is the only
-// authorization point, and named a revert signal: `no-restricted-imports` acquiring a Supabase
-// entry. This makes that signal fire instead of relying on somebody remembering it.
+// authorization point, and named a revert signal. ADR-006 narrowed that signal to one package and
+// one directory; ADR-007 makes it a two-package map, and these tests were rewritten with it — the
+// ten that had been red since ADR-006, recorded as MD-16, are among them.
 //
 // These build a throwaway project and run the real script against it as a child process, the same
 // way the hook tests do. They assert on findings for one check at a time: a minimal fixture trips
@@ -246,8 +247,21 @@ test("with no decisions directory at all, every citation fails", () => {
 });
 
 // --- D12: the seam has not grown a second door -------------------------------------------------
+//
+// REWRITTEN FOR ADR-007, WITH SYS-02, WHICH IS WHAT MD-16 ASKED FOR. MD-16 declined to add further
+// checks to a suite nobody could run green and named this rewrite as the moment to clear it: the ten
+// tests below were written for ADR-002's rule, where any Supabase package at all was the finding,
+// and they stayed red through ADR-006's narrowing.
+//
+// What they assert now is the MAP:
+//
+//     { "@supabase/ssr": "src/lib/auth/", "@supabase/supabase-js": "src/lib/data/supabase/" }
+//
+// A package outside it is an error; a mapped package outside its own directory is the same error by
+// a different route — including inside the OTHER mapped directory, which is the case the old
+// one-package check could not express at all.
 
-const ESLINT = (patterns, files = '["src/lib/data/prisma/**/*.ts"]') => `
+const ESLINT = (patterns, files = '["src/lib/data/supabase/**/*.ts"]') => `
 const RESTRICTED = ["error", { patterns: [{ group: ${patterns}, message: "seam" }] }];
 export default [
   { rules: { "no-restricted-imports": RESTRICTED } },
@@ -255,169 +269,250 @@ export default [
 ];
 `;
 
-test("a lint config with no Supabase entry passes D12", () => {
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs": ESLINT('["@prisma/client", "**/lib/data/prisma/**"]'),
-  }));
-  assert.deepEqual(r.findings("D12"), []);
-});
-
-test("Supabase in the restricted patterns fails D12 with ADR-002's reason", () => {
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs": ESLINT('["@prisma/client", "@supabase/supabase-js"]'),
-  }));
-  assert.equal(r.code, 1);
-  assert.equal(r.findings("D12").length, 1);
-  assert.match(r.findings("D12")[0], /the seam has grown a second door/);
-  assert.match(r.findings("D12")[0], /ADR-002 requires a new ADR before this/);
-});
-
-test("Supabase in the EXCEPTION list also fails D12", () => {
-  // Adding it to the allow-list is the louder signal, not the quieter one: it means the SDK is in
-  // the tree and has been handed a route through the seam.
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs": ESLINT('["@prisma/client"]', '["src/lib/data/supabase/**/*.ts"]'),
-  }));
-  assert.equal(r.findings("D12").length, 1);
-  assert.match(r.findings("D12")[0], /second door/);
-});
-
-test("D12 is case-insensitive", () => {
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs": ESLINT('["@Supabase/SUPABASE-js"]'),
-  }));
-  assert.equal(r.findings("D12").length, 1);
-});
-
-test("a comment mentioning Supabase does not fail D12", () => {
-  // A check that fired on its own rationale would teach people to delete the rationale.
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs":
-      "// No Supabase SDK exists here; ADR-002 keeps it out.\n/* supabase is out of scope */\n" +
-      ESLINT('["@prisma/client"]'),
-  }));
-  assert.deepEqual(r.findings("D12"), []);
-});
-
-test("D12 reports each distinct Supabase entry once", () => {
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs": ESLINT('["@supabase/supabase-js", "@supabase/ssr", "@supabase/supabase-js"]'),
-  }));
-  assert.equal(r.findings("D12").length, 2, r.findings("D12").join(" | "));
-});
-
-test("no eslint config at all is not a D12 failure", () => {
-  // Before Phase B there is no lint config. Absence is not a second door.
-  const r = run(project(LEDGER + UNISSUED, "x", decisions("ADR-002")));
-  assert.deepEqual(r.findings("D12"), []);
-});
-
-test("D12 survives glob patterns that contain /* and */", () => {
-  // The regression that shipped: stripping block comments with a regex made "@prisma/client/*" open
-  // a comment which closed inside "**/generated/prisma", deleting every entry between them —
-  // including the Supabase one. Fixtures with simple patterns did not reproduce it; the real
-  // pattern list did. These are the actual globs from eslint.config.mjs.
-  const realistic = `
-const RESTRICTED = ["error", { patterns: [{ group: [
-  "@prisma/client",
-  "@prisma/client/*",
-  "**/generated/prisma",
-  "**/generated/prisma/**",
-  "@supabase/supabase-js",
-  "@/lib/data/prisma/**",
-  "**/lib/data/prisma/**",
-], message: "seam" }] }];
-export default [{ rules: { "no-restricted-imports": RESTRICTED } }];
-`;
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs": realistic,
-  }));
-  assert.equal(r.findings("D12").length, 1, `D12 must still see the entry: ${r.stdout}`);
-  assert.match(r.findings("D12")[0], /@supabase\/supabase-js/);
-});
-
-test("a block comment before the pattern list is still ignored", () => {
-  const withBlockComment = `
-/* ADR-002: no Supabase SDK. supabase stays out of src/. */
-const RESTRICTED = ["error", { patterns: [{ group: ["@prisma/client", "@prisma/client/*"], message: "s" }] }];
-export default [{ rules: { "no-restricted-imports": RESTRICTED } }];
-`;
-  const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "eslint.config.mjs": withBlockComment,
-  }));
-  assert.deepEqual(r.findings("D12"), []);
-});
-
-// --- D12 via package.json: the SDK itself, not the symptom -------------------------------------
-
 const PKG = (deps = {}) => JSON.stringify({ name: "p", version: "1.0.0", ...deps }, null, 2);
 
-test("an @supabase dependency fails D12 even with the lint list untouched", () => {
-  // The dangerous ordering ADR-002 names: dependency added, patterns untouched, import unrestricted.
+/** Both mapped packages, restricted — the arrangement ADR-007 authorises. */
+const MAPPED = {
+  "package.json": PKG({
+    dependencies: { "@supabase/ssr": "0.12.5", "@supabase/supabase-js": "2.112.4" },
+  }),
+  "eslint.config.mjs": ESLINT('["@supabase/*", "@supabase/*/**"]'),
+};
+
+const src = (rel, body) => ({ [`src/${rel}`]: body });
+
+test("both mapped packages, each restricted, pass D12", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", { ...decisions("ADR-002", "ADR-007"), ...MAPPED }));
+  assert.deepEqual(r.findings("D12"), []);
+});
+
+test("a third @supabase package is a second door", () => {
   const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "package.json": PKG({ dependencies: { next: "16.3.0", "@supabase/supabase-js": "2.0.0" } }),
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    "package.json": PKG({
+      dependencies: {
+        "@supabase/ssr": "0.12.5",
+        "@supabase/supabase-js": "2.112.4",
+        "@supabase/realtime-js": "2.0.0",
+      },
+    }),
   }));
   assert.equal(r.code, 1);
   assert.equal(r.findings("D12").length, 1);
-  assert.match(r.findings("D12")[0], /dependencies includes @supabase\/supabase-js/);
+  assert.match(r.findings("D12")[0], /dependencies includes @supabase\/realtime-js/);
   assert.match(r.findings("D12")[0], /second door/);
 });
 
 for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
   test(`D12 checks ${field}`, () => {
     const r = run(project(LEDGER + UNISSUED, "x", {
-      ...decisions("ADR-002"),
-      "package.json": PKG({ [field]: { "@supabase/ssr": "1.0.0" } }),
+      ...decisions("ADR-002", "ADR-007"),
+      "package.json": PKG({ [field]: { "@supabase/realtime-js": "2.0.0" } }),
     }));
     assert.equal(r.findings("D12").length, 1, `${field} was not checked`);
-    assert.match(r.findings("D12")[0], new RegExp(`${field} includes @supabase/ssr`));
+    assert.match(r.findings("D12")[0], new RegExp(`${field} includes @supabase/realtime-js`));
   });
 }
 
-test("a clean package.json passes D12", () => {
+test("D12 is case-insensitive on the package name", () => {
+  // npm normalises package names to lower case, so a mixed-case entry does not resolve — but an
+  // audit that silently skipped an entry a reader can plainly see is the wrong way to be wrong.
   const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "package.json": PKG({ dependencies: { next: "16.3.0", "@prisma/client": "7.9.1" } }),
+    ...decisions("ADR-002", "ADR-007"),
+    "package.json": PKG({ dependencies: { "@Supabase/REALTIME-js": "2.0.0" } }),
   }));
-  assert.deepEqual(r.findings("D12"), []);
+  assert.equal(r.findings("D12").length, 1);
 });
 
 test("the bare `supabase` CLI package is not an SDK and does not fail D12", () => {
-  // ADR-002 is about what can talk to the database from application code. The CLI is tooling.
+  // ADR-002 is about what can talk to the database from application code. The CLI is tooling, and
+  // ADR-007 makes it a devDependency of this project.
   const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "package.json": PKG({ devDependencies: { supabase: "1.0.0" } }),
+    ...decisions("ADR-002", "ADR-007"),
+    "package.json": PKG({ devDependencies: { supabase: "2.115.0" } }),
   }));
   assert.deepEqual(r.findings("D12"), []);
 });
 
-test("both routes report independently", () => {
+test("a clean package.json passes D12", () => {
   const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
-    "package.json": PKG({ dependencies: { "@supabase/supabase-js": "2.0.0" } }),
-    "eslint.config.mjs": ESLINT('["@supabase/supabase-js"]'),
+    ...decisions("ADR-002", "ADR-007"),
+    "package.json": PKG({ dependencies: { next: "16.3.0" } }),
   }));
-  assert.equal(r.findings("D12").length, 2);
-  assert.ok(r.findings("D12").some((l) => l.includes("package.json")));
-  assert.ok(r.findings("D12").some((l) => l.includes("eslint.config.mjs")));
+  assert.deepEqual(r.findings("D12"), []);
 });
 
 test("a package.json that is not valid JSON is reported, not skipped", () => {
   const r = run(project(LEDGER + UNISSUED, "x", {
-    ...decisions("ADR-002"),
+    ...decisions("ADR-002", "ADR-007"),
     "package.json": "{ this is not json",
   }));
   assert.equal(r.findings("D12").length, 1);
   assert.match(r.findings("D12")[0], /not valid JSON/);
+});
+
+// --- D12 via eslint.config.mjs: the finding is an ABSENCE ---------------------------------------
+
+test("a Supabase dependency with nothing restricting it is the dangerous ordering", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    "package.json": PKG({ dependencies: { "@supabase/ssr": "0.12.5" } }),
+    "eslint.config.mjs": ESLINT('["@/lib/data/supabase/**"]'),
+  }));
+  assert.equal(r.findings("D12").length, 1);
+  assert.match(r.findings("D12")[0], /does not name/);
+  assert.match(r.findings("D12")[0], /unrestricted/);
+});
+
+test("no eslint config at all is not a D12 failure", () => {
+  // Before Phase B there is no lint config. Absence is not a second door.
+  const r = run(project(LEDGER + UNISSUED, "x", decisions("ADR-002", "ADR-007")));
+  assert.deepEqual(r.findings("D12"), []);
+});
+
+test("a `lib/data` path exempted for the AUTH package is a finding", () => {
+  // The one case ADR-007 left of the old always-wrong branch. The data seam holding an auth client
+  // is still the drift ADR-006 exists to prevent.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    "eslint.config.mjs":
+      ESLINT('["@supabase/*"]') +
+      `\nexport const authExemption = ["src/lib/data/supabase/** @supabase/ssr"];\n`,
+  }));
+  assert.equal(r.findings("D12").length, 1, r.stdout);
+  assert.match(r.findings("D12")[0], /exempts a `lib\/data` path for `@supabase\/ssr`/);
+});
+
+test("a `lib/data` path exempted for the DATA package is NOT a finding", () => {
+  // The branch ADR-007 retired. Under ADR-006 this literal was always an error; it is now the
+  // arrangement, and a check that still fired on it would make its own ticket unimplementable.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    "eslint.config.mjs":
+      ESLINT('["@supabase/*"]') +
+      `\nexport const dataExemption = ["src/lib/data/supabase/** @supabase/supabase-js"];\n`,
+  }));
+  assert.deepEqual(r.findings("D12"), []);
+});
+
+test("a comment mentioning Supabase does not fail D12", () => {
+  // A check that fired on its own rationale would teach people to delete the rationale.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    "eslint.config.mjs":
+      "// src/lib/data holds no @supabase/ssr client; ADR-006 keeps it in src/lib/auth.\n" +
+      "/* @supabase/ssr is the auth package and lib/data may not name it */\n" +
+      ESLINT('["@supabase/*"]'),
+  }));
+  assert.deepEqual(r.findings("D12"), []);
+});
+
+test("D12 survives glob patterns that contain /* and */", () => {
+  // The regression that shipped: stripping block comments with a regex made a glob ending `/*` open
+  // a comment which closed inside the next `**/...` entry, deleting every entry between them —
+  // including the one that mattered. Fixtures with simple names did not reproduce it; the real
+  // pattern list did.
+  const realistic = `
+const RESTRICTED = ["error", { patterns: [{ group: [
+  "@/lib/data/supabase",
+  "@/lib/data/supabase/**",
+  "**/lib/data/supabase/**",
+  "@supabase/*",
+  "@supabase/*/**",
+], message: "seam" }] }];
+export default [{ rules: { "no-restricted-imports": RESTRICTED } }];
+`;
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    "eslint.config.mjs": realistic,
+  }));
+  // The restriction is seen, so the absence branch does not fire.
+  assert.deepEqual(r.findings("D12"), [], r.stdout);
+});
+
+// --- D12 via src/**: the breach itself -----------------------------------------------------------
+
+test("each mapped package inside its own directory passes", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    ...src("lib/auth/supabase.ts", `import { createServerClient } from "@supabase/ssr";\n`),
+    ...src("lib/data/supabase/client.ts", `import { createClient } from "@supabase/supabase-js";\n`),
+  }));
+  assert.deepEqual(r.findings("D12"), [], r.stdout);
+});
+
+test("the AUTH package imported from the data adapter is a finding", () => {
+  // The case the old one-package check could not express: both directories are exempted, and this
+  // is still wrong. Neither exemption covers the other's package.
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    ...src("lib/data/supabase/client.ts", `import { createServerClient } from "@supabase/ssr";\n`),
+  }));
+  assert.equal(r.findings("D12").length, 1, r.stdout);
+  assert.match(r.findings("D12")[0], /names @supabase\/ssr outside `src\/lib\/auth\/\*\*`/);
+});
+
+test("the DATA package imported from the auth directory is a finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    ...src("lib/auth/permissions.ts", `import { createClient } from "@supabase/supabase-js";\n`),
+  }));
+  assert.equal(r.findings("D12").length, 1, r.stdout);
+  assert.match(
+    r.findings("D12")[0],
+    /names @supabase\/supabase-js outside `src\/lib\/data\/supabase\/\*\*`/
+  );
+});
+
+test("a Supabase import in a component is a finding", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    ...src("app/rooms/page.tsx", `import { createClient } from "@supabase/supabase-js";\n`),
+  }));
+  assert.equal(r.findings("D12").length, 1, r.stdout);
+  assert.match(r.findings("D12")[0], /app\/rooms\/page\.tsx/);
+});
+
+test("an unmapped @supabase package is a finding wherever it is imported", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    ...src("lib/auth/realtime.ts", `import { RealtimeClient } from "@supabase/realtime-js";\n`),
+  }));
+  assert.equal(r.findings("D12").length, 1, r.stdout);
+  assert.match(r.findings("D12")[0], /is in no exempted directory/);
+});
+
+test("D12 reports each distinct misplaced package once", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    ...src(
+      "app/rooms/page.tsx",
+      `import "@supabase/supabase-js";\nimport "@supabase/supabase-js";\nimport "@supabase/ssr";\n`
+    ),
+  }));
+  assert.equal(r.findings("D12").length, 2, r.findings("D12").join(" | "));
+});
+
+test("both routes report independently", () => {
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    "package.json": PKG({ dependencies: { "@supabase/realtime-js": "2.0.0" } }),
+    ...src("app/rooms/page.tsx", `import "@supabase/realtime-js";\n`),
+  }));
+  assert.equal(r.findings("D12").length, 2);
+  assert.ok(r.findings("D12").some((l) => l.includes("package.json")));
+  assert.ok(r.findings("D12").some((l) => l.includes("app/rooms/page.tsx")));
 });
 
 // --- built from the real files, not from a simplified fixture ----------------------------------
@@ -428,23 +523,38 @@ test("a package.json that is not valid JSON is reported, not skipped", () => {
 
 test("this repository's real package.json is clean under D12", () => {
   const real = fs.readFileSync(path.join(REPO, "package.json"), "utf8");
-  const r = run(project(LEDGER + UNISSUED, "x", { ...decisions("ADR-002"), "package.json": real }));
-  assert.deepEqual(r.findings("D12"), [], "no Supabase SDK should be present");
+  const r = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    "package.json": real,
+    "eslint.config.mjs": fs.readFileSync(path.join(REPO, "eslint.config.mjs"), "utf8"),
+  }));
+  assert.deepEqual(r.findings("D12"), [], "every Supabase package must be in the map");
 });
 
-test("this repository's real eslint.config.mjs, with one Supabase entry added, fails D12", () => {
+test("this repository's real eslint.config.mjs is clean, and hides no injected entry", () => {
   // The positive case has to use the real pattern list. A fixture list of simple names does not
-  // contain "@prisma/client/*" or "**/generated/prisma", which is the shape that broke the check.
+  // contain the globs ending in `/*`, which is the shape that broke the check.
   const real = fs.readFileSync(path.join(REPO, "eslint.config.mjs"), "utf8");
-  const injected = real.replace('"@prisma/client",', '"@prisma/client",\n          "@supabase/supabase-js",');
+  const injected = real.replace(
+    'const SUPABASE_PATTERNS = [',
+    'const SEAM_AUTH_EXEMPTION = ["src/lib/data/supabase/** @supabase/ssr"];\nconst SUPABASE_PATTERNS = ['
+  );
   assert.notEqual(injected, real, "injection point not found — update this test");
 
-  const clean = run(project(LEDGER + UNISSUED, "x", { ...decisions("ADR-002"), "eslint.config.mjs": real }));
-  assert.deepEqual(clean.findings("D12"), [], "the real config must be clean");
+  const clean = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    "eslint.config.mjs": real,
+  }));
+  assert.deepEqual(clean.findings("D12"), [], `the real config must be clean: ${clean.stdout}`);
 
-  const dirty = run(project(LEDGER + UNISSUED, "x", { ...decisions("ADR-002"), "eslint.config.mjs": injected }));
+  const dirty = run(project(LEDGER + UNISSUED, "x", {
+    ...decisions("ADR-002", "ADR-007"),
+    ...MAPPED,
+    "eslint.config.mjs": injected,
+  }));
   assert.equal(dirty.findings("D12").length, 1, `real config must not hide the entry: ${dirty.stdout}`);
-  assert.match(dirty.findings("D12")[0], /@supabase\/supabase-js/);
+  assert.match(dirty.findings("D12")[0], /@supabase\/ssr/);
 });
 
 // --- D9: scoped to documents a human owns ------------------------------------------------------

@@ -1,12 +1,15 @@
 name: seat-device-tracking
 
 # Postgres is hosted on Supabase. There is no database service here and no named volume — see
-# ADR-002. Supabase is used as hosted Postgres and nothing else: not its auth, not RLS, not realtime,
-# not storage.
+# ADR-002, and ADR-007, which made Supabase the data CLIENT as well as the host.
 #
-# **Docker is optional for local development.** `pnpm dev` needs Node and a Supabase connection
-# string; it does not need a container. This file exists to run the application image, which is
-# useful for checking the production build behaves, and is not on the path of ordinary work.
+# **Docker is optional for running the application.** `pnpm dev` needs Node and a Supabase project;
+# it does not need a container. This file exists to run the application image, which is useful for
+# checking the production build behaves, and is not on the path of ordinary work.
+#
+# It IS needed for one thing now, and that thing is not this file: `supabase db reset` and
+# `supabase gen types typescript --local` run the CLI's own Postgres stack in containers
+# (ADR-007 OQ-2). That is a schema-change activity, not a run-the-app activity.
 
 services:
   app:
@@ -16,15 +19,16 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      # Defaults to mock so the image comes up without a database at all. Switch to `prisma` only
-      # after prisma/schema.prisma is approved and a migration has been applied.
-      DATA_SOURCE: ${DATA_SOURCE:-mock}
-      # Both come from the host environment; neither has a default. A compose file that invented a
-      # fallback connection string would be a credential in version control, and a wrong one.
-      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL — Supabase pooled connection, port 6543}
-      DIRECT_URL: ${DIRECT_URL:?set DIRECT_URL — Supabase direct connection, port 5432}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
-      NEXT_PUBLIC_BETTER_AUTH_URL: ${NEXT_PUBLIC_BETTER_AUTH_URL:-http://localhost:3000}
+      # Since ADR-007 the default is `supabase`, so this image comes up against the real database
+      # unless it is told otherwise. `mock` still works and needs nothing below it.
+      DATA_SOURCE: ${DATA_SOURCE:-supabase}
+      # From the host environment, with no defaults. A compose file that invented a fallback URL or
+      # key would be a credential in version control, and a wrong one.
+      #
+      # No connection string appears here and that is not an omission: the running application speaks
+      # HTTP to PostgREST and opens no Postgres connection. DIRECT_URL is a migration credential and
+      # migrations are not run from this image.
+      SUPABASE_URL: ${SUPABASE_URL:?set SUPABASE_URL — Project Settings -> API}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?set SUPABASE_ANON_KEY — Project Settings -> API}
     ports:
       - "3000:3000"

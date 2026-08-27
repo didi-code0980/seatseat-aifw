@@ -39,12 +39,13 @@ export async function assignSeatOccupant(
 ): Promise<AssignOccupantOutcome> {
   const seat = seats.find((s) => s.id === seatId);
   if (seat === undefined) return { assigned: false, reason: "SEAT_NOT_FOUND" };
-  // Design F-4. `Seat.occupantId` is a foreign key onto Member (prisma/schema.prisma:114-115), so
+  // Design F-4. `Seat.occupantId` is a foreign key onto Member (`Seat_occupantId_fkey` in
+  // `supabase/migrations/20260826094134_init.sql`), so
   // the seam agrees with the model rather than writing an occupantId no member answers to.
   if (!members.some((m) => m.id === memberId)) {
     return { assigned: false, reason: "MEMBER_NOT_FOUND" };
   }
-  // INV-01. Under `prisma` the single nullable reference cannot hold two occupants; under `mock`
+  // INV-01. Under `supabase` the single nullable reference cannot hold two occupants; under `mock`
   // this line is the only mechanism, which is 01-story.md out-of-scope item 9 stated as code.
   if (seat.occupantId !== null) return { assigned: false, reason: "SEAT_OCCUPIED" };
 

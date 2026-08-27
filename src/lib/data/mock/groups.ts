@@ -138,7 +138,7 @@ export async function getGroupReferences(id: string): Promise<GroupReferences | 
  * `membersDetached` is counted during the write rather than inferred afterwards: once the group is
  * gone there is nothing left to read the membership off.
  *
- * 02-design.md F-5 records that `prisma/schema.prisma:153` declares `onDelete: SetNull` on
+ * 02-design.md F-5 records that `Group_parentId_fkey` is declared `ON DELETE SET NULL` on
  * `Group.parent` and would therefore perform the silent reparent Q-1 rejected. The refusal is the
  * seam's on both sides; the model disagreeing with it is a human's to resolve under RULE-09.
  *

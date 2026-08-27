@@ -9,12 +9,13 @@
 // 7). An earlier version of this file cloned with `structuredClone`, which made the store a second
 // source of truth: every module reading the collections then had to be repointed at it, the list of
 // those modules lived in a design document, and nothing enforced the list — not
-// `tests/unit/seam-parity.test.ts`, which compares the mock against Prisma and not against the store;
+// `tests/unit/seam-parity.test.ts`, which compares the mock against the Supabase adapter and not
+// against the store;
 // not lint; not the type system. `mock/layout.ts` was missed, and after a room delete it kept
 // returning the deleted room with all six of its deleted seats. INV-11 was observably false through a
 // seam read path. Aliasing makes that state unrepresentable rather than merely currently-absent.
 //
-// What the clone was justified as buying, and did not: `prisma/seed.ts` runs in its own process
+// What the clone was justified as buying, and did not: `scripts/seed.ts` runs in its own process
 // (`pnpm db:seed`), so a runtime mutation was never able to reach the seed anyway; and it bought no
 // test isolation, because a clone taken once at module load is exactly as process-global and as
 // un-reset as the arrays it copied. The source text of `fixtures.ts` is what a reader opens to learn
@@ -27,7 +28,7 @@
 //
 // One consumer of `fixtures.ts` does not track the cascade and is safe: `fixtures.ts:73` builds
 // `ports` with `seats.flatMap(...)`, a new array computed once at load rather than a view, so it
-// still holds the ports of destroyed seats. Nothing in the seam reads it — `prisma/seed.ts` is its
+// still holds the ports of destroyed seats. Nothing in the seam reads it — `scripts/seed.ts` is its
 // only consumer, in another process. Do not read `ports` from a mock module.
 
 import {

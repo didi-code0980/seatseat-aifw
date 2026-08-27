@@ -33,7 +33,8 @@ export async function getMember(id: string): Promise<Member | null> {
 }
 
 /**
- * AC-2, and F-1. `Member.email` is `@unique` (prisma/schema.prisma:164), so refusing a duplicate is
+ * AC-2, and F-1. `Member.email` is unique — constraint `Member_email_key` in
+ * `supabase/migrations/20260826094134_init.sql` — so refusing a duplicate is
  * the seam agreeing with the model rather than adding a rule of its own — a mock that accepted a
  * second `ada@example.internal` would accept data the database rejects. It returns a refusal instead
  * of throwing: an address already in use is an expected failure, not a programmer error
@@ -171,7 +172,7 @@ export async function getMemberReferences(id: string): Promise<MemberReferences 
  * unchanged, and the strongest way to hold that is a function with no write on that path at all.
  *
  * On success it removes exactly one row from the members collection **and performs no cascade**.
- * `prisma/schema.prisma` declares three cascades that reach `Member` and none of them is implemented
+ * The first migration declares three delete rules that reach `Member` and none of them is implemented
  * here: `Account.member` (`Cascade`, line 231), `SeatRequest.requester` (`Cascade`, line 206) and
  * `Account.createdBy` (`SetNull`, line 235). That is finding F-4 in 02-design.md, and the reasoning
  * is that all three are currently unreachable — INV-12 refuses the deletion of any member who

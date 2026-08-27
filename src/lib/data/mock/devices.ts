@@ -28,7 +28,8 @@ export async function listUnassignedDevices(): Promise<Device[]> {
 }
 
 /**
- * AC-2, and F-1. `Device.assetTag` is `@unique` (prisma/schema.prisma:185), so refusing a duplicate
+ * AC-2, and F-1. `Device.assetTag` is unique — constraint `Device_assetTag_key` in
+ * `supabase/migrations/20260826094134_init.sql` — so refusing a duplicate
  * is the seam agreeing with the model rather than adding a rule of its own — a mock that accepted a
  * second `AST-0001` would accept data the database rejects. It returns a refusal instead of
  * throwing: a tag already in use is an expected failure, not a programmer error

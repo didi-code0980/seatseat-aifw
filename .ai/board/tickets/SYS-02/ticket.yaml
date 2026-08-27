@@ -5,7 +5,22 @@ id: SYS-02
 title: "Cutover to Supabase as the data client"
 feature_ids: [SYS-02]
 group: SYS
-state: IN_PROGRESS   # ADVANCED FROM SPEC BY /design ON 2026-08-26T09:22:00Z, gate PASS.
+state: REVIEW        # ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-27T01:28:07Z, gate PASS.
+                     #
+                     # `pnpm typecheck` and `pnpm lint` exit 0, every contract item in
+                     # `02-design.md` section 1 is implemented, and `03-impl-log.md` lists all 51
+                     # files touched. Six deviations are declared in that file rather than left for
+                     # R5 to find.
+                     #
+                     # `pnpm test` IS RED — one test, `tests/unit/self-signup.test.ts`, whose SYS-01
+                     # AC-3 assertion ADR-007 clause 2 reverses by decision. That path is NOT in
+                     # `allowed_paths`, so RULE-03 refuses the edit and the developer did not make
+                     # it, and did not widen this field to grant itself the permission either.
+                     # Raised in `99-questions.md`, routed to `tech-lead-design`. It does not block
+                     # this gate and it does block a green `pnpm verify`, exactly as `D-1` does.
+                     #
+                     # ---- WHAT THIS LINE SAID BEFORE, KEPT ----
+                     # state: IN_PROGRESS — ADVANCED FROM SPEC BY /design ON 2026-08-26T09:22:00Z, gate PASS.
                      #
                      # THE TICKET NEVER SAT AT `READY` AND THIS FILE DOES NOT PRETEND IT DID. `/spec`
                      # left it at SPEC because DoR is the orchestrator's to evaluate and SPEC does not
@@ -188,6 +203,11 @@ gates:
   # steward change landing with this ticket. ADR-007's affected-documents table does not cover it
   # because `.ai/registry/decisions/**` is exempt from D6 (MD-38), which is why it was invisible when
   # that table was written.
+  #
+  # IN_PROGRESS HAS NO ROW IN THIS BLOCK AND THAT IS THE TEMPLATE'S SHAPE, NOT AN OMISSION.
+  # `.ai/templates/ticket.yaml` declares exactly four gates — spec, design, review, qa — and the
+  # IN_PROGRESS verdict lives in `03-impl-log.md`'s front-matter, which is where every stage's gate
+  # is quoted from. `gate: PASS` there, 2026-08-27T01:28:07Z. `state:` above carries what it means.
   review: { passed: false, at: null }
   qa:     { passed: false, at: null }
 

@@ -23,7 +23,8 @@ export async function countSeatsInRoom(roomId: string): Promise<number> {
  * expected failure, not a programmer error (coding-standards.md, "Error handling").
  *
  * The id is minted here with `crypto.randomUUID()` and is never read from a caller. A
- * caller-supplied id would let the UI invent a primary key; the Prisma model uses `@default(cuid())`
+ * caller-supplied id would let the UI invent a primary key; the `Seat` and `Room` id columns carry a
+ * `gen_random_uuid()::text` default
  * for the same reason and the mock cannot.
  */
 export async function createRoom(input: NewRoom): Promise<CreateRoomOutcome> {

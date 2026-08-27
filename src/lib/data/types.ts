@@ -1,12 +1,18 @@
 // DTOs for the data seam.
 //
-// These are the only shapes that cross the seam. No Prisma type ever leaves `src/lib/data/prisma/**`
-// (RULE-02): the Prisma-backed implementation maps its rows onto these types before returning, so
-// swapping the mock for Prisma cannot change a single component.
+// These are the only shapes that cross the seam. No Supabase type ever leaves
+// `src/lib/data/supabase/**` (RULE-02): the Supabase-backed implementation maps its rows onto these
+// types before returning, so swapping the mock for the database cannot change a single component.
 //
-// Every field here is a placeholder until `prisma/schema.prisma` is approved. A field name invented
-// at this layer would propagate into the mock, the Prisma mapping, and the selectors before anyone
-// reviewed it (RULE-04), so these mirror the draft schema exactly and change with it.
+// EVERY FIELD HERE IS UNCHANGED BY THE CUTOVER, AND THAT IS THE CRITERION RATHER THAN AN
+// OBSERVATION. ADR-007 requires the replacement to be module-for-module against the same DTOs, so
+// SYS-02 edits this file's COMMENTS and nothing else — not one interface, union member, field name
+// or optionality. A change here is a review finding.
+//
+// The schema these mirror is `supabase/migrations/20260826094134_init.sql`, which keeps the field
+// names below verbatim: quoted PascalCase tables and camelCase columns, so the adapter maps rows
+// onto these types with no renaming layer. A name invented at this layer would propagate into the
+// mock, the adapter, and the selectors before anyone reviewed it (RULE-04).
 
 export type Role = "USER" | "MANAGER" | "ADMIN";
 
@@ -136,9 +142,9 @@ export interface Member {
  * `id` is minted and `groupId` is always null — group membership is out-of-scope item 5 and no form
  * field collects it, so `NewMember` deliberately has no way to express one.
  *
- * `role` is required and has no default here, although `prisma/schema.prisma:165` declares
- * `@default(USER)`. AC-3 refuses a creation with no role chosen, and a default would silently
- * satisfy the very thing that criterion refuses.
+ * `role` is required and has no default here, although the `Member` table declares
+ * `DEFAULT 'USER'` (`supabase/migrations/20260826094134_init.sql`). AC-3 refuses a creation with no
+ * role chosen, and a default would silently satisfy the very thing that criterion refuses.
  */
 export interface NewMember {
   fullName: string;
