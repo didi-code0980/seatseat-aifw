@@ -60,3 +60,18 @@ Prefer a number from `.ai/board/metrics.md` over a judgement call.
 
 Every file whose `governed_by` or content changes as a result, with the `doc_version` each must move
 to. Check D9 fails until this list is worked through.
+
+**Then grep `tests/` for every source path in the list, and add what it finds.** A table of documents
+records what a decision *changes*; it does not record what *asserts* what it changes, and an assertion
+is a test. A test is where a decision is enforced most literally, which makes it the last place that
+should be missed and — because a passing suite reads as agreement — the place a stale decision survives
+longest.
+
+Added 2026-08-27 after ADR-007 listed `package.json` and did not list
+`tests/unit/self-signup.test.ts`, which asserts that `@supabase/ssr` is the *only* Supabase package in
+it. The ADR adopts a second one. QA found it by running the suite; the trace was one `grep` away and
+nobody made it. MD-36.
+
+The grep is enough. **Do not go looking for tests that assert a decision "in spirit"** — the list is
+files that name a path this ADR touches, nothing wider. A speculative entry costs a reader more than a
+missing one, because they cannot tell whether it was reasoned or guessed.
