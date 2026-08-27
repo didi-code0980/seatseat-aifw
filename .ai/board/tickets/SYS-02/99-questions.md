@@ -63,9 +63,36 @@ with the amendment being the two lines above, narrowed from *"the only Supabase 
 *"exactly the two packages ADR-007's map names"* — or whether it is deliberately left red for a
 follow-up chore, as `D-3` leaves the nine stale validation-layer comments.
 
-**A.** <unanswered — raised at the end of IN_PROGRESS, 2026-08-27>
+**A.** **Answered 2026-08-27T04:51:28Z by `tech-lead-design`. It joins `allowed_paths` — exit (a).**
 
-**Amended:** <pending>
+**Both readings you offered were legitimate and the second one is wrong, for a mechanical reason
+rather than a matter of taste.** `D-3` leaves *prose* stale, and no check reads prose. This leaves an
+*executable assertion* stale: `pnpm test` exits 1, the QA gate is *"`pnpm test` and `pnpm test:e2e`
+exit 0"*, and `pnpm verify` stays red for every ticket after this one. A red suite is not a
+deferrable comment, so the chore exit was not available.
+
+**You were also right that section 5 read as an omission.** It is. *"Not on the list, on purpose"*
+names `src/lib/auth/self-signup.ts` — the source file — and never the test. Nothing was decided about
+`tests/unit/self-signup.test.ts` at DESIGN, because this stage swept the documentation corpus for
+ADR-007's reach and did not sweep the test corpus. ADR-007's own *Affected documents* table had the
+identical hole; the steward closed it on `main` in PR #58 (`38c7926`) and recorded it as MD-36, and
+that row's Owner column now names this ticket and this stage.
+
+**The edit is specified in `02-design.md` section 5.1 rather than left to you.** It is three changed
+lines and one deletion. Two notes where it departs from what you proposed: `.sort()` is added, because
+`allDeps` carries `package.json`'s insertion order and today's alphabetical agreement is a coincidence
+a reorder would break; and the `it(...)` title changes too, because *"is the only Supabase package"*
+would otherwise name a test asserting it is one of two.
+
+**Your two refusals were both correct and neither cost anything.** Not editing the test under RULE-03,
+and not widening `allowed_paths` yourself, are the two halves of the same rule. The second is the one
+worth naming: the ticket directory is exempt from `check-allowed-paths.mjs`, so that edit would have
+succeeded mechanically. Declining a permission you could have taken is what made this an omission the
+model caught rather than one it absorbed silently.
+
+**Amended:** `02-design.md` — section 5 list and table, new section 5.1, amendment banner, changelog.
+`ticket.yaml` — `allowed_paths` 25 -> 26 entries, `state` -> `IN_PROGRESS`, `design` gate `at`.
+`rework_count` unchanged at 0.
 
 ---
 
@@ -117,9 +144,35 @@ AssertionError: expected [ '@supabase/ssr', '@supabase/supabase-js' ]
    because the new exemption is `src/lib/data/supabase/**/*.ts` and does not match that pattern. QA
    verified this: 14 of the 15 tests in that file pass.
 
-**A.** <unanswered — raised at QA, 2026-08-27>
+**A.** **Answered 2026-08-27T04:51:28Z by `tech-lead-design`. Confirmed, and the amendment is
+above.** The path is on `allowed_paths` and `02-design.md` section 5.1 carries the replacement text.
 
-**Amended:** <pending>
+**On your point 3 — the assertion you expected is what was written, with two deliberate departures.**
+`.sort()` is added, because `allDeps` is `Object.keys` over the merged dependency blocks and carries
+`package.json`'s insertion order; the sorted and as-found orders agree today, which is a coincidence
+rather than a property. And the `it(...)` title changes as well, so this is three changed lines and
+one deletion rather than two lines. You scoped it to two, which is right about the assertions; the
+title says *"is the only Supabase package"* and would have survived as a passing test with a false
+name — the same defect class you removed from AC-10, AC-6 and AC-13 this run.
+
+**On your point 2 — the routing was right and `rework_count` stays 0.** RULE-08 is exact: *only
+Developer-caused failures increment it*. `.ai/01-operating-model.md` §*Failure routing* routes *R5
+impossible as specified* here with *No*. **Your warning has already come true once in a smaller way
+and is worth keeping in view:** nobody wrote `REWORK` into `ticket.yaml` at all. `/handoff` step 2a,
+which transcribes `next_state`, `routed_to` and `increments_rework_count` out of your front-matter,
+landed on `main` in PR #60 and is not on this branch; the hand-off that released `feat/SYS-02` ran
+steps 3 and 6 by hand. So the field was never at risk of being incremented, because nothing wrote it.
+MD-46 records the deadlock; its *Not done* column records that `rework_count` still has no owner on
+the same-lane route.
+
+**On your AC-5 check — confirmed independently here, and it is the reason the boundary is written
+out.** `src/lib/data/supabase/**/*.ts` does not match `/["']src\/lib\/data\/\*\*["']/`, and it does
+not match because the exemption really is the adapter directory and not the seam
+(`.ai/standards/integrations.md:30-32`). Section 5.1 puts that assertion explicitly out of bounds so
+the next hand does not tidy it.
+
+**Amended:** as recorded in the `developer` entry above. Nothing in `05-test-plan.md` or
+`06-test-report.md` is contradicted by this amendment and neither is rewritten by it.
 
 ---
 

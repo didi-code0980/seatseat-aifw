@@ -2,13 +2,17 @@
 ticket: SYS-02
 stage: DESIGN
 agent: tech-lead-design
-produced_at: 2026-08-26T09:22:00Z
-inputs_read: [ .ai/board/tickets/SYS-02/ticket.yaml, .ai/board/tickets/SYS-02/01-story.md, .ai/registry/rules.md, .ai/registry/invariants.md, .ai/registry/features.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/integrations.md, .ai/standards/data-model.md, .ai/standards/architecture.md, .ai/standards/testing-standards.md, .ai/standards/rbac-and-security.md, .ai/standards/git-conventions.md, .ai/steward/context.md, src/lib/data/index.ts, src/lib/data/types.ts, src/lib/data/derive.ts, src/lib/data/fixtures.ts, src/lib/data/prisma/**, src/lib/data/mock/seats.ts, src/lib/data/mock/store.ts, src/lib/auth/supabase.ts, src/app/page.tsx, prisma/schema.prisma, prisma/constraints.draft.sql, prisma/seed.ts, prisma.config.ts, package.json, eslint.config.mjs, scripts/check-docs.mjs, scripts/check-allowed-paths.mjs, scripts/tests/check-docs.test.mjs, tests/unit/seam-parity.test.ts, vitest.config.mts, playwright.config.ts, .env.example, .github/workflows/verify.yml, .github/CODEOWNERS, docker/docker-compose.yml, "node_modules/.pnpm/@supabase+supabase-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/@supabase+auth-js@2.112.4/**/GoTrueAdminApi.d.ts", "node_modules/.pnpm/@supabase+postgrest-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/vitest@4.1.10*/**/reporters.d.DtoKVV2s.d.ts", "https://supabase.com/docs/reference/cli/supabase-db-push", "https://supabase.com/docs/guides/local-development/cli/getting-started" ]
+produced_at: 2026-08-27T04:51:28Z
+inputs_read: [ .ai/board/tickets/SYS-02/ticket.yaml, .ai/board/tickets/SYS-02/01-story.md, .ai/registry/rules.md, .ai/registry/invariants.md, .ai/registry/features.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/integrations.md, .ai/standards/data-model.md, .ai/standards/architecture.md, .ai/standards/testing-standards.md, .ai/standards/rbac-and-security.md, .ai/standards/git-conventions.md, .ai/steward/context.md, src/lib/data/index.ts, src/lib/data/types.ts, src/lib/data/derive.ts, src/lib/data/fixtures.ts, src/lib/data/prisma/**, src/lib/data/mock/seats.ts, src/lib/data/mock/store.ts, src/lib/auth/supabase.ts, src/app/page.tsx, prisma/schema.prisma, prisma/constraints.draft.sql, prisma/seed.ts, prisma.config.ts, package.json, eslint.config.mjs, scripts/check-docs.mjs, scripts/check-allowed-paths.mjs, scripts/tests/check-docs.test.mjs, tests/unit/seam-parity.test.ts, vitest.config.mts, playwright.config.ts, .env.example, .github/workflows/verify.yml, .github/CODEOWNERS, docker/docker-compose.yml, "node_modules/.pnpm/@supabase+supabase-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/@supabase+auth-js@2.112.4/**/GoTrueAdminApi.d.ts", "node_modules/.pnpm/@supabase+postgrest-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/vitest@4.1.10*/**/reporters.d.DtoKVV2s.d.ts", "https://supabase.com/docs/reference/cli/supabase-db-push", "https://supabase.com/docs/guides/local-development/cli/getting-started", .ai/board/tickets/SYS-02/03-impl-log.md, .ai/board/tickets/SYS-02/04-review.md, .ai/board/tickets/SYS-02/05-test-plan.md, .ai/board/tickets/SYS-02/06-test-report.md, .ai/board/tickets/SYS-02/99-questions.md, tests/unit/self-signup.test.ts, "origin/main:.ai/registry/decisions/ADR-007-supabase-as-the-data-client.md", "origin/main:.ai/steward/context.md", "origin/main:.ai/01-operating-model.md" ]
 consulted:
   - with: none
     asked: "Nothing. No pair was consulted and no chat was opened. Every question this stage was routed — Q-3 in `01-story.md` — was answerable from installed types and the Supabase CLI's own reference, which is where the answer came from."
     answer: "n/a"
     resulted_in_amendment: false
+  - with: none
+    asked: "Nothing, on the amendment run of 2026-08-27 either. No chat was opened. Two questions arrived FOR this stage rather than from it — `developer` at 2026-08-27T01:28:07Z and `qa` at 2026-08-27T03:52:46Z, both in `99-questions.md`, both answered there in writing. That is the asynchronous channel and not a chat, and the `chat_budget` counters in `ticket.yaml` are untouched."
+    answer: "n/a"
+    resulted_in_amendment: true
 chat_before_verdict: none
 gate: PASS
 blocking_reason: ""
@@ -16,6 +20,19 @@ next_state: IN_PROGRESS
 ---
 
 # SYS-02 — Tech design: cutover to Supabase as the data client
+
+> **AMENDED 2026-08-27T04:51:28Z, after the QA gate failed. Gate still PASS.**
+>
+> **The whole amendment is one path added to section 5** — `tests/unit/self-signup.test.ts` — and the
+> two-line replacement text that section now specifies. **No other section changed.** The contract,
+> the permission model, the seam impact, the schema delta, the testability contract and the rejected
+> alternatives are exactly as they were at `2026-08-26T09:22:00Z`, and `size` is still `L`.
+>
+> `06-test-report.md` routed here with `increments_rework_count: false` on the *R5 impossible as
+> specified* row of `.ai/01-operating-model.md` §*Failure routing*. That routing is correct and this
+> stage agrees with it: the omission is section 5's, made at DESIGN, and the developer both refused
+> the edit under RULE-03 and reported it in `99-questions.md` before QA ran. **`rework_count` stays
+> 0** — RULE-08.
 
 **Three things to read before section 1. Each one is a decision this stage took that a reader would
 otherwise discover at the wrong moment.**
@@ -569,6 +586,7 @@ allowed_paths:
   - "src/lib/auth/supabase.ts"
   - "src/app/(app)/seats/seats-manager.tsx"
   - "tests/unit/seam-parity.test.ts"
+  - "tests/unit/self-signup.test.ts"
   - "scripts/seed.ts"
   - "scripts/check-docs.mjs"
   - "scripts/tests/check-docs.test.mjs"
@@ -600,6 +618,7 @@ own directory is exempt in the checker and is deliberately not listed.
 | `scripts/check-docs.mjs`, `scripts/tests/check-docs.test.mjs` | D12 becomes the two-package map, ADR-007 §8. MD-16's ten failing tests are here and are rewritten here — verified: `node --test scripts/tests/check-docs.test.mjs` fails exactly ten, all D12. |
 | `vitest.config.mts` | `test.env = { DATA_SOURCE: "mock" }`. AC-2, and section 6.3. |
 | `.github/workflows/verify.yml` | AC-9's regenerate-and-diff job |
+| `tests/unit/self-signup.test.ts` | **Added by the amendment of 2026-08-27; see 5.1 below.** SYS-01's AC-3, encoded as an executable assertion that ADR-007 clause 2 reverses. **Two lines, and nothing else in the file.** |
 | `.github/CODEOWNERS` | `/prisma/` leaves; **`/supabase/` joins**, which is what puts RULE-09's human signature on the migration mechanically rather than by memory |
 | `.gitignore` | `supabase/.temp/`, `supabase/.branches/` |
 | `docker/**` | `docker-compose.yml:19-21` offers `prisma` as a `DATA_SOURCE` value; the Dockerfile comment reasons about Prisma 7's Node floor |
@@ -616,6 +635,62 @@ own directory is exempt in the checker and is deliberately not listed.
 - `playwright.config.ts` — it already pins `DATA_SOURCE: "mock"` on the web server, which is what
   keeps the e2e suite off the single Supabase project. `01-story.md` `Q-2` owns that question and it
   is out of scope here.
+
+### 5.1 `tests/unit/self-signup.test.ts` — the exact edit, and its boundary
+
+**Added to `allowed_paths` on 2026-08-27 by amendment.** This is the only path on the list that
+belongs to a ticket already `DONE`, so the boundary is written out rather than left to judgement.
+
+**Why it is added rather than left red for a chore.** `99-questions.md` asked exactly that, offering
+`D-3`'s treatment of the nine stale validation-layer comments as the precedent. **It is not the same
+case and the difference is mechanical:** `D-3` leaves *prose* stale, which no check reads. This leaves
+an *executable assertion* stale, which fails `pnpm test`, fails the QA gate, and makes `pnpm verify`
+red for every ticket after this one until someone fixes it. A red suite is not a deferrable comment.
+
+**The authority is not this design's preference.** ADR-007's *Affected documents* table was amended on
+`main` (PR #58, `38c7926`, 2026-08-27) to carry this exact file, and its Owner column reads
+*"SYS-02, once `tech-lead-design` adds the path to `allowed_paths`"*. **That row is NOT on this branch
+yet** — it arrives when `main` merges — so a reader checking it here before then will not find it, and
+should look at `origin/main`. The same amendment records that **SYS-01's AC-3 is superseded, not
+wrong**, and that SYS-01's `01-story.md` is not to be edited.
+
+**The change, in full.** Three lines change and one is deleted. Nothing else in the file may be
+touched — 14 of its 15 tests pass today.
+
+```ts
+// BEFORE
+  it("AC-3: @supabase/ssr is present and is the only Supabase package in package.json", () => {
+    const supabaseDeps = allDeps.filter((d) => d.startsWith("@supabase/"));
+    expect(supabaseDeps).toEqual(["@supabase/ssr"]);
+    expect(allDeps).not.toContain("@supabase/supabase-js");
+
+// AFTER
+  it("AC-3 (superseded by ADR-007 clause 2): package.json carries exactly the two Supabase packages the integrations map names", () => {
+    const supabaseDeps = allDeps.filter((d) => d.startsWith("@supabase/")).sort();
+    expect(supabaseDeps).toEqual(["@supabase/ssr", "@supabase/supabase-js"]);
+    // `not.toContain` deleted — clause 2 adopts the package it forbade.
+```
+
+Three things about that text, each a decision rather than a transcription of what QA proposed:
+
+1. **`.sort()` is added.** QA's expected assertion was *"`["@supabase/ssr", "@supabase/supabase-js"]`
+   sorted"*. `allDeps` is `Object.keys` over the merged dependency blocks, so its order is
+   `package.json`'s insertion order, not alphabetical. Both agree today — verified by running the
+   filter against the real file — and the agreement is a coincidence that reordering `package.json`
+   would break. Sorting makes the assertion mean what it says.
+2. **The `it(...)` title changes too, and that is the third line.** QA scoped this to *two lines*,
+   which is right about the assertions and leaves a test named *"is the only Supabase package"*
+   asserting that it is one of two. A passing test with a false name is the failure mode QA spent
+   this run removing from three other assertions; it should not be introduced here.
+3. **`expect(pkgJson.dependencies?.["@supabase/ssr"]).toBeDefined()` stays.** It is still true and
+   still SYS-01's, and the amendment narrows the criterion rather than dropping it.
+
+**Explicitly out of bounds in this file.** Its SYS-01 AC-5 assertion —
+`expect(eslintConfig).not.toMatch(/["']src\/lib\/data\/\*\*["']/)` — is green and stays green and
+must not be touched. The new lint exemption is `src/lib/data/supabase/**/*.ts`, which does not match
+that pattern, and the reason it does not match is the reason it is correct: the exemption is the
+adapter directory, not the seam. `.ai/standards/integrations.md:30-32` is the two-package map both
+assertions now answer to. `developer` and `qa` each verified this independently; so did this stage.
 
 ## 6. Testability contract
 
@@ -803,3 +878,12 @@ twenty-seven citations **are** corrected, because `src/lib/data/**` is the ticke
   cascaded*). `D-1` raised against the steward: deleting `prisma/` turns D6 red in six human-owned
   documents and ADR-007's affected-documents table does not cover it. Raised by `tech-lead-design`.
   Amended by `tech-lead-design`.
+- `2026-08-27T04:51:28Z` — **amended at the QA FAIL. Gate still PASS; `size` still `L`.** One path
+  added to section 5, `tests/unit/self-signup.test.ts`, with section 5.1 specifying the exact edit
+  and its boundary. Section 5's *"Not on the list, on purpose"* named `src/lib/auth/self-signup.ts`,
+  the source file, and never the test — so this was an omission, not a decision being reversed. The
+  design swept the documentation corpus for ADR-007's reach (`D-1`, twelve D6 references) and did not
+  sweep the test corpus; ADR-007's own affected-documents table had the same hole, fixed on `main` in
+  PR #58 and recorded as MD-36. **Nothing else changed** — no contract, permission, seam, schema,
+  testability or rejected-alternative text differs from the entry above. `rework_count` stays 0 under
+  RULE-08. Amended by `tech-lead-design`.

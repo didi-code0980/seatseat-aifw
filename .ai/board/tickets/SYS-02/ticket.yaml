@@ -5,7 +5,33 @@ id: SYS-02
 title: "Cutover to Supabase as the data client"
 feature_ids: [SYS-02]
 group: SYS
-state: REVIEW        # ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-27T01:28:07Z, gate PASS.
+state: IN_PROGRESS   # RETURNED FROM THE QA FAIL BY /design ON 2026-08-27T04:51:28Z, DESIGN
+                     # AMENDMENT, gate PASS. One path added to `allowed_paths` below; nothing else
+                     # in this design changes.
+                     #
+                     # `06-test-report.md` returned `gate: FAIL`, `next_state: REWORK`,
+                     # `routed_to: tech-lead-design`, `increments_rework_count: false` — the
+                     # *R5 impossible as specified* row of `.ai/01-operating-model.md`
+                     # §*Failure routing*. This stage is that route. **`rework_count` stays 0**,
+                     # RULE-08: only Developer-caused failures increment it, and the developer
+                     # reported this one in `99-questions.md` before QA ever ran.
+                     #
+                     # THE TICKET NEVER SAT AT `REWORK` AND THIS FILE DOES NOT PRETEND IT DID.
+                     # `/handoff` step 2a, which transcribes `next_state`, `routed_to` and
+                     # `increments_rework_count` out of a verdict's front-matter, landed on `main`
+                     # in PR #60 and IS NOT ON THIS BRANCH. The hand-off that released
+                     # `feat/SYS-02` at `658ab73` ran steps 3 and 6 by hand, so no step 2a ran and
+                     # nobody wrote `REWORK`. RULE-13 forbids `/review` and `/qa` to touch this
+                     # file, and no `orchestrator` has run in the implement lane since MD-27. The
+                     # steward records the whole deadlock as MD-46.
+                     #
+                     # WHAT REMAINS IS THE DEVELOPER'S AND IT IS TWO LINES — the SYS-01 AC-3
+                     # assertion in `tests/unit/self-signup.test.ts`, narrowed exactly as section 5
+                     # of `02-design.md` specifies. REVIEW and QA both run again afterwards, which
+                     # is why both gate rows below stay `false`.
+                     #
+                     # ---- WHAT THIS LINE SAID BEFORE, KEPT ----
+                     # state: REVIEW — ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-27T01:28:07Z, gate PASS.
                      #
                      # `pnpm typecheck` and `pnpm lint` exit 0, every contract item in
                      # `02-design.md` section 1 is implemented, and `03-impl-log.md` lists all 51
@@ -63,7 +89,10 @@ size_estimate: "M"    # SET BY ba ON THE SECOND RUN, 2026-08-26T08:33:56Z, BY Q-
                       # DOES NOT APPLY HERE and routing this back to SPEC would produce the same
                       # story again. Q-1 in `01-story.md` is the record and is routed to the steward.
 
-size: "L"             # VERDICT, 2026-08-26T09:22:00Z, counted from the 25 globs enumerated in
+size: "L"             # VERDICT, 2026-08-26T09:22:00Z. UNCHANGED BY THE 2026-08-27 AMENDMENT, which
+                      # took the list from 25 globs to 26 — one test file, a two-line edit. `L` is a
+                      # band, not a count, and one path does not move it. Originally counted from
+                      # the 25 globs enumerated in
                       # `02-design.md` section 5 — 13 files deleted, 13 created, 28 modified. Grounds
                       # in full under `02-design.md` **Size verdict**; the three things a reader needs
                       # without opening it:
@@ -129,6 +158,12 @@ invariants_touched: [INV-01, INV-02, INV-03, INV-04, INV-05, INV-06, INV-07, INV
 # `src/lib/data/types.ts`, `src/lib/data/mock/**` and `src/lib/data/fixtures.ts` are COMMENT TEXT ONLY.
 # No type, no fixture value and no mock behaviour changes — AC-5 and AC-12 are the criteria and R5 is
 # where it is judged.
+#
+# `tests/unit/self-signup.test.ts` was ADDED 2026-08-27T04:51:28Z by the DESIGN amendment that
+# answers the QA FAIL. It is 26 entries now, not 25. It is the ONE path on this list that belongs to
+# a ticket already DONE — SYS-01 — and the scope is TWO LINES: the SYS-01 AC-3 assertion that ADR-007
+# clause 2 reverses. Nothing else in that file may be touched, and its SYS-01 AC-5 assertion is green
+# today and must stay green. `02-design.md` section 5 carries the exact replacement text.
 allowed_paths:
   - "supabase/**"
   - "src/lib/data/index.ts"
@@ -140,6 +175,7 @@ allowed_paths:
   - "src/lib/auth/supabase.ts"
   - "src/app/(app)/seats/seats-manager.tsx"
   - "tests/unit/seam-parity.test.ts"
+  - "tests/unit/self-signup.test.ts"
   - "scripts/seed.ts"
   - "scripts/check-docs.mjs"
   - "scripts/tests/check-docs.test.mjs"
@@ -186,7 +222,12 @@ chat_budget:
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
   spec:   { passed: true,  at: "2026-08-26T08:33:56Z" }
-  design: { passed: true,  at: "2026-08-26T09:22:00Z" }
+  design: { passed: true,  at: "2026-08-27T04:51:28Z" }
+  # AMENDED 2026-08-27T04:51:28Z, still PASS. The amendment adds ONE path to `allowed_paths` —
+  # `tests/unit/self-signup.test.ts` — and changes nothing else: all seven sections are still
+  # complete and `size` is still `L`. `at:` moves to the amendment because this row dates the design
+  # that is on disk, and the design on disk is the amended one. **The first PASS was
+  # `2026-08-26T09:22:00Z`** and `02-design.md`'s changelog carries both entries.
   # PASS. All seven sections complete, `allowed_paths` enumerated above, `size` set to L.
   #
   # NOT BLOCKED, and the one thing that could have made it so is answered rather than deferred:
