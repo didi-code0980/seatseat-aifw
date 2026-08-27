@@ -1,8 +1,15 @@
 # state enum: IDEA TRIAGE BACKLOG SPEC READY DESIGN IN_PROGRESS REVIEW QA REWORK ESCALATED DONE
 # Seeded from .ai/templates/ticket.yaml at 2026-08-25.
-# Feature REG-01: User self-release and seat request workflow.
+# Feature REG-01: User self-release. The seat request workflow is REG-02, split out 2026-08-27
+# on the operator's decision.
 id: REG-01
-title: "User self-release and seat request workflow"
+title: "User self-release"   # NARROWED 2026-08-27, not rewritten. The operator answered the 🟡 on
+                             # this ticket's registry row — *"tách REG-01 và REG-02"* — and the
+                             # request workflow moved to REG-02. The compound title was itself the
+                             # unstated assumption the 🟡 named: it came from this file, seeded
+                             # outside the loop on 2026-08-25, while the backlog has carried
+                             # "User self-release" alone since Phase C. The registry row is the
+                             # authority and now reads the same.
 feature_ids: [REG-01]
 group: REG
 state: BACKLOG

@@ -39,9 +39,9 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
-| 1 | SYS-02 | Cutover to Supabase as the data client | BACKLOG | three preconditions in its `ticket.yaml` — credentials on the machine, two Supabase projects, `SUPABASE_SERVICE_ROLE_KEY` in `.env.example` |
-| 2 | GRP-02 | Member assignment to groups | BACKLOG | nothing — `depends_on: [GRP-01]` is satisfied, GRP-01 merged as PR #42 |
-| 3 | REG-01 | User self-release and seat request workflow | BACKLOG | 🟡 in its registry row — is self-release one feature with the request workflow, or two? Nobody has said |
+| 1 | SYS-02 | Cutover to Supabase as the data client | IN_PROGRESS | nothing — SPEC 2026-08-26T08:33:56Z, DESIGN 09:22:00Z, `size: L` and the registry forbids the split. In the implement lane on `feat/SYS-02` |
+| 2 | REG-01 | User self-release | BACKLOG | nothing in the model — but nothing in `src/` resolves the signed-in Member, and `glossary.md` §Self-release is about *the seat they currently occupy*. `SYS-02` adds `Account.auth_user_id` |
+| 3 | REG-02 | Seat request workflow | BACKLOG | no ticket seeded yet. Needs a requester identity *and* an approver rank; INV-08's rank enforcement is a browser-storage flag that enforces nothing (MD-14) |
 
 **Refilled 2026-08-26. This table was empty while three seeded tickets sat at `BACKLOG`**, which made
 them invisible to the one file whose job is to order them. The gap opened because `/ship` is this
@@ -61,6 +61,30 @@ single ticket, per the operator's decision of 2026-08-26 that it is not to be sp
 searching the ledger first**, which is what `features.md` asks for in as many words. Until the two
 `TRIAGE` rows are marked `OUTDATED` pointing here, the registry holds two contradictory proposals for
 one piece of work.
+
+**Rewritten 2026-08-27, and this table was wrong in three ways at once.** It is repaired here rather
+than at `/ship` because the operator asked for it in the same breath as the split — `/ship` is still
+the only *routine* writer of this file, and one instruction does not loosen that.
+
+- **GRP-02 sat at `BACKLOG` while also sitting in `## ARCHIVE`.** It is `DONE` and merged in PR #51.
+  Its row was added *after* the ship wrote the archive entry, so `/ship` could not have removed a row
+  that did not yet exist. Dropped from this table; the ARCHIVE entry stands.
+- **SYS-02 read `BACKLOG` with three preconditions outstanding.** All three are answered — the
+  operator supplied `.env.local`, answered **one** Supabase project rather than two (recorded in
+  PR #53 with its consequence: every `pnpm verify` reaches the database the product uses), and
+  `.env.example` is the ticket's own work. It has since passed SPEC and DESIGN and is in the implement
+  lane.
+- **REG-01 carried a 🟡 that has been answered.** *"tách REG-01 và REG-02"* — self-release stays here,
+  the request workflow becomes `REG-02`.
+
+**Neither REG row is startable today, and the reason is the one that withdrew the AUT sign-in ticket,
+not a scope question.** `glossary.md` §Self-release is *"an occupant vacating a seat they currently
+occupy"*; §Request is *"A Member asking"* whose approval goes *"to a Manager or Admin"*. Nothing in
+`src/` resolves the signed-in Member — no `getCurrentMember`, no `authUserId`, and `PermissionGate` is
+imported nowhere on any shipped surface. `SYS-02` adds `Account.auth_user_id` (`02-design.md:463`,
+`uuid UNIQUE REFERENCES auth.users(id)`, nullable) and is in flight, which is the first half of it.
+**Note that ADR-006 OQ-3 named the key `Member.authUserId` and SYS-02 adds `Account.auth_user_id`;
+nobody has said those are the same thing.**
 
 ## What is not in this table, and should not be
 
