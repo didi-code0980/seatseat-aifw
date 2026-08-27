@@ -387,6 +387,21 @@ human and it is the first migration, under RULE-09.
 
 ## Affected documents
 
+**Appended 2026-08-27, after QA found the omission by execution rather than by reading.**
+
+| File | What this ADR makes false | Owner |
+|---|---|---|
+| `tests/unit/self-signup.test.ts` | AC-3 of SYS-01, encoded as an executable assertion: `expect(supabaseDeps).toEqual(["@supabase/ssr"])` and `expect(allDeps).not.toContain("@supabase/supabase-js")`. Clause 2 of this ADR adopts the second package, so the test asserts the opposite of a decision that supersedes it. | SYS-02, once `tech-lead-design` adds the path to `allowed_paths` |
+
+`package.json` was already in the table below. **The test that asserts a property of `package.json`
+was not, and the trace between them is one `grep`.** The template now instructs that grep for every
+future ADR — MD-36.
+
+**SYS-01's AC-3 is superseded, not wrong.** It was true when written and the story stays as it is; a
+DONE ticket's acceptance criteria are a record of what was asked for, not a standing claim. What must
+not happen is the test changing to assert the opposite with no trail — this row is that trail.
+
+
 **Nothing in this table is speculative — each row names a specific sentence that this ADR makes
 false.** Rows marked ✅ are done in the same change as this ADR; the rest belong to the ticket that
 implements it, because writing them before OQ-1 to OQ-3 are answered would mean writing them twice.
