@@ -156,18 +156,37 @@ browser, so R4 and check D12 are what is left. MD-33 records the gap and the fix
 
 ## Failure routing
 
-| Failing check | Route to | Increments `rework_count` |
-|---|---|---|
-| R1, R2, R3, R4, R5 implementable, R9 | `developer` | Yes |
-| R5 impossible as specified, R7 | `tech-lead-design` | No |
-| R6, QA: AC ambiguous or untestable | `ba` | No |
-| QA: behaviour wrong | `developer` | Yes |
-| **R8** | **human, immediately** | ESCALATE (RULE-07) |
-| DoR item unsatisfied at the READY gate | `ba` if the item is produced at SPEC, otherwise a human | No |
+| Failing check | Route to | Increments `rework_count` | Where the fix runs |
+|---|---|---|---|
+| R1, R2, R3, R4, R5 implementable, R9 | `developer` | Yes | `aiw-implement` — same lane, branch stays |
+| R5 impossible as specified, R7 | `tech-lead-design` | No | `aiw-design` — **rework hand-off** |
+| R6, QA: AC ambiguous or untestable | `ba` | No | `aiw-design` — **rework hand-off** |
+| QA: behaviour wrong | `developer` | Yes | `aiw-implement` — same lane, branch stays |
+| **R8** | **human, immediately** | ESCALATE (RULE-07) | neither — RULE-09, no command |
+| DoR item unsatisfied at the READY gate | `ba` if the item is produced at SPEC, otherwise a human | No | `aiw-design` — same lane |
 
 Per RULE-08, upstream defects must not burn the downstream agent's rework budget. A Developer who
 correctly implemented an incoherent design has not failed, and charging that failure to the Developer
 would exhaust the budget under RULE-06 for a defect it did not cause and cannot fix.
+
+**Two of these rows send a failure across the worktree boundary, and crossing it takes a command.**
+`ba` and `tech-lead-design` sit in `aiw-design`; the two stages that route to them, REVIEW and QA, run
+in `aiw-implement`. The last row also routes to `ba`, but the READY gate is evaluated in `aiw-design`
+already, so nothing has to move. Git holds `feat/<ID>` exclusively across worktrees, so until the lane holding the
+branch releases it, the routed role cannot check it out and the routed command cannot run — and
+running it from the folder that happens to hold the branch is not an alternative, because a session's
+folder is fixed at launch and it commits the tree it was launched in.
+
+**That release is the rework hand-off** — `.claude/commands/handoff.md` step 1, third case. It pushes
+the failed lane's work, transcribes the `next_state` and `routed_to` the verdict already declared into
+`ticket.yaml`, and frees the branch name. The receiving lane then runs the routed stage command,
+which switches to the branch itself, and hands the ticket forward again when its gate passes.
+
+**Written 2026-08-27, from a stop rather than from foresight.** SYS-02 failed QA on a stale assertion
+and routed to `tech-lead-design`. The verdict was correct and the fix was two lines, but `/handoff`
+recognised only the two forward hand-offs and refused a lane whose gate had not passed, so
+`aiw-implement` held the branch it could not release and `aiw-design` could not take the branch it
+needed. The loop had no legal next move in either folder. MD-46.
 
 ## Handoff and bounded chat
 

@@ -71,14 +71,19 @@ Per `## Replying` in `CLAUDE.md`. Do not tabulate the ACs or restate the test co
 and `06-test-report.md` hold them, and they are what the gate is read from. On PASS, say so. On FAIL,
 give the failing criterion and where it routes.
 
-On PASS the next command and its session go in the sign-off's *Tiếp theo* line, not in a block of
-their own. For reference, it reads:
+**Passed or failed, the next command in this folder is almost always `/handoff $ARGUMENTS`, and it is
+yours to run before the session ends.**
 
-```
-QA passed. Run /ship ROO-01 in the orchestrator session.
-```
+| Verdict | What `/handoff` is | What goes in *Tiếp theo* |
+|---|---|---|
+| `gate: PASS` | the implement → ship hand-off | `/handoff <ID>` |
+| `gate: FAIL`, `routed_to: ba` or `tech-lead-design` | the **rework hand-off** — those roles sit in `aiw-design` and cannot take the branch until this folder gives the name up | `/handoff <ID>` |
+| `gate: FAIL`, `routed_to: developer` | none — the fix is in this folder and the branch does not move | the routed command |
+| `next_state: ESCALATED` | none — RULE-07 | `không có`, and say what the human decides |
 
-Then end this session. On FAIL, print the routed command instead and still end this session.
+**Never name the routed command when it runs in `aiw-design`.** `CLAUDE.md` §*Tiếp theo is for the
+folder you are standing in*: what you can honestly report from here is the verdict, and that the
+branch has been released for the lane that owns the fix. Then end this session.
 
 ---
 

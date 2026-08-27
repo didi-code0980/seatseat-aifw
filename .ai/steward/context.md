@@ -1156,3 +1156,54 @@ failures, MD-16's D12 set, untouched.
 **Not done:** MD-41's writer for `IN_PROGRESS` — `GRP-01` is still set by hand. MD-34's duplicate-id
 check. MD-33's two D12 extensions. Three checks in one session is how a guard gets written against a
 defect nobody understands yet.
+
+### 2026-08-27 — a failed gate had nowhere to go, because only a passing one could move the branch
+
+The operator reported SYS-02 stuck: QA failed and routed to `tech-lead-design`, `tech-lead-design`
+lives in `aiw-design`, and `aiw-design` had no way to get the branch. Their words for it —
+*"đây là vòng lặp không thể đi tiếp."* It was not a session mistake. `/handoff` step 1 read the
+`gates` map and matched two hand-offs, `spec`+`design` and `review`+`qa`, then refused everything else
+on the ground that *a pushed branch is a claim that a lane is done*. **A FAIL is never in the gates
+map at all** — RULE-13 forbids `/review` and `/qa` to touch `ticket.yaml`, so the verdict exists only
+in front-matter. So the one lane that could release `feat/SYS-02` had no command that would, and the
+one lane that needed it could not take it: `git switch` refuses a branch checked out in another
+worktree. Neither folder had a legal move. MD-46.
+
+**The fix is a third hand-off, keyed on the verdict instead of the gates map.** `gate: FAIL` plus a
+`routed_to` naming a role in the other folder is the rework hand-off: push, transcribe, release. A
+`routed_to` naming a role in *this* folder is explicitly not one — QA to `developer` is fixed two feet
+away and the branch must not move. That distinction is why the case could not be written as "release
+on any FAIL".
+
+**The second half was quieter and would have outlived the first.** `/review` and `/qa` both hand
+`next_state` to *"the `orchestrator`"*, and since 2026-08-25 no `orchestrator` runs in the implement
+lane — I removed it myself, in MD-27's fix, and did not follow the sentence through. So `state: REWORK`
+and `owner` were written by nobody, and a released branch would have arrived in `aiw-design` still
+claiming to be mid-lane. New step 2a copies `next_state`, `routed_to` and `increments_rework_count`
+across, and stops rather than guessing if any is missing. It is transcription: the verdict already
+named the value, and copying a named value is the same act as copying a `gate:` line.
+
+**One claim I had to correct mid-run.** I wrote *four of the six rows* cross the worktree boundary,
+then counted: it is **two** — the `tech-lead-design` row and the `ba` row. The sixth routes to `ba`
+as well, but the READY gate is evaluated in `aiw-design` already, so nothing moves. Wrong in three
+files before it was checked, which is the exact shape the standing instruction *verify before
+answering* is aimed at, arriving in written artifacts rather than in chat.
+
+**Changed:** `.claude/commands/handoff.md` (description, the folder table, step 1 rewritten, new
+step 2a, the `state:` line under *What this command never does*), `.ai/01-operating-model.md`
+(§*Failure routing* — a *Where the fix runs* column and the paragraph naming the rework hand-off),
+`.ai/standards/session-model.md` (§*The handoff protocol* — row R), `.claude/commands/qa.md` (a
+verdict-to-*Tiếp theo* table replacing a line that told `qa` to print `/ship`, which runs in the other
+folder and which `CLAUDE.md` forbids it to name), `.claude/commands/review.md` (the `orchestrator`
+sentence), `.ai/board/model-debt.md` (MD-46).
+
+**The deadlock itself was cleared by hand while I was reading it** — at 11:22 a session in
+`aiw-implement` pushed `feat/SYS-02` to `658ab73` and detached at `origin/main`, which is `/handoff`
+steps 3 and 6 run without step 1's permission. The branch is free and the design lane can take it.
+That is the right outcome and it is not evidence the model allowed it; it is what the model now says
+to do.
+
+**Not done:** `rework_count` is written on the cross-lane route and still by nobody on the same-lane
+one, so RULE-06's escalation at two cycles cannot fire for a `developer` rework. Recorded in MD-46's
+fix column rather than fixed, because it needs an owner for the field and the only role standing in
+that folder at that moment is the one whose budget it counts.

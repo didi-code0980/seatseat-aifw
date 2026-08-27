@@ -250,18 +250,27 @@ stronger claim than a parked one and a cheaper state to resume from.
 
 ### The handoff protocol
 
-Three commits per ticket, at three boundaries. Full steps in `.claude/commands/handoff.md`; what
-belongs here is why it has the shape it does.
+Three commits per ticket when nothing fails, at three boundaries, plus one more each time a gate
+fails to a role in the other folder. Full steps in `.claude/commands/handoff.md`; what belongs here is
+why it has the shape it does.
 
 | # | Where | Run by | After | What moves |
 |---|---|---|---|---|
 | 1 | `aiw-design` | `tech-lead-design` | `design` gate passes | `feat/<ID>` pushed carrying `01-story.md` and `02-design.md`; branch released |
 | 2 | `aiw-implement` | `qa` | `qa` gate passes | the same branch pushed carrying `src/**`, `tests/**` and artifacts 03–06; branch released |
 | 3 | `aiw-design` | `orchestrator` | Definition of Done confirmed | `state: DONE`, board files, the pull request |
+| R | either | the role that wrote the failing verdict | a gate FAILs to a role in the **other** folder | the branch pushed with that stage's artifact, `state: REWORK` and `owner:` transcribed from the verdict; branch released |
 
-**Each hand-off is run by the role that closed the gate it hands on.** That is the whole of the
-pairing rule, and it is why the two are not interchangeable: a role can only commit the working tree
-of the folder its session was launched in.
+**Row R runs as often as rework happens and not at all otherwise, which is why it has a letter rather
+than a number.** A failure routed inside the same lane — QA to `developer` is the common one — moves
+no branch and takes no hand-off. Added 2026-08-27: without it, the two rows in
+`.ai/01-operating-model.md` §*Failure routing* that point at `ba` or `tech-lead-design` from a stage
+that runs in the implement lane had no way to reach them, and SYS-02 stopped between the folders with no legal command in
+either. MD-46.
+
+**Each hand-off is run by the role that closed — or failed — the gate it hands on.** That is the whole
+of the pairing rule, and it is why they are not interchangeable: a role can only commit the working
+tree of the folder its session was launched in.
 
 The receiving lane opens with `git fetch && git switch feat/<ID> && git pull`.
 
