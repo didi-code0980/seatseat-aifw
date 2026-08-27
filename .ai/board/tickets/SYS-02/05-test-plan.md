@@ -2,7 +2,7 @@
 ticket: SYS-02
 stage: QA
 agent: qa
-produced_at: 2026-08-27T03:52:46Z
+produced_at: 2026-08-27T07:33:53Z
 inputs_read: [ .ai/board/tickets/SYS-02/01-story.md, .ai/board/tickets/SYS-02/02-design.md ]
 consulted: []
 chat_before_verdict: none
@@ -16,9 +16,20 @@ next_state: QA
 Written from `01-story.md` and **section 6 of `02-design.md` only** (RULE-05). `src/**` was not read.
 Isolated dispatch (RULE-13), no message channel; `chat_before_verdict: none` is an attestation.
 
+**Third QA run, 2026-08-27T07:33:53Z.** Section 6 of `02-design.md` is byte-identical to what the
+previous run read — the `4eaab7f` design amendment touched section 5 only — so the coverage below
+stands unchanged and is re-affirmed rather than re-derived. What changed outside it:
+`tests/unit/self-signup.test.ts` joined `allowed_paths`, the developer made the edit section 5.1
+specifies, and **`pnpm test` is now green**. The blocking failure of the 03:52:46Z run is gone.
+
+**AC-1 still has no test, and that is now the only thing this plan cannot close.** It is unchanged
+from the previous run, for an unchanged reason, and the environment was re-read rather than recalled
+— see *Criteria this environment cannot execute*.
+
 **This plan supersedes the one produced at 2026-08-27T02:48:00Z.** RULE-13 discards the QA session
-after each verdict, so this run started cold and re-derived the coverage rather than inheriting it.
-Three things changed and each is a defect in the earlier plan, not a change in the ticket:
+after each verdict, so the 03:52:46Z run started cold and re-derived the coverage rather than
+inheriting it. Three things changed there and each was a defect in the earliest plan, not a change in
+the ticket:
 
 1. **The earlier plan claimed AC-1 and AC-11 as covered by e2e specs.** Both suites run under
    `DATA_SOURCE=mock` (`playwright.config.ts:36`, which this ticket does not change). A mock-mode
@@ -154,8 +165,11 @@ tests added by this plan use no fixture entities at all — they read `package.j
 - **The `.ai/**` documentation corpus.** `node scripts/check-docs.mjs` exits 1 with twelve D6 findings
   on this branch. That is `02-design.md` `D-1`, declared in advance, owned by the steward, and outside
   `allowed_paths`. This plan reads D12 only, which is what design §6.1 makes AC-6's criterion.
-- **`tests/unit/self-signup.test.ts`.** It is not in `allowed_paths` and QA did not edit it. See
-  `99-questions.md`.
+- **`tests/unit/self-signup.test.ts` as SYS-02 coverage.** The path joined `allowed_paths` in the
+  `4eaab7f` amendment and its stale SYS-01 AC-3 assertion has been corrected, so it is green. It is
+  still **not** a SYS-02 criterion: it encodes SYS-01's AC-3, and no row in the coverage map above
+  rests on it. It corroborates AC-6 — `package.json` carries exactly the two packages the
+  integrations map names — without being AC-6's test.
 
 ## Selector gaps
 
