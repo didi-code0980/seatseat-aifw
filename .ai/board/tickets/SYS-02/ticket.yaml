@@ -5,7 +5,26 @@ id: SYS-02
 title: "Cutover to Supabase as the data client"
 feature_ids: [SYS-02]
 group: SYS
-state: IN_PROGRESS   # RETURNED FROM THE QA FAIL BY /design ON 2026-08-27T04:51:28Z, DESIGN
+state: REVIEW        # ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-27T07:17:47Z, gate PASS,
+                     # ON THE SECOND RUN OF THIS STAGE. `pnpm typecheck` and `pnpm lint` exit 0 and
+                     # **`pnpm test` is now green — 8 files, 160 tests, 0 failed.** The one red test
+                     # the first run reported is narrowed, exactly as `02-design.md` §5.1 specifies.
+                     #
+                     # ONE FILE CHANGED ON THIS CYCLE: `tests/unit/self-signup.test.ts`, four lines.
+                     # No `src/**` file moved, so the implementation REVIEW and QA already read is
+                     # byte-identical. `03-impl-log.md` §*Rework cycle* is the record.
+                     #
+                     # `rework_count` STAYS 0 AND THE FIELD BELOW IS UNCHANGED. RULE-08 increments it
+                     # only on a Developer-caused failure; this one was reported by the developer in
+                     # `99-questions.md` before QA ran, and `06-test-report.md` set
+                     # `increments_rework_count: false` itself.
+                     #
+                     # `D-1` IS STILL OPEN AND STILL BLOCKS A GREEN `pnpm verify` — twelve D6
+                     # findings in six human-owned documents under `.ai/registry/**` and
+                     # `.ai/standards/**`. Not this ticket's paths; a steward change lands with it.
+                     #
+                     # ---- WHAT THIS LINE SAID BEFORE, KEPT ----
+                     # state: IN_PROGRESS — RETURNED FROM THE QA FAIL BY /design ON 2026-08-27T04:51:28Z, DESIGN
                      # AMENDMENT, gate PASS. One path added to `allowed_paths` below; nothing else
                      # in this design changes.
                      #

@@ -101,7 +101,7 @@ describe("Repository & Provider Contract Assertions (AC-1 to AC-7)", () => {
     expect(fs.existsSync(path.join(root, "src/lib/auth/permissions.ts"))).toBe(true);
   });
 
-  it("AC-3: @supabase/ssr is present and is the only Supabase package in package.json", () => {
+  it("AC-3 (superseded by ADR-007 clause 2): package.json carries exactly the two Supabase packages the integrations map names", () => {
     const pkgJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
     expect(pkgJson.dependencies?.["@supabase/ssr"]).toBeDefined();
 
@@ -110,9 +110,9 @@ describe("Repository & Provider Contract Assertions (AC-1 to AC-7)", () => {
       ...pkgJson.devDependencies,
       ...pkgJson.peerDependencies,
     });
-    const supabaseDeps = allDeps.filter((d) => d.startsWith("@supabase/"));
-    expect(supabaseDeps).toEqual(["@supabase/ssr"]);
-    expect(allDeps).not.toContain("@supabase/supabase-js");
+    const supabaseDeps = allDeps.filter((d) => d.startsWith("@supabase/")).sort();
+    expect(supabaseDeps).toEqual(["@supabase/ssr", "@supabase/supabase-js"]);
+    // `not.toContain` deleted — clause 2 adopts the package it forbade.
   });
 
   it("AC-5: eslint.config.mjs names @supabase/* in restricted imports and only exempts src/lib/auth/**", () => {
