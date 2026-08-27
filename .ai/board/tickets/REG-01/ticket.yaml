@@ -11,7 +11,25 @@ branch: ""
 size_estimate: ""     # S|M — set by ba at SPEC; gates DoR
 size: ""              # S|M|L|XL — set by tech-lead-design at DESIGN; decides splitting
 depends_on: []
-invariants_touched: [INV-01, INV-02, INV-03, INV-06]
+invariants_touched: []   # CORRECTED 2026-08-27 TO MATCH THE REGISTRY ROW, WHICH REJECTS THE LIST THIS
+                         # FIELD USED TO CARRY. It read [INV-01, INV-02, INV-03, INV-06], written at
+                         # seed on 2026-08-25 against a REG table that was empty — the row did not
+                         # exist yet, so those four IDs were transcribed from nothing. The row, when
+                         # it was finally written, says so in its own words: *"The seeded ticket
+                         # claims INV-01, INV-02, INV-03, INV-06, transcribed from a row that did not
+                         # exist, so that list has no source and is not carried here — a plausible
+                         # invention is more expensive to find than an obvious gap."*
+                         #
+                         # [] HERE MEANS THE SAME THING IT MEANS ON THE ROW: not "considered and none
+                         # engaged", but "SPEC determines the real set and this is amended then". The
+                         # `ba` re-derives rather than transcribes — SEA-01 went from four to seven at
+                         # SPEC, MEM-01 from four to two, GRP-02 arrived at ten.
+                         #
+                         # THE OLD LIST WAS PROBABLY NOT FAR WRONG, AND THAT IS WHY IT HAD TO GO.
+                         # Self-release is an occupant exit, so INV-06 plausibly applies —
+                         # `glossary.md:107` says as much. A list that is plausible and sourceless is
+                         # harder to catch than one that is absent, which is the whole argument the
+                         # row makes.
 allowed_paths: []
 schema_delta: none
 requires_adr: false
