@@ -3,8 +3,8 @@ ticket: SYS-02
 stage: SPEC
 agent: ba
 produced_at: 2026-08-26T08:03:28Z
-amended_at: 2026-08-26T08:33:56Z
-inputs_read: [ .ai/board/tickets/SYS-02/ticket.yaml, .ai/registry/features.md, .ai/registry/invariants.md, .ai/registry/glossary.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/rbac-and-security.md, .ai/standards/testing-standards.md, .ai/standards/integrations.md, .ai/board/model-debt.md, .ai/templates/story.md, "branch: feat/SYS-02, cut from origin/main at 114b4e0" ]
+amended_at: 2026-08-27T07:56:34Z   # third run. 2026-08-26T08:33:56Z was the second; both are in the changelog.
+inputs_read: [ .ai/board/tickets/SYS-02/ticket.yaml, .ai/registry/features.md, .ai/registry/invariants.md, .ai/registry/glossary.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/rbac-and-security.md, .ai/standards/testing-standards.md, .ai/standards/integrations.md, .ai/board/model-debt.md, .ai/templates/story.md, .ai/board/tickets/SYS-02/06-test-report.md, .ai/board/tickets/SYS-02/99-questions.md, .ai/board/tickets/SYS-02/02-design.md, "branch: feat/SYS-02 at f32e10e, third run" ]
 consulted:
   - with: none
     asked: "Nothing. No pair was consulted and no chat was opened."
@@ -14,10 +14,14 @@ consulted:
     asked: "Q-1 — `size_estimate` has no value this ticket can truthfully take. Three exits offered: (a) give the field an L value, (b) read the field as the story's scope rather than the implementation's footprint and set M, (c) accept that SYS-02 escalates and never passes DoR. This story recommended (a)."
     answer: "`/spec SYS-02` reissued unchanged after the BLOCKED verdict. Read under the standing instruction in `.ai/steward/context.md` — 'Disagree once, then comply fully. An instruction repeated is a decision made.' — as the decision that SPEC passes. Exit (b) is taken: it is the only one of the three this stage can execute, because (a) amends `.ai/01-operating-model.md` under RULE-01 and (c) is the verdict already given and refused."
     resulted_in_amendment: true
+  - with: qa
+    asked: "`99-questions.md`, qa -> ba, 2026-08-27T03:52:46Z, restated as the failure in `06-test-report.md`: `Q-2` is open, and it is what makes AC-1 unmapped and the second halves of AC-9, AC-11 and AC-12 unexecutable. Which database does a non-production run reach? Three answers named as legitimate: a second Supabase project, a local CLI stack, or these four accepted as verified only in CI or by hand."
+    answer: "The second of the three, and it needs nothing provisioned. `ADR-007` OQ-2 — registry plane, ACCEPTED — already decides that the types are generated from `supabase db reset` against `supabase/migrations/` on the CLI's own local stack, and states that CI needs no cloud credential for it. That stack is a migrated, emptiable database that is not the live project, and it is the environment those criteria were missing. `Q-2` carries the decision; five Givens now name it — AC-1, AC-9, AC-10, AC-11 and AC-12, the fifth because AC-10's own `Given` said *an empty database* and named none either."
+    resulted_in_amendment: true
 chat_before_verdict: none
 gate: PASS
 blocking_reason: ""
-next_state: READY
+next_state: DESIGN
 ---
 
 # SYS-02 — Cutover to Supabase as the data client
@@ -34,6 +38,15 @@ does not change. It adds no capability, changes no DTO, and touches no screen. O
 neither `S` nor `M` and nothing below pretends otherwise; `Q-1` stays open and routed to the steward,
 because the reason the field could not hold the truth is a defect in the model and reissuing a command
 did not repair it. What DESIGN is owed, in one line, is under *Size*.
+
+**Third run, 2026-08-27, on the `R6` route out of the QA gate.** `06-test-report.md` returned
+`gate: FAIL`, `routed_to: ba`, `increments_rework_count: false` on one row: **AC-1 mapped to no named
+test**, and AC-9, AC-11 and AC-12 were recorded PARTIAL for the same single reason — none of them
+named a database they could be observed against, and the only project that exists is the live one.
+The failure is this story's, not the implementation's; both suites are green and no behaviour is
+wrong. What this run changes is the *Given* of five criteria and the status of `Q-2`. **No criterion
+was weakened to clear the row, and the cheap substitution `06-test-report.md` names and refuses —
+giving AC-1's ID to a test of its first clause alone — is not made here either.**
 
 Every acceptance criterion derives from `.ai/registry/features.md:152`, `ADR-007`, its five answered
 open questions, its *Implementation decisions, 2026-08-26*, and the standards named in `inputs_read`.
@@ -74,8 +87,47 @@ without a screen** — a rendered indicator, a package that is absent, a command
 write the database refuses. An AC that could only be confirmed by reading the diff is not an AC and
 none is written here.
 
+### The environment each criterion is observed in
+
+**Added on the third run, 2026-08-27, answering `Q-2`. It is the whole of what this run changes.**
+
+Five clauses can only be observed against a database that has been migrated and can be emptied:
+AC-1 entirely, AC-10, AC-11, AC-12, and the regeneration half of AC-9. Until now none of them named
+one, and the only database in existence is the live project — so QA wrote no test for AC-1 at all and
+marked the other three PARTIAL.
+
+**They now name one, and it is not the live project.** It is the Supabase CLI's own local stack:
+`supabase db reset` against `supabase/migrations/`. This is not a new instrument and this stage did
+not choose it. `ADR-007` OQ-2 — registry plane, `ACCEPTED` — already decides that the committed types
+are produced *"by `supabase db reset` against `supabase/migrations/` followed by `supabase gen types
+typescript --local`"*, and states in the same answer that **CI needs no cloud credential**. A stack
+with those two properties is a migrated, emptiable database that is not the product's. That is
+exactly what these five clauses were missing.
+
+**The substance of no criterion changed.** Only the *Given* of each says where it is observed. AC-1
+still asserts that a row written through the application survives a process restart. The exchange
+`06-test-report.md` declined to make — give AC-1's ID to a test of *"runs against the real database by
+default"* alone and let the coverage map read complete while both substantive clauses stay unverified
+— is declined here too, and would have been the easier amendment to write.
+
+**One constraint on DESIGN, stated here because it is what makes the QA gate satisfiable rather than
+merely satisfied.** The stack needs a container runtime, and the machine this loop runs on has none —
+`which supabase` and `docker info` both came back empty when QA checked. So these tests must not sit
+inside `pnpm test`. The QA gate is *"`pnpm test` and `pnpm test:e2e` exit 0"*, and a unit suite that
+turns red wherever Docker is absent fails that gate on the absence of a container runtime rather than
+on the product. They belong behind their own command, green in CI, and reporting **skipped, no local
+stack** rather than **failed** where the stack is not up. Which file, which script and which job step
+is DESIGN's to fix; that the five clauses must be executable somewhere, and must not make the unit
+suite red anywhere, is this stage's.
+
+**What this costs, so QA does not discover it.** On the loop's own machine these five clauses will be
+reported *not executed here*, with CI as the evidence. That is weaker than a test QA watched pass, and
+it is the honest ceiling of a decision that provisions nothing. `Q-2` names the two alternatives that
+would lift it and what each would cost.
+
 **AC-1 — The application runs against the real database by default**
-- Given a checkout with credentials present and no `DATA_SOURCE` set in the environment
+- Given the CLI's local stack up and migrated, its URL and key in the environment, and no
+  `DATA_SOURCE` set
 - When the application starts and a page reading any seam function is opened
 - Then the data shown comes from the Postgres database, not from in-memory fixtures
 - And a row created through the application is still present after the process is restarted
@@ -126,27 +178,27 @@ none is written here.
 - And the generated table types are read from a committed file rather than fetched
 
 **AC-9 — The committed types cannot drift from the migrations**
-- Given the committed generated types and the migrations directory
+- Given the committed generated types, the migrations directory, and the CLI's local stack
 - When types are regenerated from a local reset of those migrations and compared
 - Then the comparison is identical
 - And a regeneration that differs fails the run rather than rewriting the file silently
 
 **AC-10 — The first migration carries the three invariant constraints**
-- Given the first migration applied to an empty database
+- Given the first migration applied to the CLI's local stack by `supabase db reset`
 - When the schema is inspected
 - Then INV-04 is held by a partial unique index, INV-05 by a constraint trigger on the device table,
   and INV-06 by a downgrade trigger on the seat table
 - And no `status` column exists on the seat table (INV-03)
 
 **AC-11 — The database refuses data the invariants forbid**
-- Given the migrated database
+- Given the CLI's local stack with the first migration applied
 - When a write is attempted that would give one seat two occupants, one seat two primary devices, or
   a primary device an owner who is not that seat's occupant
 - Then the database rejects the write, not only the application
 - And when an occupant is removed from a seat, that seat's primary device is no longer primary
 
 **AC-12 — The seed produces the same data the fixtures describe, and can be run twice**
-- Given an empty migrated database
+- Given the CLI's local stack reset to the first migration and holding no rows
 - When the seed is run
 - Then the application renders the same rooms, seats, members and devices that `DATA_SOURCE=mock`
   renders
@@ -243,7 +295,11 @@ Non-empty and specific. Each item names where the work goes instead.
    again.
 7. **Deploying anything.** No environment is provisioned, no CI secret is set, and no production
    cutover is performed by this ticket. It makes the application capable of running against a real
-   database on a machine that has credentials.
+   database on a machine that has credentials. **The CLI's local stack, named in five Givens on
+   2026-08-27, does not weaken this item.** It is created by a command and thrown away, it issues its
+   own keys, and `ADR-007` OQ-2 says CI needs no cloud credential for it — so nothing is provisioned
+   and no secret is set. Installing the container runtime it needs is the operator's, once, and is
+   `Q-2`'s cost rather than this ticket's work.
 8. **Changing any DTO or any seam signature.** ADR-007 §1 requires the replacement to be
    module-for-module against the same types. AC-5 is the criterion. A change here would ripple to
    every caller and is the definition of XL in `.ai/01-operating-model.md` §Sizing.
@@ -255,6 +311,14 @@ Non-empty and specific. Each item names where the work goes instead.
     inside this ticket. Drafting it is design work; approving it is not this ticket's to do and not
     DESIGN's to route around.
 11. **Tracker synchronization.** `sync_enabled` is `false` (RULE-10).
+12. **Pointing any automated run at the live Supabase project.** Added 2026-08-27 with `Q-2`'s
+    answer, because that answer is only safe if this holds. The unit suite is pinned to
+    `DATA_SOURCE=mock` by `.ai/standards/testing-standards.md`; the Playwright suite is pinned on its
+    web server; the five database clauses run against the CLI's local stack. **Nothing under `tests/`
+    and no CI job may read `SUPABASE_URL` from a cloud project.** `pnpm dev` on a credentialed machine
+    is the one thing that reaches it, a human starts it deliberately, and that is unchanged from
+    before this ticket. A test that reached the live project would also be writing to a database whose
+    migration has no RULE-09 signature.
 
 ## Size
 
@@ -359,7 +423,44 @@ such a ticket goes** — presumably to the human escalation §Sizing already rou
 to `READY`. Until that exists, the next ticket with a non-`none` `schema_delta` reaches this same
 question, and the loop's answer to it is now a precedent rather than a decision.
 
-### Q-2 — OPEN — With one Supabase project, what does `pnpm dev` and the e2e suite run against?
+### Q-2 — ANSWERED 2026-08-27 — With one Supabase project, what does `pnpm dev` and the e2e suite run against?
+
+**Answered at this stage, on the `R6` route out of the QA gate. The question as posed had three
+legitimate answers and this is the second of them; the other two are kept below with their costs,
+because the one chosen has a ceiling and a reader needs to see what would lift it.**
+
+| | Answer | What it needs | What it gives |
+|---|---|---|---|
+| (a) | A second Supabase project, `dev` | The operator creates it; keys into three `.env.local` files and into CI | Reversed on 2026-08-26 by the operator — *"Chỉ có 1 project supabase duy nhất"* — and out-of-scope item 5 says this ticket does not reopen it |
+| **(b)** | **The CLI's own local stack** | **A container runtime on whatever machine runs the tests. Nothing provisioned, no key, no cost** | **A migrated, emptiable database that is not the product's. TAKEN** |
+| (c) | Accept the five clauses as verified by hand after the migration is signed | A change to the Definition of Done, which is `.ai/01-operating-model.md` and human-only | Nothing to build, and the cutover reaches DONE never having been executed once |
+
+**(b) is taken and this stage did not invent it.** `ADR-007` OQ-2 is registry plane and `ACCEPTED`,
+and it already names `supabase db reset` against `supabase/migrations/` as how the committed types are
+produced, adding that **CI needs no cloud credential** to do it. The instrument was decided; what was
+missing was that no acceptance criterion pointed at it. Five Givens now do, under *The environment each
+criterion is observed in*.
+
+**(c) is refused rather than declined.** It is the cheapest today and it is the one exit this stage
+could not take even if it wanted to: *every AC maps to a named test* is a Definition of Done item in
+`.ai/01-operating-model.md`, RULE-09 makes that file human-only, and a `ba` waiving a gate item to
+clear a gate it is standing at has removed the gate.
+
+**What (b) does not give, stated because it is the part that will surface at QA.** The loop's machine
+has no container runtime — `which supabase` and `docker info` both came back empty on 2026-08-27 — so
+the five clauses will be green in CI and *not executed here*. A QA session reports what it ran, and it
+will not have run these. **That residue is (a)'s or a container runtime's to remove, and both are the
+operator's**, which is why this question stays visible rather than closing.
+
+**One correction to the question below, which is otherwise kept as first posed.** It says the
+Playwright suite *"cannot run on mock without testing something nobody ships"*. That is true of what
+Playwright is for and it is not true of this repository today: `playwright.config.ts:36` already pins
+`DATA_SOURCE=mock` on its web server, and this ticket does not change that line. So the e2e suite is
+pinned like the unit suite, and the consumer that is genuinely unpinned is `pnpm dev` alone — which a
+human starts deliberately, on a machine that has credentials, and which out-of-scope item 12 leaves
+exactly where it was.
+
+---- THE QUESTION AS FIRST POSED, KEPT ----
 
 **Routed to:** the operator. **Blocks:** nothing at SPEC. **Blocks:** a safe `/qa` on every ticket
 after this one.
@@ -444,3 +545,17 @@ the seam.
   one that shows what it argued. No acceptance criterion, no invariant and no out-of-scope item
   changed; the scope this stage described is the scope that passed. Raised by the operator. Amended
   by `ba`.
+- `2026-08-27T07:56:34Z` — sections *heading note*, *Acceptance criteria*, *Out of scope* and `Q-2`
+  amended on the third run, the `R6` route out of `06-test-report.md`'s `gate: FAIL`. Gate PASS,
+  `next_state` READY -> DESIGN. **`Q-2` answered**, exit (b): the five clauses that need a migrated,
+  emptiable database are observed against the Supabase CLI's local stack, which `ADR-007` OQ-2 already
+  names and which needs no cloud credential. A new section, *The environment each criterion is observed
+  in*, carries it, and the *Given* of AC-1, AC-9, AC-10, AC-11 and AC-12 names it. **The five previous
+  Givens, kept verbatim, in order:** *"Given a checkout with credentials present and no `DATA_SOURCE`
+  set in the environment"*; *"Given the committed generated types and the migrations directory"*;
+  *"Given the first migration applied to an empty database"*; *"Given the migrated database"*; *"Given
+  an empty migrated database"*. **No When, no Then and no invariant changed, and no criterion was
+  narrowed** — every clause `06-test-report.md` called unexecutable is still asserted in full. Out of
+  scope gains item 12, which is what makes the answer safe: no automated run may reach the live
+  project. `invariants_touched` and `size_estimate` are unchanged and were re-read, not re-derived.
+  Raised by `qa`. Amended by `ba`.

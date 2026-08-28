@@ -218,6 +218,58 @@ harness, or in CI. It is still open.
 **This does not block the QA gate.** The gate fails on the entry above. Per the failure routing table
 this one routes to `ba` and does not increment `rework_count`.
 
-**A.** <unanswered — raised at QA, 2026-08-27>
+**A.** **Answered 2026-08-27T07:56:34Z by `ba`, on the `R6` route. `Q-2` is closed and the amendment
+is in `01-story.md`.**
 
-**Amended:** <pending>
+**The answer is your second option, and it needs nothing provisioned.** The five clauses are observed
+against the Supabase CLI's own local stack — `supabase db reset` against `supabase/migrations/`. This
+stage did not choose the instrument: `ADR-007` OQ-2 is registry plane and `ACCEPTED`, it already names
+that exact command as how the committed types are produced, and it states in the same answer that **CI
+needs no cloud credential** for it. A stack with those two properties is a migrated, emptiable database
+that is not the product's, which is precisely what your four rows were missing. What was wrong was that
+no acceptance criterion pointed at it. Five `Given` clauses now do — AC-1, AC-9, AC-10, AC-11, AC-12 —
+under `01-story.md` §*The environment each criterion is observed in*.
+
+**On the substitution you refused: it is refused here too, and you were right to name it.** Nothing was
+narrowed to clear the row. AC-1 still asserts that a row written through the application survives a
+process restart; AC-11 still says *not only the application*; AC-12 still says the seed runs twice.
+Every `When` and every `Then` is byte-identical, and the five previous `Given` clauses are kept verbatim
+in the changelog so the change is auditable rather than assertable. Your paragraph *"what was
+deliberately not done to make this row go green"* is the reason the amendment took this shape, and it
+is quoted in the story rather than paraphrased.
+
+**Your third option was refused rather than declined, and the distinction matters for whoever reads
+this next.** *Accept the four as verified only in CI or by hand* is the cheapest exit and it is the one
+this stage could not take at all: *every AC maps to a named test* is a Definition of Done item in
+`.ai/01-operating-model.md`, RULE-09 makes that file human-only, and a `ba` waiving a gate item in order
+to clear a gate it is standing at has removed the gate.
+
+**What you should expect to be able to report, and what you should not.** The loop's machine has no
+container runtime — your own `which supabase` and `docker info` are the evidence, and they are cited as
+such. So these five clauses will be **green in CI and not executed on the machine you run on**, and the
+honest coverage row says so rather than PASS. That residue is real, it is stated in the story rather
+than hidden in this answer, and removing it needs either a container runtime on that machine or a second
+project. Both are the operator's; `Q-2` keeps them visible with their costs.
+
+**One constraint that is yours to hold DESIGN to.** These tests must not sit inside `pnpm test`. The QA
+gate is *"`pnpm test` and `pnpm test:e2e` exit 0"*, and a unit suite that turns red wherever Docker is
+absent would fail your gate on the absence of a container runtime rather than on the product — the
+opposite of what you spent the last two runs fixing. They belong behind their own command, reporting
+**skipped, no local stack** where the stack is not up. Which file and which script is DESIGN's;
+`allowed_paths` needs at least one more test path before anyone can write them.
+
+**One correction to your framing, and it makes your position slightly stronger.** You wrote that the
+mock-mode e2e suite *"is precisely the thing AC-11 excludes"*, which is right — but the story's own `Q-2`
+had claimed Playwright *"cannot run on mock without testing something nobody ships"*, and that claim was
+already false when it was written: `playwright.config.ts:36` pins `env: { DATA_SOURCE: "mock" }` on the
+web server today, verified by reading it. So the e2e suite is pinned exactly as the unit suite is, the
+only consumer that reaches a cloud project is `pnpm dev`, and out-of-scope item 12 now says no automated
+run and no CI job may reach it at all.
+
+**Amended:** `01-story.md`, third run, `2026-08-27T07:56:34Z`. New section *The environment each
+criterion is observed in*; `Given` amended on AC-1, AC-9, AC-10, AC-11, AC-12; out of scope gains item
+12; `Q-2` answered with the two rejected alternatives and their costs kept; changelog carries the five
+previous `Given` clauses verbatim. Gate PASS, `next_state: DESIGN`. `invariants_touched` and
+`size_estimate` unchanged. Nothing in `05-test-plan.md` or `06-test-report.md` is contradicted by this
+amendment and neither is rewritten by it — `06-test-report.md`'s FAIL stands as correct, and this is the
+route it asked for.
