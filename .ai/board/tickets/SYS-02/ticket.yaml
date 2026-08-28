@@ -5,7 +5,40 @@ id: SYS-02
 title: "Cutover to Supabase as the data client"
 feature_ids: [SYS-02]
 group: SYS
-state: REVIEW        # ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-27T07:17:47Z, gate PASS,
+state: IN_PROGRESS   # RETURNED FROM THE SECOND QA FAIL BY /design ON 2026-08-28T02:06:22Z, gate PASS.
+                     #
+                     # THE ROUTE DID NOT ARRIVE HERE FIRST. `06-test-report.md` gated FAIL on AC-1
+                     # having no named test and routed to `ba` on the `R6` row; `ba` amended
+                     # `01-story.md` at 2026-08-27T07:56:34Z, re-PASSED SPEC, and set
+                     # `next_state: DESIGN` with one constraint attached. This stage executed that
+                     # constraint. `02-design.md` section 6.4 is the `pnpm test:db` lane, and section
+                     # 5 gains SIX paths for it: `tests/db/**`, `tests/db-e2e/**`,
+                     # `scripts/test-db.mjs`, `scripts/local-stack-client.ts`, `vitest.db.config.mts`
+                     # and `playwright.db.config.ts`.
+                     #
+                     # WHAT IS OWED AT IN_PROGRESS IS THE LANE, NOT THE TESTS. `02-design.md` 5.2
+                     # splits the six paths: the developer writes the runner, the two configs, the
+                     # `test:db` script, the two CI steps and the `postgres` devDependency, and
+                     # writes NOTHING under `tests/db/**` or `tests/db-e2e/**`. QA writes those two
+                     # directories and nothing else on the list. RULE-05 is the reason; 5.2 states
+                     # it.
+                     #
+                     # NO `src/**` FILE CHANGES ON THIS CYCLE. Sections 1 to 4 of the design are
+                     # unchanged, so the implementation that REVIEW and QA already read is untouched.
+                     #
+                     # `rework_count` STAYS 0. RULE-08 — the failure was the story's, and
+                     # `06-test-report.md` set `increments_rework_count: false` itself.
+                     #
+                     # `D-1` IS STILL OPEN AND `D-4` JOINS IT. The QA gate is worded twice and the
+                     # two do not agree: `.ai/01-operating-model.md:100` says "vitest + playwright
+                     # exit 0", which reaches the new lane, and `.claude/commands/qa.md:46` says
+                     # "`pnpm test` and `pnpm test:e2e` exit 0", which does not. Section 6.4 is built
+                     # so both readings are safe. The residue is that under the command wording the
+                     # gate can go green while the lane is red; CI is the backstop, with
+                     # `REQUIRE_LOCAL_STACK=1`. Both findings are the steward's.
+                     #
+                     # ---- WHAT THIS LINE SAID BEFORE, KEPT ----
+                     # state: REVIEW — ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-27T07:17:47Z, gate PASS,
                      # ON THE SECOND RUN OF THIS STAGE. `pnpm typecheck` and `pnpm lint` exit 0 and
                      # **`pnpm test` is now green — 8 files, 160 tests, 0 failed.** The one red test
                      # the first run reported is narrowed, exactly as `02-design.md` §5.1 specifies.
@@ -109,8 +142,11 @@ size_estimate: "M"    # SET BY ba ON THE SECOND RUN, 2026-08-26T08:33:56Z, BY Q-
                       # story again. Q-1 in `01-story.md` is the record and is routed to the steward.
 
 size: "L"             # VERDICT, 2026-08-26T09:22:00Z. UNCHANGED BY THE 2026-08-27 AMENDMENT, which
-                      # took the list from 25 globs to 26 — one test file, a two-line edit. `L` is a
-                      # band, not a count, and one path does not move it. Originally counted from
+                      # took the list from 25 globs to 26 — one test file, a two-line edit — AND
+                      # UNCHANGED BY THE 2026-08-28 AMENDMENT, which took it from 26 to 32: the six
+                      # paths of the `pnpm test:db` lane, none of them under `src/**`. `L` is a
+                      # band whose floor is "more than 12", not a count, and neither amendment moves
+                      # it. Originally counted from
                       # the 25 globs enumerated in
                       # `02-design.md` section 5 — 13 files deleted, 13 created, 28 modified. Grounds
                       # in full under `02-design.md` **Size verdict**; the three things a reader needs
@@ -179,10 +215,21 @@ invariants_touched: [INV-01, INV-02, INV-03, INV-04, INV-05, INV-06, INV-07, INV
 # where it is judged.
 #
 # `tests/unit/self-signup.test.ts` was ADDED 2026-08-27T04:51:28Z by the DESIGN amendment that
-# answers the QA FAIL. It is 26 entries now, not 25. It is the ONE path on this list that belongs to
+# answers the QA FAIL. It took the list to 26 entries, from 25. It is the ONE path on this list that
+# belongs to
 # a ticket already DONE — SYS-01 — and the scope is TWO LINES: the SYS-01 AC-3 assertion that ADR-007
 # clause 2 reverses. Nothing else in that file may be touched, and its SYS-01 AC-5 assertion is green
 # today and must stay green. `02-design.md` section 5 carries the exact replacement text.
+#
+# SIX PATHS WERE ADDED 2026-08-28T02:06:22Z by the DESIGN amendment answering the second QA FAIL —
+# `tests/db/**`, `tests/db-e2e/**`, `scripts/test-db.mjs`, `scripts/local-stack-client.ts`,
+# `vitest.db.config.mts` and `playwright.db.config.ts`. It is 32 entries now, not 26. They are the
+# `pnpm test:db` lane, which is what makes AC-1, AC-9, AC-10, AC-11 and AC-12 executable against the
+# Supabase CLI's local stack without putting one test inside `pnpm test` or `pnpm test:e2e`.
+# **THE SIX ARE NOT ALL ONE STAGE'S**: `02-design.md` 5.2 gives the runner, the two configs and the
+# CI steps to the `developer`, and `tests/db/**` and `tests/db-e2e/**` to `qa` — and forbids the
+# developer to write even a placeholder in those two directories, under RULE-05. Section 6.4 is the
+# lane's full specification and is the part QA is dispatched with.
 allowed_paths:
   - "supabase/**"
   - "src/lib/data/index.ts"
@@ -195,13 +242,19 @@ allowed_paths:
   - "src/app/(app)/seats/seats-manager.tsx"
   - "tests/unit/seam-parity.test.ts"
   - "tests/unit/self-signup.test.ts"
+  - "tests/db/**"
+  - "tests/db-e2e/**"
   - "scripts/seed.ts"
+  - "scripts/test-db.mjs"
+  - "scripts/local-stack-client.ts"
   - "scripts/check-docs.mjs"
   - "scripts/tests/check-docs.test.mjs"
   - "prisma/**"
   - "prisma.config.ts"
   - "eslint.config.mjs"
   - "vitest.config.mts"
+  - "vitest.db.config.mts"
+  - "playwright.db.config.ts"
   - "package.json"
   - "pnpm-lock.yaml"
   - ".env.example"
@@ -240,8 +293,51 @@ chat_budget:
   qa->tech-lead-design:        { used: 0, max: 6 }
 tracker: { provider: clickup, external_id: "", sync_enabled: false }
 gates:
-  spec:   { passed: true,  at: "2026-08-26T08:33:56Z" }
-  design: { passed: true,  at: "2026-08-27T04:51:28Z" }
+  spec:   { passed: true,  at: "2026-08-27T07:56:34Z" }
+  # RE-PASSED 2026-08-27T07:56:34Z ON THE THIRD RUN, the `R6` route out of `06-test-report.md`'s
+  # `gate: FAIL` — *QA: AC ambiguous or untestable* -> `ba`, `increments_rework_count: false`.
+  # `at:` moves because this row dates the story that is on disk. **The first PASS was
+  # `2026-08-26T08:33:56Z`** and `01-story.md`'s changelog carries all three entries.
+  #
+  # WHAT CHANGED IS FIVE `Given` CLAUSES AND `Q-2`. AC-1, AC-9, AC-10, AC-11 and AC-12 now name the
+  # database they are observed against — the Supabase CLI's local stack, which `ADR-007` OQ-2 already
+  # decides and which needs no cloud credential. No `When`, no `Then`, no invariant and no
+  # out-of-scope item was narrowed; out of scope GAINS item 12, forbidding any automated run from
+  # reaching the live project. `01-story.md` §*The environment each criterion is observed in* is the
+  # record and keeps the five previous Givens verbatim.
+  #
+  # `invariants_touched` AND `size_estimate` BELOW ARE UNCHANGED and were re-read rather than
+  # re-derived. The scope did not move: the same criteria are asserted, against a named environment.
+  #
+  # `state:` ABOVE IS STALE AND THIS RUN DID NOT WRITE IT. It reads `REVIEW`; the ticket has since
+  # been through QA, which returned FAIL. RULE-13 keeps `/review` and `/qa` out of this file and
+  # `/spec` does not promote past its own gate, so the field has had no owner since MD-46 — the same
+  # deadlock that left `REWORK` unwritten. The orchestrator is the writer.
+  #
+  # ONE CONSTRAINT DESIGN INHERITS, and it is what makes the QA gate satisfiable rather than merely
+  # satisfied: the local stack needs a container runtime and the loop's machine has none, so the new
+  # tests must live behind their own command and must NOT make `pnpm test` red where Docker is
+  # absent. `allowed_paths` will need at least one more test path; that is DESIGN's to enumerate.
+  design: { passed: true,  at: "2026-08-28T02:06:22Z" }
+  # RE-AMENDED 2026-08-28T02:06:22Z, still PASS. All seven sections are still complete,
+  # `allowed_paths` is enumerated above at 32 entries, and `size` is still `L`. `at:` moves because
+  # this row dates the design that is on disk. **The first PASS was `2026-08-26T09:22:00Z`** and
+  # `02-design.md`'s changelog carries all three entries.
+  #
+  # WHAT CHANGED IS ONE TEST LANE AND THE PATHS IT NEEDS. Section 6.4 specifies `pnpm test:db` —
+  # runner, preflight, two configs, one database-handle module under `scripts/`, and the file each of
+  # the five criteria goes in. 6.2 was rewritten so AC-9's regeneration is a NAMED TEST rather than a
+  # workflow step, which is what the Definition of Done asks for. Sections 1, 2, 3 and 4 are
+  # unchanged, so nothing about the contract, the permission model, the seam or the schema moved.
+  #
+  # ONE FINDING FOR THE STEWARD, `D-4`: the QA gate is worded twice and the two wordings disagree
+  # about whether `pnpm test:db` is inside it — `.ai/01-operating-model.md:100` names the RUNNERS
+  # ("vitest + playwright exit 0"), which reaches the lane; `.claude/commands/qa.md:46` names two
+  # COMMANDS, which does not. 6.4 is built so both readings are safe, and under neither can the lane
+  # make the gate falsely red. The residue is the command wording letting the gate go green while the
+  # lane is red, with CI as the backstop. Neither file is in `allowed_paths`.
+  #
+  # ---- WHAT THIS BLOCK SAID BEFORE, KEPT ----
   # AMENDED 2026-08-27T04:51:28Z, still PASS. The amendment adds ONE path to `allowed_paths` —
   # `tests/unit/self-signup.test.ts` — and changes nothing else: all seven sections are still
   # complete and `size` is still `L`. `at:` moves to the amendment because this row dates the design

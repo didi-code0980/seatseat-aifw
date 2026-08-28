@@ -2,8 +2,8 @@
 ticket: SYS-02
 stage: DESIGN
 agent: tech-lead-design
-produced_at: 2026-08-27T04:51:28Z
-inputs_read: [ .ai/board/tickets/SYS-02/ticket.yaml, .ai/board/tickets/SYS-02/01-story.md, .ai/registry/rules.md, .ai/registry/invariants.md, .ai/registry/features.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/integrations.md, .ai/standards/data-model.md, .ai/standards/architecture.md, .ai/standards/testing-standards.md, .ai/standards/rbac-and-security.md, .ai/standards/git-conventions.md, .ai/steward/context.md, src/lib/data/index.ts, src/lib/data/types.ts, src/lib/data/derive.ts, src/lib/data/fixtures.ts, src/lib/data/prisma/**, src/lib/data/mock/seats.ts, src/lib/data/mock/store.ts, src/lib/auth/supabase.ts, src/app/page.tsx, prisma/schema.prisma, prisma/constraints.draft.sql, prisma/seed.ts, prisma.config.ts, package.json, eslint.config.mjs, scripts/check-docs.mjs, scripts/check-allowed-paths.mjs, scripts/tests/check-docs.test.mjs, tests/unit/seam-parity.test.ts, vitest.config.mts, playwright.config.ts, .env.example, .github/workflows/verify.yml, .github/CODEOWNERS, docker/docker-compose.yml, "node_modules/.pnpm/@supabase+supabase-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/@supabase+auth-js@2.112.4/**/GoTrueAdminApi.d.ts", "node_modules/.pnpm/@supabase+postgrest-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/vitest@4.1.10*/**/reporters.d.DtoKVV2s.d.ts", "https://supabase.com/docs/reference/cli/supabase-db-push", "https://supabase.com/docs/guides/local-development/cli/getting-started", .ai/board/tickets/SYS-02/03-impl-log.md, .ai/board/tickets/SYS-02/04-review.md, .ai/board/tickets/SYS-02/05-test-plan.md, .ai/board/tickets/SYS-02/06-test-report.md, .ai/board/tickets/SYS-02/99-questions.md, tests/unit/self-signup.test.ts, "origin/main:.ai/registry/decisions/ADR-007-supabase-as-the-data-client.md", "origin/main:.ai/steward/context.md", "origin/main:.ai/01-operating-model.md" ]
+produced_at: 2026-08-28T02:06:22Z   # fourth run. 2026-08-26T09:22:00Z was the first; 2026-08-27T04:51:28Z the second. The changelog carries all three.
+inputs_read: [ .ai/board/tickets/SYS-02/ticket.yaml, .ai/board/tickets/SYS-02/01-story.md, .ai/registry/rules.md, .ai/registry/invariants.md, .ai/registry/features.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/integrations.md, .ai/standards/data-model.md, .ai/standards/architecture.md, .ai/standards/testing-standards.md, .ai/standards/rbac-and-security.md, .ai/standards/git-conventions.md, .ai/steward/context.md, src/lib/data/index.ts, src/lib/data/types.ts, src/lib/data/derive.ts, src/lib/data/fixtures.ts, src/lib/data/prisma/**, src/lib/data/mock/seats.ts, src/lib/data/mock/store.ts, src/lib/auth/supabase.ts, src/app/page.tsx, prisma/schema.prisma, prisma/constraints.draft.sql, prisma/seed.ts, prisma.config.ts, package.json, eslint.config.mjs, scripts/check-docs.mjs, scripts/check-allowed-paths.mjs, scripts/tests/check-docs.test.mjs, tests/unit/seam-parity.test.ts, vitest.config.mts, playwright.config.ts, .env.example, .github/workflows/verify.yml, .github/CODEOWNERS, docker/docker-compose.yml, "node_modules/.pnpm/@supabase+supabase-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/@supabase+auth-js@2.112.4/**/GoTrueAdminApi.d.ts", "node_modules/.pnpm/@supabase+postgrest-js@2.112.4/**/dist/index.d.mts", "node_modules/.pnpm/vitest@4.1.10*/**/reporters.d.DtoKVV2s.d.ts", "https://supabase.com/docs/reference/cli/supabase-db-push", "https://supabase.com/docs/guides/local-development/cli/getting-started", .ai/board/tickets/SYS-02/03-impl-log.md, .ai/board/tickets/SYS-02/04-review.md, .ai/board/tickets/SYS-02/05-test-plan.md, .ai/board/tickets/SYS-02/06-test-report.md, .ai/board/tickets/SYS-02/99-questions.md, tests/unit/self-signup.test.ts, "origin/main:.ai/registry/decisions/ADR-007-supabase-as-the-data-client.md", "origin/main:.ai/steward/context.md", "origin/main:.ai/01-operating-model.md", "branch: feat/SYS-02 at f32e10e, fourth run" ]
 consulted:
   - with: none
     asked: "Nothing. No pair was consulted and no chat was opened. Every question this stage was routed — Q-3 in `01-story.md` — was answerable from installed types and the Supabase CLI's own reference, which is where the answer came from."
@@ -11,6 +11,10 @@ consulted:
     resulted_in_amendment: false
   - with: none
     asked: "Nothing, on the amendment run of 2026-08-27 either. No chat was opened. Two questions arrived FOR this stage rather than from it — `developer` at 2026-08-27T01:28:07Z and `qa` at 2026-08-27T03:52:46Z, both in `99-questions.md`, both answered there in writing. That is the asynchronous channel and not a chat, and the `chat_budget` counters in `ticket.yaml` are untouched."
+    answer: "n/a"
+    resulted_in_amendment: true
+  - with: none
+    asked: "Nothing, on the amendment run of 2026-08-28 either. No chat was opened and the `chat_budget` counters in `ticket.yaml` are untouched. The constraint this run executes arrived in writing — `01-story.md` §*The environment each criterion is observed in* and `99-questions.md` `Q-2`, both written by `ba` at 2026-08-27T07:56:34Z on the `R6` route out of the QA gate."
     answer: "n/a"
     resulted_in_amendment: true
 chat_before_verdict: none
@@ -21,6 +25,26 @@ next_state: IN_PROGRESS
 
 # SYS-02 — Tech design: cutover to Supabase as the data client
 
+> **AMENDED 2026-08-28T02:06:22Z, after the second QA gate failed and `ba` amended the story.
+> Gate still PASS. `size` still `L`.**
+>
+> **The whole amendment is one new test lane** — `pnpm test:db`, specified in **section 6.4** —
+> plus the six `allowed_paths` entries it needs, the ownership split in 5.2, and the two rejected
+> alternatives that shaped it. **Sections 1, 2, 3 and 4 are unchanged**: no contract, no
+> permission, no seam signature and no schema statement differs from the entry below.
+>
+> `06-test-report.md` returned `gate: FAIL` on one row — **AC-1 mapped to no named test** — and
+> recorded AC-9, AC-11 and AC-12 PARTIAL for the same single reason: no criterion named a
+> database it could be observed against. That routed to `ba` on the *R6* row, not here, and `ba`
+> answered it by naming one — the Supabase CLI's own local stack, which `ADR-007` OQ-2 already
+> decides and which needs no cloud credential. **What arrives at DESIGN is the constraint
+> attached to that answer:** the machine this loop runs on has no container runtime, so the five
+> clauses must be executable somewhere and must not make `pnpm test` red anywhere. Which file,
+> which script and which job step is this stage's, and 6.4 is the answer. **`rework_count` stays
+> 0** — RULE-08; this route never reached the developer.
+>
+> ---- THE PREVIOUS AMENDMENT'S NOTE, KEPT ----
+>
 > **AMENDED 2026-08-27T04:51:28Z, after the QA gate failed. Gate still PASS.**
 >
 > **The whole amendment is one path added to section 5** — `tests/unit/self-signup.test.ts` — and the
@@ -70,6 +94,11 @@ each. This is the single largest shape decision in this design and it is not in 
 
 `size: L`. Counted from `allowed_paths` in section 5: 13 files deleted, 13 created, 28 modified —
 54, against `L`'s threshold of "more than 12".
+
+**Re-counted on 2026-08-28 and unchanged.** The `pnpm test:db` lane adds six entries to section 5
+— two test directories, a runner, one database-handle module and two configs — taking the list
+from 26 globs to 32. `L` is a band whose floor is *more than 12*, not a count; six paths do not
+move it, and none of them is under `src/**`.
 
 **Not `XL`.** The three XL clauses in `.ai/01-operating-model.md` §Sizing, each answered:
 
@@ -587,13 +616,19 @@ allowed_paths:
   - "src/app/(app)/seats/seats-manager.tsx"
   - "tests/unit/seam-parity.test.ts"
   - "tests/unit/self-signup.test.ts"
+  - "tests/db/**"
+  - "tests/db-e2e/**"
   - "scripts/seed.ts"
+  - "scripts/test-db.mjs"
+  - "scripts/local-stack-client.ts"
   - "scripts/check-docs.mjs"
   - "scripts/tests/check-docs.test.mjs"
   - "prisma/**"
   - "prisma.config.ts"
   - "eslint.config.mjs"
   - "vitest.config.mts"
+  - "vitest.db.config.mts"
+  - "playwright.db.config.ts"
   - "package.json"
   - "pnpm-lock.yaml"
   - ".env.example"
@@ -618,6 +653,8 @@ own directory is exempt in the checker and is deliberately not listed.
 | `scripts/check-docs.mjs`, `scripts/tests/check-docs.test.mjs` | D12 becomes the two-package map, ADR-007 §8. MD-16's ten failing tests are here and are rewritten here — verified: `node --test scripts/tests/check-docs.test.mjs` fails exactly ten, all D12. |
 | `vitest.config.mts` | `test.env = { DATA_SOURCE: "mock" }`. AC-2, and section 6.3. |
 | `.github/workflows/verify.yml` | AC-9's regenerate-and-diff job |
+| `tests/db/**`, `tests/db-e2e/**` | **Added 2026-08-28.** The five clauses `06-test-report.md` could not map. **QA writes these two directories and nothing else on this list** — 5.2. |
+| `scripts/test-db.mjs`, `scripts/local-stack-client.ts`, `vitest.db.config.mts`, `playwright.db.config.ts` | **Added 2026-08-28, and they are the `developer`'s, not QA's.** The lane's runner, its one database handle, and the two configs that keep it out of `pnpm test` and `pnpm test:e2e`. Section 6.4. |
 | `tests/unit/self-signup.test.ts` | **Added by the amendment of 2026-08-27; see 5.1 below.** SYS-01's AC-3, encoded as an executable assertion that ADR-007 clause 2 reverses. **Two lines, and nothing else in the file.** |
 | `.github/CODEOWNERS` | `/prisma/` leaves; **`/supabase/` joins**, which is what puts RULE-09's human signature on the migration mechanically rather than by memory |
 | `.gitignore` | `supabase/.temp/`, `supabase/.branches/` |
@@ -632,9 +669,12 @@ own directory is exempt in the checker and is deliberately not listed.
   widening `allowed_paths` across the validation layer to fix prose is a worse trade than the stale
   prose. `D-3`.
 - `.ai/registry/**` and `.ai/standards/**` — `D-1`. They need changing and this ticket may not.
-- `playwright.config.ts` — it already pins `DATA_SOURCE: "mock"` on the web server, which is what
-  keeps the e2e suite off the single Supabase project. `01-story.md` `Q-2` owns that question and it
-  is out of scope here.
+- `playwright.config.ts` — **still off the list on 2026-08-28, and now for a stronger reason.**
+  `01-story.md` `Q-2` is answered, and the answer is a *second* config — `playwright.db.config.ts` —
+  not an edit to this one. This file goes on pinning `DATA_SOURCE: "mock"` on port 3100, which is
+  exactly what keeps `pnpm test:e2e` green on a machine with no container runtime and keeps the
+  mock suite off every Supabase project, live or local. Editing it would put both lanes back in one
+  file, which is the thing 6.4 exists to avoid.
 
 ### 5.1 `tests/unit/self-signup.test.ts` — the exact edit, and its boundary
 
@@ -692,6 +732,24 @@ that pattern, and the reason it does not match is the reason it is correct: the 
 adapter directory, not the seam. `.ai/standards/integrations.md:30-32` is the two-package map both
 assertions now answer to. `developer` and `qa` each verified this independently; so did this stage.
 
+### 5.2 Who writes which of the six new paths
+
+**Added 2026-08-28.** `scripts/check-allowed-paths.mjs` matches every changed path on the branch and
+does not care which stage changed it, so both halves of the lane sit on one list and the split has to
+be written down rather than inferred.
+
+| Stage | Writes | Does not touch |
+|---|---|---|
+| `developer`, IN_PROGRESS | `scripts/test-db.mjs`, `scripts/local-stack-client.ts`, `vitest.db.config.mts`, `playwright.db.config.ts`, the `test:db` script in `package.json`, the two steps in `.github/workflows/verify.yml`, and the `postgres` devDependency | anything under `tests/db/**` or `tests/db-e2e/**` — **not one file, not a placeholder** |
+| `qa`, QA | `tests/db/**` and `tests/db-e2e/**` | every other path on this list |
+
+**The developer must not seed the two test directories, and the reason is RULE-05.** A test written
+by the stage that wrote the implementation is derived from the implementation, which is the whole
+basis of the isolated QA dispatch; `.ai/standards/testing-standards.md` §*Fixtures that share the
+implementation's assumptions* states the general form of it. An empty directory costs the lane
+nothing — `scripts/test-db.mjs` reports a lane with no tests as a lane with no tests, and the QA
+stage is where it stops being empty.
+
 ## 6. Testability contract
 
 **No `data-testid` is added, removed or renamed by this ticket.** The table is the complete channel
@@ -738,14 +796,25 @@ RULE-05 gives QA no `src/**` access, so these are stated here as the commands an
 | AC-7 | no file matched by `grep -rl "use client" src` names `@supabase/`; no `NEXT_PUBLIC_` name in `.env.example` or in `src/**` carries a Supabase key |
 | AC-8 | `pnpm typecheck` exits 0 with no `SUPABASE_*` variable set and no network |
 
-### 6.2 AC-9 — the CI job that stops the committed types drifting
+### 6.2 AC-9 — the regeneration becomes a named test and stops being only a CI step
 
-A step in `.github/workflows/verify.yml`: start the CLI's local stack, `supabase db reset` against
-`supabase/migrations/`, `supabase gen types typescript --local > /tmp/types.ts`, then
-`diff supabase/types.generated.ts /tmp/types.ts`. **A difference fails the run; it must not rewrite
-the file.** ADR-007 OQ-2 says why in one line: generating from the cloud project would make the
-committed types describe whatever that project currently holds, and the migrations are meant to be
-the only source. Requires Docker on the runner, which `ubuntu-latest` has.
+**Rewritten 2026-08-28.** `.github/workflows/verify.yml` already carries a *Generated types match the
+migrations* step, written at IN_PROGRESS from this section's previous wording, and it does the right
+thing: start the CLI's local stack, `supabase db reset` against `supabase/migrations/`, regenerate
+with `supabase gen types typescript --local`, `diff` against the committed file, fail on a
+difference, never rewrite it in place.
+
+**It is still not what AC-9 needs.** `06-test-report.md` recorded AC-9 *PARTIAL — the regeneration
+itself is unverified*, because *every AC maps to a named test* is a Definition of Done item and a
+workflow step carries no test name. So the regeneration moves into the lane as
+`tests/db/types-drift.test.ts` (6.4), and the workflow step is **deleted** in the same edit and
+replaced by `pnpm test:db`, which runs it. The behaviour is identical; what changes is that it now
+has an AC ID and a name.
+
+**A difference still fails the run and still must not rewrite `supabase/types.generated.ts`.**
+ADR-007 OQ-2 gives the reason in one line: types generated from the cloud project describe whatever
+that project currently holds, and the migrations are meant to be the only source. Requires Docker on
+the runner, which `ubuntu-latest` has.
 
 ### 6.3 AC-2 — how `DATA_SOURCE=mock` gets set, in one place
 
@@ -758,6 +827,130 @@ sixteen files where one omission reaches for a network and fails as a connection
 
 Playwright already pins it on its web server (`playwright.config.ts:36`) and this ticket does not
 change that.
+
+### 6.4 `pnpm test:db` — the database-backed lane
+
+**Added 2026-08-28, and it is in section 6 because section 6 is the only part of this design QA is
+dispatched with.** Everything QA needs in order to write these tests is here: the command, the two
+runners, the one module that holds a database handle, and the file each criterion goes in.
+
+**Why a third command and not a third vitest project.** `pnpm test` is `vitest run` against
+`vitest.config.mts`, which pins `DATA_SOURCE=mock` for the reason in 6.3, and a project declared
+inside that config is still collected by `pnpm test`. `.claude/commands/qa.md:46` states the QA gate
+as *"every `AC-n` maps to at least one named test; `pnpm test` and `pnpm test:e2e` exit 0"*, and
+`01-story.md` requires these five clauses to be invisible to both commands: a unit suite that turns
+red wherever Docker is absent fails the gate on the absence of a container runtime rather than on the
+product. (`.ai/01-operating-model.md:100` words the same gate as *"vitest + playwright exit 0"* —
+`D-4` is that discrepancy, and 6.4 is built so both readings are safe.)
+
+**Why the lane is *not collected* rather than *skipped*.** `.ai/standards/testing-standards.md`
+§*What makes a test bad here* is explicit — *"A skipped test left in the suite. Delete it or fix it;
+a skip is a passing test that checks nothing."* A `describe.skipIf(noLocalStack)` would leave a dozen
+permanently-skipped tests in every run on the loop's own machine, which is the thing that standard
+forbids. `scripts/test-db.mjs` instead runs its preflight **before any test file is loaded** and exits
+0 with one line — `test:db skipped — no local stack (supabase CLI or docker absent)`. Nothing is
+skipped, because nothing is collected.
+
+**And it must fail loudly where it is meant to run.** `REQUIRE_LOCAL_STACK=1` turns the same
+preflight into a non-zero exit naming what was missing, and the CI step sets it. Without that flag a
+runner that lost Docker would report this lane green, which is the failure the skip would otherwise
+create.
+
+**`scripts/test-db.mjs`, in order.** Section 1.8 is where the URLs come from.
+
+| # | Step | Why it is that way |
+|---|---|---|
+| 1 | preflight — `supabase --version`, `docker info` | both exit 0, run the lane; otherwise skip-or-fail per `REQUIRE_LOCAL_STACK` |
+| 2 | `pnpm supabase start`, then `pnpm supabase db reset --local --no-seed` | migrations applied, **no rows**. AC-10's *"the first migration applied"* and AC-12's *"holding no rows"* are both exactly this state |
+| 3 | read the stack's environment from `pnpm supabase status -o env` | the API URL, the anon key, the service-role key and the direct `DB URL`. **Read, never hard-coded** — a literal local key in the repository is a credential-shaped string that stops being true the day the CLI rotates its demo keys. `TODO(verify):` the exact key names against the installed CLI (`supabase` 2.115.0) before writing them down |
+| 4 | `vitest run --config vitest.db.config.mts` | AC-9, AC-10, AC-11, and AC-12's second clause |
+| 5 | `pnpm build` **once**, with the stack's environment | both Playwright passes below serve this one build. Building under the local stack rather than under `mock` matters: whatever Next prerenders reads the real database at build time |
+| 6 | `playwright test --config playwright.db.config.ts --grep @write` | AC-1's write, AC-12's render parity |
+| 7 | `playwright test --config playwright.db.config.ts --grep @read` | AC-1's survival clause |
+
+**Steps 6 and 7 are the process restart, and that is the only reason there are two invocations.**
+AC-1's last clause is *"still present after the process is restarted"*. One Playwright run boots one
+`webServer` and holds it for the whole run, so no restart can happen inside it. Two invocations of the
+same config with `reuseExistingServer: false` boot two servers against one database, and **step 2 does
+not run again between them** — so the room created under `@write` is read back by a process that never
+held it in memory. This is what makes AC-1 a test of persistence rather than a test of rendering, and
+it is the distinction `06-test-report.md` refused to blur when it declined to give AC-1's ID to a test
+of its first clause alone.
+
+**`vitest.db.config.mts`** — a separate file, not a project inside `vitest.config.mts`.
+
+- `include: ["tests/db/**/*.test.ts"]`, `environment: "node"` — nothing in this lane renders
+- **no `test.env.DATA_SOURCE`.** This lane is the one place ADR-007 §7's default is exercised, and
+  AC-1's `Given` says *no `DATA_SOURCE` set*; setting it would test the override instead of the
+  default
+- `fileParallelism: false` — one database, mutated by every file. The same reasoning as
+  `playwright.config.ts`'s `workers: 1` (MD-23), and stronger, because the store is now durable
+- the stack's environment, passed through from step 3
+
+**`playwright.db.config.ts`** — `testDir: "./tests/db-e2e"`, `workers: 1`, `fullyParallel: false`,
+and `reuseExistingServer: false` **unconditionally**, not `!process.env.CI`: a server left over from
+the `@write` pass is precisely the thing that must not be reused. `webServer.command` is
+`pnpm start --port 3200` — the build happened at step 5 — and **port 3200** so a mock-mode server on
+3100 can be up at the same time. `webServer.env` carries the stack's URL and key and **leaves
+`DATA_SOURCE` unset.**
+
+**`scripts/local-stack-client.ts` — the one module in this lane that holds a database handle, and
+the reason it sits under `scripts/` rather than under `tests/`.** AC-11 asserts that the database
+rejects the write **not only the application**, so it needs a path that is not the seam; AC-10
+inspects the catalogue, which PostgREST cannot reach at all. Both need SQL. **A file under
+`tests/db/` importing `@supabase/supabase-js` or a Postgres driver would be a lint error**, because
+`no-restricted-imports` restricts `@supabase/*` across the repository and
+`.ai/standards/integrations.md` says it *"exempts the two paths in the table above and nothing else"*
+— a human-owned sentence this stage may not edit and will not quietly contradict. `scripts/**` is
+already outside the lint config's scope (`eslint.config.mjs:92-101`) and is already the plane
+`scripts/seed.ts` uses for exactly this reason (ADR-007 OQ-3). **So no lint exemption is added, D12's
+two-package map is untouched, and `integrations.md` stays true as written.**
+
+What the module exports, which is all QA needs to know about it:
+
+| Export | Returns | For |
+|---|---|---|
+| `serviceClient()` | a `@supabase/supabase-js` client on the service-role key | writes the seam refuses to make |
+| `sql(text, params?)` | `Promise<Row[]>` over the stack's direct `DB URL` | AC-10's catalogue queries and AC-11's raw writes |
+| `reset()` | `Promise<void>` | truncates the application tables; each file's starting point |
+
+**All three refuse a non-loopback host, and that refusal is a control rather than a comment.**
+`01-story.md` out-of-scope item 12 says no automated run and no CI job may reach the live project. The
+module throws unless the URL's host is `127.0.0.1` or `localhost`, so a mis-set `SUPABASE_URL` fails
+the lane instead of writing into a database whose migration carries no RULE-09 signature.
+
+**The driver is a `postgres` devDependency added by this ticket.** Dev-only, imported from `scripts/`
+and nowhere else, and it never reaches a build. The alternative — a test-only introspection function
+inside the migration — is rejected in section 7 **F**.
+
+**Where each criterion goes.**
+
+| AC | File | What the test names and asserts |
+|---|---|---|
+| AC-1 | `tests/db-e2e/persistence.spec.ts` | `@write`: `home-data-source` reads `supabase` — not `mock`, never `prisma`; then `rooms-create-open` → `room-create-name` / `-code` / `-grid-width` / `-grid-height` → `room-create-submit`, and the new row renders in `rooms-table`. `@read`, against the second server: the same `rooms-row-<code>-*` cells are still there |
+| AC-9 | `tests/db/types-drift.test.ts` | regenerate into a temp file and compare against `supabase/types.generated.ts` — identical. A second named test asserts the committed file's bytes are unchanged after the regeneration ran, which is the *"fails the run rather than rewriting the file silently"* clause |
+| AC-10 | `tests/db/schema.test.ts` | over the reset stack: the partial unique index (INV-04), the constraint trigger on the device table (INV-05), the downgrade trigger on the seat table (INV-06), and **no `status` column on the seat table** (INV-03). Section 4.3 is the shape each of the three has |
+| AC-11 | `tests/db/refusals.test.ts` | through `serviceClient()` and `sql()`, never through the seam: a second occupant, a second primary device, and a primary device owned by someone who is not that seat's occupant — each rejected, asserted **on the SQLSTATE section 1.5 names and never on message text**. Then remove an occupant and assert that seat's primary device is no longer primary |
+| AC-12 | `tests/db/seed.test.ts` and `tests/db-e2e/seed-parity.spec.ts` | the first runs the seed twice against the reset stack and asserts the second run changes no row and exits 0. The second opens `rooms-page`, `seats-page`, `members-page`, `devices-page` and `groups-page` and asserts the same business keys the mock renders — `ROOM-A`, `SEAT-A-01`, `ada@example.internal`, `AST-0001`, from `src/lib/data/fixtures.ts`, which is the one file both modes read |
+
+**The CI step, and there is no new job name.** `.github/workflows/verify.yml`'s own header comment
+says exactly two status checks exist and that a third would be another thing to configure, keep green
+and explain. So this goes inside the existing `verify` job, after `pnpm verify`:
+
+```yaml
+      - name: Install the browser test:db needs
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: pnpm test:db
+        env:
+          REQUIRE_LOCAL_STACK: "1"
+        run: pnpm test:db
+```
+
+`pnpm test:e2e` has never run in CI and this design does not add it. The browser install is here
+because **`pnpm test:db` is the first Playwright run this repository performs on a runner**, and
+without it the lane would fail on a missing browser rather than on the product. The *Generated types
+match the migrations* step is deleted in the same edit — 6.2 says why.
 
 ## 7. Rejected alternatives
 
@@ -799,6 +992,26 @@ the migrations the only source and the CI diff is what holds them to it. The pri
 **E. Keep `prisma` as a dev-only tool for introspection.** **Rejected by the operator on 2026-08-26**,
 ADR-007 OQ-1, in their own words: *there is no query to port, and keeping it rebuilds exactly the
 two-owners problem.* Recorded here rather than re-argued.
+
+**F. Put AC-10's catalogue queries and AC-11's raw writes behind a test-only `plpgsql` function in
+the migration, called through `.rpc()`.** It needs no Postgres driver and no new devDependency, and
+`@supabase/supabase-js` is already the only client this project has. **Rejected because the migration
+is the artefact RULE-09 puts a human signature on**, and asking for that signature on a schema
+carrying test scaffolding makes the signature harder to give rather than easier. It also inverts
+AC-11: a refusal proven through a function that ships inside the product schema is still a refusal
+the product defines. A driver that exists only in `devDependencies` and is imported only from
+`scripts/` costs one dependency and leaves the migration exactly what a reviewer is being asked to
+approve.
+
+**G. Keep the five clauses inside `pnpm test`, guarded by `describe.skipIf(noLocalStack)`.** By a
+wide margin the smallest diff — no runner script, no second vitest config, no second Playwright
+config. **Rejected on two independent grounds, either sufficient on its own.**
+`.ai/standards/testing-standards.md` §*What makes a test bad here* forbids a skipped test left in a
+suite, and this would leave a dozen of them in every run on the machine the loop actually uses. And
+the story's constraint is not about noise: `vitest run` exits non-zero on a **collection** error, so a
+config that reaches for the stack's environment while assembling the suite fails `pnpm test` outright
+where Docker is absent — the QA gate going red on a missing container runtime, which is the exact
+outcome the story's third run exists to prevent.
 
 ## Open questions
 
@@ -865,6 +1078,40 @@ path references, so nothing goes red. Section 5 states the trade: widening `allo
 validation layer to correct prose weakens R1 more than the stale prose costs. The seam's own
 twenty-seven citations **are** corrected, because `src/lib/data/**` is the ticket's subject.
 
+### D-4 — OPEN — two documents word the QA gate differently, and the difference decides whether `pnpm test:db` is inside it
+
+**Routed to:** the steward. **Blocks:** nothing at this stage, and it is the most consequential thing
+this amendment leaves behind.
+
+The QA gate is written twice and the two wordings do not agree. **Both were read, not recalled:**
+
+| Where | Wording | Does it reach `pnpm test:db`? |
+|---|---|---|
+| `.ai/01-operating-model.md:100` | *"Every `AC-n` maps to at least one named test; **vitest + playwright** exit 0"* | **Yes.** It names the runners, and the lane is vitest and playwright |
+| `.claude/commands/qa.md:46` | *"every `AC-n` maps to at least one named test; **`pnpm test` and `pnpm test:e2e`** exit 0"* | **No.** It names two commands, and `pnpm test:db` is neither |
+
+`.ai/standards/testing-standards.md` §Tools sides with neither and knows of no third lane at all:
+*"Both run from `pnpm verify` in CI, and `pnpm test:e2e` locally."* None of the three files is in
+`allowed_paths`, so this stage states the consequences rather than repairing them. **Section 6.4 is
+built so that both readings are safe**, which is why this is a finding and not a blocker:
+
+- **Under either wording the gate cannot go falsely red.** That is what `01-story.md` required, and
+  the lane delivers it by exiting 0 where no stack exists — nothing is skipped because nothing is
+  collected.
+- **Under the command wording the gate can go green while the lane is red.** What carries it then is
+  the half both wordings share: *every `AC-n` maps to at least one named test* is the Definition of
+  Done item that failed this ticket on 2026-08-27, and it is the item that would fail it again. **That
+  is a weaker control than a gate command and it is worth saying so plainly.** CI is the backstop —
+  the lane runs there on every pull request with `REQUIRE_LOCAL_STACK=1`, so a red lane blocks the
+  merge even though it would not block the gate.
+- **Under the runner wording a QA agent reading only the operating model would be right to run
+  `pnpm test:db` and report it**, and would be reporting something `qa.md` never asked for. Two
+  correct readings producing two different test reports is the defect here, not either reading.
+
+Fix shape, for whoever takes it: make the two agree. Name `pnpm test:db` in `qa.md`'s command list
+with an explicit *"or reports skipped where no local stack exists"*, and give §Tools a third row.
+Both are one-line edits to files this ticket may not touch.
+
 ## Changelog
 
 - `2026-08-26T09:22:00Z` — design created at DESIGN. Gate PASS. `size: L`, not split, per
@@ -887,3 +1134,25 @@ twenty-seven citations **are** corrected, because `src/lib/data/**` is the ticke
   PR #58 and recorded as MD-36. **Nothing else changed** — no contract, permission, seam, schema,
   testability or rejected-alternative text differs from the entry above. `rework_count` stays 0 under
   RULE-08. Amended by `tech-lead-design`.
+- `2026-08-28T02:06:22Z` — **amended at the second QA FAIL, after `ba` answered `Q-2` on the `R6`
+  route. Gate still PASS; `size` still `L`.** Section **6.4** added: `pnpm test:db`, the
+  database-backed lane that makes AC-1, AC-9, AC-10, AC-11 and AC-12 executable against the Supabase
+  CLI's local stack **without putting a single test inside `pnpm test` or `pnpm test:e2e`**. The lane
+  is not collected rather than skipped, because `.ai/standards/testing-standards.md` forbids a
+  skipped test left in a suite; `REQUIRE_LOCAL_STACK=1` makes the same preflight fail in CI, so the
+  skip cannot hide a broken runner. Six paths added to section 5 and **5.2** splits them between
+  `developer` and `qa` — the developer writes the lane and not one file of the tests, RULE-05. **6.2
+  rewritten**: AC-9's regeneration moves out of a workflow step and into a named test, which is what
+  the Definition of Done asks for and what a step can never be. Section 7 gains **F** (a test-only
+  `plpgsql` function in the migration — rejected on RULE-09) and **G** (`skipIf` inside `pnpm test` —
+  rejected on the testing standard and on vitest's collection-error exit). One dependency added:
+  `postgres`, dev-only, imported only from `scripts/`. **No lint exemption is added and D12's
+  two-package map is untouched** — the lane's database handle lives under `scripts/`, which is
+  already outside the lint config, so `.ai/standards/integrations.md`'s *"and nothing else"* stays
+  true. `D-4` raised against the steward, and it was found by reading both files rather than
+  by recalling either: `.ai/01-operating-model.md:100` words the QA gate as *"vitest + playwright
+  exit 0"* and `.claude/commands/qa.md:46` words it as *"`pnpm test` and `pnpm test:e2e` exit 0"* —
+  the first reaches the new lane and the second does not. 6.4 is built so both readings are safe; the
+  residue is that under the command wording the gate can go green while the lane is red, with CI as
+  the backstop. **Sections 1, 2, 3 and 4 are unchanged.** `rework_count` stays 0 — RULE-08; this route
+  went to `ba` and never reached the developer. Amended by `tech-lead-design`.
