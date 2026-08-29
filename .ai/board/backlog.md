@@ -120,7 +120,7 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
-| SYS-02 | 2026-08-29T03:34:48Z | *pending — opened at ship; recorded in a follow-up commit* | 0 |
+| SYS-02 | 2026-08-29T03:34:48Z | [#61](https://github.com/didi-code0980/seatseat-aifw/pull/61) — open; registry half is [#62](https://github.com/didi-code0980/seatseat-aifw/pull/62) | 0 |
 | GRP-02 | 2026-08-26T07:18:01Z | *see the note below* | 0 |
 | GRP-01 | 2026-08-26T02:06:22Z | *see the note below* | 0 |
 | SYS-01 | 2026-08-25T03:14:52Z | *pending — opened at ship; see the note below* | 0 |
