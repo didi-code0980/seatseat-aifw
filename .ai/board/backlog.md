@@ -39,8 +39,7 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
-| 1 | GRP-02 | Member assignment to groups | BACKLOG | nothing — `depends_on: [GRP-01]` is satisfied, GRP-01 merged as PR #42 |
-| 2 | REG-01 | User self-release and seat request workflow | BACKLOG | 🟡 in its registry row — is self-release one feature with the request workflow, or two? Nobody has said |
+| 1 | REG-01 | User self-release and seat request workflow | BACKLOG | 🟡 in its registry row — is self-release one feature with the request workflow, or two? Nobody has said |
 
 **Refilled 2026-08-26. This table was empty while three seeded tickets sat at `BACKLOG`**, which made
 them invisible to the one file whose job is to order them. The gap opened because `/ship` is this
