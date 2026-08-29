@@ -5,7 +5,38 @@ id: SYS-02
 title: "Cutover to Supabase as the data client"
 feature_ids: [SYS-02]
 group: SYS
-state: IN_PROGRESS   # RETURNED FROM THE SECOND QA FAIL BY /design ON 2026-08-28T02:06:22Z, gate PASS.
+state: REVIEW        # ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-29T03:10:09Z, gate PASS.
+                     #
+                     # THE THIRD IN_PROGRESS RUN, AND IT IS NOT A REWORK OF THIS STAGE'S OWN WORK.
+                     # `06-test-report.md` returned `routed_to: ba`, `increments_rework_count:
+                     # false`; `ba` amended the story and `tech-lead-design` amended the design with
+                     # the `pnpm test:db` lane. This run built the developer's half of it, which
+                     # `02-design.md` §5.2 enumerates: `scripts/test-db.mjs`,
+                     # `scripts/local-stack-client.ts`, `vitest.db.config.mts`,
+                     # `playwright.db.config.ts`, the `test:db` script and the `postgres`
+                     # devDependency in `package.json`, and the two steps in `verify.yml`.
+                     # `rework_count` STAYS 0 — RULE-08.
+                     #
+                     # `tests/db/**` AND `tests/db-e2e/**` ARE ABSENT ON PURPOSE. §5.2 gives them to
+                     # QA — "not one file, not a placeholder" — so `scripts/test-db.mjs` reports a
+                     # lane with no tests rather than depending on a seed the developer may not
+                     # write.
+                     #
+                     # `pnpm test` IS RED — two tests, and this time `allowed_paths` is not the
+                     # obstacle. `tests/unit/seam-parity.test.ts`'s AC-9 block asserts the presence
+                     # of the workflow step §6.2 orders deleted. The path IS on `allowed_paths`;
+                     # what withholds the edit is §5.2 and RULE-05, because those assertions are
+                     # QA's and §6.2 relocates AC-9 to a file this stage may not write. Raised in
+                     # `99-questions.md` with three shapes. It does not block this gate and it does
+                     # block the QA gate, exactly as `self-signup.test.ts` did on the first run.
+                     #
+                     # THE LANE ITSELF HAS NEVER RUN PAST ITS PREFLIGHT. No container runtime on
+                     # this machine and CI has not seen this branch, so steps 2 through 7 are
+                     # unexecuted anywhere. Both preflight paths were verified: skip exits 0,
+                     # `REQUIRE_LOCAL_STACK=1` exits 1 naming what was missing.
+                     #
+                     # ---- WHAT THIS LINE SAID BEFORE, KEPT ----
+                     # state: IN_PROGRESS — RETURNED FROM THE SECOND QA FAIL BY /design ON 2026-08-28T02:06:22Z, gate PASS.
                      #
                      # THE ROUTE DID NOT ARRIVE HERE FIRST. `06-test-report.md` gated FAIL on AC-1
                      # having no named test and routed to `ba` on the `R6` row; `ba` amended

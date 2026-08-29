@@ -75,28 +75,36 @@ jobs:
       - name: pnpm verify
         run: pnpm verify
 
-      # AC-9 — the committed table types cannot drift from the migrations.
+      # `pnpm test:db` — the database-backed lane. SYS-02 `02-design.md` sections 6.2 and 6.4.
       #
-      # It REGENERATES AND DIFFS. A difference fails the run; it must never rewrite
-      # `supabase/types.generated.ts` in place, because a job that silently fixes the file removes
-      # the only signal that the schema and the committed types disagreed.
+      # NO NEW JOB NAME, and the header above says why: exactly two status checks exist, branch
+      # protection points at those two, and a third would be another thing to configure, keep green
+      # and explain. So this runs inside `verify`, after `pnpm verify`.
       #
-      # Generated from a LOCAL RESET of `supabase/migrations/`, never from the linked cloud project
-      # (ADR-007 OQ-2). Types generated from the cloud describe whatever that project currently
-      # holds, which is not necessarily what the migrations say — and with one Supabase project a
-      # hand-edit in the dashboard would propagate into the committed types with nothing to catch it.
-      # Generating from the migrations makes them the only source, and this diff is what holds them
-      # to it.
+      # THE BROWSER INSTALL IS HERE BECAUSE `pnpm test:db` IS THE FIRST PLAYWRIGHT RUN THIS
+      # REPOSITORY PERFORMS ON A RUNNER. `pnpm test:e2e` has never run in CI and this design does not
+      # add it. Without the install the lane would fail on a missing browser rather than on the
+      # product.
+      - name: Install the browser test:db needs
+        run: pnpm exec playwright install --with-deps chromium
+
+      # THIS REPLACES THE `Generated types match the migrations` STEP, which did the right thing and
+      # was not what AC-9 needed: `06-test-report.md` recorded AC-9 PARTIAL because "every AC maps to
+      # a named test" is a Definition of Done item and a workflow step carries no test name. The
+      # regeneration moved into the lane as `tests/db/types-drift.test.ts`, which this command runs.
+      # The behaviour is identical — regenerate from a LOCAL reset of `supabase/migrations/`, never
+      # from the cloud project (ADR-007 OQ-2), fail on a difference, never rewrite the committed file
+      # in place. What changed is that it now has an AC ID and a name.
       #
-      # `supabase start` runs Postgres in Docker, which `ubuntu-latest` has. That requirement is new
-      # to this repository and it contradicts `.ai/standards/integrations.md` §"Docker is optional";
-      # correcting that document is a steward change, recorded as `D-1` in SYS-02's design.
-      - name: Generated types match the migrations
-        run: |
-          pnpm supabase start
-          pnpm supabase db reset --local --no-seed
-          pnpm supabase gen types typescript --local > /tmp/types.generated.ts
-          diff -u supabase/types.generated.ts /tmp/types.generated.ts
+      # `REQUIRE_LOCAL_STACK: "1"` turns the runner's preflight from a skip into a failure. Without
+      # it a runner that lost Docker would report this lane green, which is the whole reason the lane
+      # is not-collected rather than skipped. `ubuntu-latest` has Docker; that requirement
+      # contradicts `.ai/standards/integrations.md` §"Docker is optional", and correcting that
+      # document is a steward change, recorded as `D-1` in SYS-02's design.
+      - name: pnpm test:db
+        env:
+          REQUIRE_LOCAL_STACK: "1"
+        run: pnpm test:db
 
   allowed-paths:
     name: allowed-paths

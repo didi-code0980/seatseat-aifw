@@ -2,25 +2,122 @@
 ticket: SYS-02
 stage: IN_PROGRESS
 agent: developer
-produced_at: 2026-08-27T07:17:47Z   # AMENDED RUN. The first run was 2026-08-27T01:28:07Z and its
-                                    # verdict is kept in full below under **Rework cycle**. This
-                                    # stage is the QA FAIL's route, not a rework of this stage's own
-                                    # work: `06-test-report.md` returned `routed_to:
-                                    # tech-lead-design` and `increments_rework_count: false`, the
-                                    # design amendment of 2026-08-27T04:51:28Z added one path to
-                                    # `allowed_paths`, and this run makes the two-line edit that
-                                    # path exists for. `rework_count` stays 0 — RULE-08.
-inputs_read: [ .ai/board/tickets/SYS-02/02-design.md, .ai/board/tickets/SYS-02/01-story.md, .ai/board/tickets/SYS-02/ticket.yaml, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/registry/invariants.md, .ai/registry/features.md, .ai/standards/integrations.md, .ai/standards/data-model.md, .ai/standards/testing-standards.md, src/lib/data/mock/**, src/lib/data/prisma/**, src/lib/data/types.ts, src/lib/data/fixtures.ts, src/lib/auth/supabase.ts, prisma/schema.prisma, prisma/constraints.draft.sql, prisma/seed.ts, prisma.config.ts, eslint.config.mjs, vitest.config.mts, scripts/check-docs.mjs, scripts/tests/check-docs.test.mjs, tests/unit/seam-parity.test.ts, tests/unit/self-signup.test.ts, .env.example, .github/workflows/verify.yml, .github/CODEOWNERS, docker/**, "node_modules/@supabase/supabase-js/dist/index.d.mts", "node_modules/.pnpm/@supabase+postgrest-js@2.112.4/**/dist/index.d.mts", "pnpm supabase db push --help", "pnpm supabase db reset --help", "pnpm supabase gen types --help" ]
+produced_at: 2026-08-29T03:10:09Z   # THIRD RUN. The first was 2026-08-27T01:28:07Z, the second
+                                    # 2026-08-27T07:17:47Z; both verdicts are kept in full below.
+                                    # This run is the SECOND QA FAIL's route, and like the first it
+                                    # is not a rework of this stage's own work: `06-test-report.md`
+                                    # returned `gate: FAIL` on AC-1 mapping to no named test,
+                                    # `routed_to: ba`, `increments_rework_count: false`; `ba`
+                                    # amended the story to name the environment, and
+                                    # `tech-lead-design` amended the design at 2026-08-28T02:06:22Z
+                                    # with one new test lane. This run builds the developer's half
+                                    # of that lane. `rework_count` stays 0 — RULE-08.
+inputs_read: [ .ai/board/tickets/SYS-02/02-design.md, .ai/board/tickets/SYS-02/01-story.md, .ai/board/tickets/SYS-02/ticket.yaml, .ai/board/tickets/SYS-02/06-test-report.md, .ai/board/tickets/SYS-02/99-questions.md, .ai/standards/testing-standards.md, .ai/standards/integrations.md, .ai/standards/git-conventions.md, .ai/registry/rules.md, CLAUDE.md, vitest.config.mts, playwright.config.ts, .github/workflows/verify.yml, eslint.config.mjs, tsconfig.json, .gitignore, .env.example, package.json, scripts/seed.ts, scripts/check-allowed-paths.mjs, tests/unit/seam-parity.test.ts, supabase/migrations/20260826094134_init.sql, "node_modules/.pnpm/postgres@3.4.9/**/types/index.d.ts", "pnpm supabase status --help", "pnpm exec playwright test --help", "pnpm exec vitest --help" ]
 consulted:
   - with: tech-lead-design
-    asked: "`tests/unit/self-signup.test.ts:113-115` asserts `@supabase/ssr` is the only `@supabase/*` package in package.json — SYS-01 AC-3. ADR-007 clause 2 makes that false and `pnpm test` fails on it. The file is not in `allowed_paths`. Does it join the list, or is it left red for a follow-up chore?"
-    answer: "ANSWERED 2026-08-27T04:51:28Z by design amendment: the path joins `allowed_paths`. `02-design.md` §5.1 specifies the exact replacement text, adds `.sort()` to the filter, changes the `it(...)` title as well, keeps the `@supabase/ssr` toBeDefined assertion, and rules the SYS-01 AC-5 assertion out of bounds. Applied verbatim in this run."
-    resulted_in_amendment: true
+    asked: "`02-design.md` §6.2 deletes the `Generated types match the migrations` workflow step. Three AC-9 assertions in `tests/unit/seam-parity.test.ts` pin that step and two now fail. The path is on `allowed_paths`, so RULE-03 permits the edit — but the assertions are QA's and §6.2 relocates AC-9 to `tests/db/types-drift.test.ts`, which §5.2 forbids this stage to write. Retarget, delete, or split?"
+    answer: "UNANSWERED at the time of this verdict. Raised in `99-questions.md` at 2026-08-29T03:10:09Z with three shapes and a recommendation. It does not block this gate and it does block the QA gate's `pnpm test` clause."
+    resulted_in_amendment: false
 chat_before_verdict: none
 gate: PASS
 blocking_reason: ""
 next_state: REVIEW
 ---
+
+# SYS-02 — implementation log
+
+## Third run — the developer's half of the `pnpm test:db` lane
+
+**Read these three notes before the table.**
+
+**1. The gate is PASS and `pnpm test` is red — two tests, and this time the path is NOT the
+obstacle.** `pnpm typecheck` and `pnpm lint` both exit 0. `pnpm test` is `2 failed | 158 passed`,
+both failures in `tests/unit/seam-parity.test.ts`'s AC-9 block, both asserting the presence of the
+`Generated types match the migrations` workflow step that `02-design.md` §6.2 orders deleted. **That
+file is on `allowed_paths`, so unlike the first run's `self-signup.test.ts` nothing mechanical
+refused the edit** — what refused it is §5.2 and RULE-05, because those assertions are QA's and §6.2
+moves AC-9 into `tests/db/types-drift.test.ts`, which this stage may not write. Raised in
+`99-questions.md` with three shapes and a recommendation. Same shape as the first run's note, one
+stage earlier in the noticing.
+
+**2. `tests/db/` and `tests/db-e2e/` are ABSENT, deliberately, and the runner handles their
+absence.** §5.2 is explicit — *"not one file, not a placeholder"*. Neither runner tolerates a missing
+`testDir`, and `--pass-with-no-tests` covers an empty directory rather than an absent one, so
+`scripts/test-db.mjs` checks for test files itself and reports **"no tests yet: tests/db/ and
+tests/db-e2e/ are QA's to write"** rather than failing. That check is the mechanism that lets §5.2's
+ownership split cost the lane nothing.
+
+**3. The lane could not be executed on this machine and the reason is the one the lane is designed
+around.** `docker info` — *command not found*. So the preflight's skip path is the path that ran, and
+steps 2 through 7 have never been executed anywhere. **`REQUIRE_LOCAL_STACK=1` is what makes that
+safe in CI**: it turns the same preflight into a non-zero exit naming what was missing, and the
+workflow step sets it. What was verified here is the skip path, the require path, `typecheck`,
+`lint`, and `check-allowed-paths`.
+
+### Files touched — seven, all inside `allowed_paths`
+
+| File | New? | Why |
+|---|---|---|
+| `scripts/test-db.mjs` | new | The lane's runner. §6.4's seven steps in order, plus the preflight that decides between skip and fail, plus the empty-lane report note 2 describes. `.mjs` run via `node` — no shebang, no `.sh`, per the Windows-native agreement |
+| `scripts/local-stack-client.ts` | new | The lane's one database handle. `serviceClient()`, `sql()`, `reset()` — and `close()`, which is a declared deviation below. Under `scripts/` because `no-restricted-imports` would refuse the driver under `tests/`, and `eslint.config.mjs:92-101` already ignores `scripts/**`; no lint exemption added, D12's two-package map untouched |
+| `vitest.db.config.mts` | new | §6.4: `include: ["tests/db/**/*.test.ts"]`, `environment: "node"`, `fileParallelism: false`, and **no `test.env.DATA_SOURCE`** — its absence is what makes this the one lane that exercises ADR-007 §7's default |
+| `playwright.db.config.ts` | new | §6.4: `testDir: "./tests/db-e2e"`, port 3200, `workers: 1`, `fullyParallel: false`, `reuseExistingServer: false` unconditionally, `DATA_SOURCE` unset. `pnpm start` and not `pnpm build && pnpm start` — the build is the runner's step 5, once, for both passes |
+| `package.json` | edited | Adds the `test:db` script and the `postgres` devDependency §6.4 names. Pinned `3.4.9` with no range, matching every other devDependency in the file |
+| `pnpm-lock.yaml` | edited | `postgres@3.4.9` and its resolution. `pnpm install --lockfile-only` |
+| `.github/workflows/verify.yml` | edited | The two steps §6.4 specifies, inside the existing `verify` job so no third status-check name appears; `Generated types match the migrations` deleted per §6.2, its reasoning carried into the replacement's comment |
+
+### Four deviations from the design, declared rather than left for R5
+
+1. **`scripts/local-stack-client.ts` exports a fourth name, `close()`.** §6.4's table lists three.
+   Vitest holds the process open on an idle socket, so a file that called `sql()` and never closed
+   the pool would **hang** the lane rather than fail it — and a hung CI job is the worst of the three
+   outcomes. QA calls it in an `afterAll`. It adds no capability: it opens nothing and reads nothing.
+2. **Step 3's four key names are resolved by role against a candidate list, not read from four fixed
+   names.** §6.4 carries a `TODO(verify):` on exactly this — *"the exact key names against the
+   installed CLI"* — and it could not be discharged here: `supabase status -o env` needs a running
+   stack, Docker is absent, and the names are not recoverable from the stripped 2.115.0 binary
+   (`--override-name api.url=…` in `supabase status --help` is the only published clue and it names
+   the *input* keys, not the output ones). So the runner parses whatever the CLI emits, resolves each
+   of the four roles against its candidates, and **exits non-zero printing the keys the CLI actually
+   emitted** when a role does not resolve. That is a loud failure naming its own fix instead of a
+   guess, and it is marked `TODO(verify):` in the file. First machine with a container runtime
+   reduces each list to one name.
+3. **The runner normalises the stack's environment onto four names this project owns** —
+   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` — rather than
+   passing the CLI's names through. The first three are the names the **application already reads**
+   (`.env.example`), which is what makes the app under test reach the local stack and nothing else;
+   the fourth is new and is read only by `scripts/local-stack-client.ts`. It confines deviation 2's
+   uncertainty to one function.
+4. **The loopback refusal is enforced twice.** §6.4 puts it on the client module's three exports.
+   `scripts/test-db.mjs` checks the same two URLs at step 3 as well, so the lane refuses **before**
+   it builds and boots two servers. Both parse the URL and compare `hostname`; neither substring-
+   matches, because `https://evil.test/?x=127.0.0.1` contains the loopback literal and is not a
+   loopback host.
+
+### `reset()` truncates `public` from the catalogue, and never `auth`
+
+§6.4 says *"truncates the application tables"* without listing them. It enumerates `pg_tables` for
+schema `public` rather than naming the eight, so a later migration that adds a table does not leave a
+stale list here reporting a clean database that is not one. `auth.users` is deliberately untouched:
+those rows are the identity provider's, ADR-003 makes a Member outlive its login, and `scripts/seed.ts`
+is idempotent over them (AC-12). `RESTART IDENTITY CASCADE`, because the eight tables reference each
+other.
+
+### What was verified, and what could not be
+
+| Claim | How |
+|---|---|
+| `pnpm typecheck` exits 0 | run — exit 0 |
+| `pnpm lint` exits 0 | run — exit 0, 3 pre-existing warnings in two files this run did not touch |
+| Every changed path is inside `allowed_paths` | `node scripts/check-allowed-paths.mjs` — PASS, 60 changed files |
+| `sql.unsafe(text, params)` is the driver's parameterised raw-query entry | read `postgres@3.4.9/types/index.d.ts:691` |
+| `--passWithNoTests` and `--pass-with-no-tests` exist on the two runners | `vitest --help`, `playwright test --help` |
+| The preflight's skip path | `docker info` is absent on this machine, so this is the path that ran |
+| Steps 2-7 of the runner | **NOT EXECUTED ANYWHERE.** No container runtime here and CI has not run this branch. This is the largest untested surface in the change and note 3 says so |
+| The four CLI key names | **NOT VERIFIED** — deviation 2 |
+
+---- WHAT THIS FILE SAID ON THE PREVIOUS TWO RUNS, KEPT ----
+
 
 # SYS-02 — implementation log
 

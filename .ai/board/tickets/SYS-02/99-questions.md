@@ -273,3 +273,61 @@ previous `Given` clauses verbatim. Gate PASS, `next_state: DESIGN`. `invariants_
 `size_estimate` unchanged. Nothing in `05-test-plan.md` or `06-test-report.md` is contradicted by this
 amendment and neither is rewritten by it — `06-test-report.md`'s FAIL stands as correct, and this is the
 route it asked for.
+
+---
+
+```markdown
+---
+from: developer
+to: tech-lead-design
+asked_at: 2026-08-29T03:10:09Z
+---
+```
+
+**Q.** `02-design.md` §6.2 says the `Generated types match the migrations` step is **deleted** from
+`.github/workflows/verify.yml` in the same edit that adds `pnpm test:db`. That deletion is not
+optional and this run made it. **Three assertions in `tests/unit/seam-parity.test.ts` pin the step
+that was deleted**, and two of them now fail:
+
+```
+× AC-9: the workflow regenerates types from a LOCAL reset of supabase/migrations/
+× AC-9: a difference is compared and fails the run
+  (the third, "the regeneration does not write over the committed file", is a `not.toMatch`
+   and passes vacuously now that no `gen types` line remains in the file)
+```
+
+`pnpm test` is `2 failed | 158 passed`. `pnpm typecheck` and `pnpm lint` both exit 0.
+
+**Why this stage did not fix it, and it is not RULE-03 this time.** `tests/unit/seam-parity.test.ts`
+**is** on `allowed_paths` and has been since the first enumeration, so nothing mechanical refused the
+edit. What refuses it is **§5.2 and RULE-05**. Those three assertions are QA's, written in the QA
+stage as an explicit stand-in — their own comment says so: *"The regeneration itself needs Docker and
+the Supabase CLI, which QA does not have here. What is asserted is the CI contract that performs
+it."* §6.2 is the ruling that the stand-in was insufficient, and it relocates AC-9 to
+`tests/db/types-drift.test.ts`, which §5.2 assigns to QA and forbids this stage to write. **Rewriting
+an AC-9 assertion to match CI steps this same run authored is the derivation the isolated dispatch
+exists to prevent**, and AC-9 is one of the five criteria this whole amendment was raised to cover.
+
+**The likely disposition is deletion rather than retargeting, which is a second reason it is not
+mine.** If AC-9 now lives in `tests/db/types-drift.test.ts`, the three seam-parity assertions are
+superseded, not merely stale — and deleting tests another stage wrote is not a developer's call under
+any reading.
+
+**What this stage did instead.** Left them red, declared it here and in `03-impl-log.md`, and made
+the CI shape §6.2 specifies verifiable by a future assertion: the new step is named `pnpm test:db`,
+sets `REQUIRE_LOCAL_STACK: "1"`, and is preceded by `pnpm exec playwright install --with-deps
+chromium`.
+
+**Three shapes, and the third is the one this stage would take if it were its call:**
+
+1. **Retarget** the two assertions at the new step. Cheapest, and it leaves AC-9 asserted twice —
+   once against CI text and once against a real regeneration — which is the duplication §6.2 removed.
+2. **Delete** all three and let `tests/db/types-drift.test.ts` carry AC-9 alone. Honest, and it drops
+   AC-9's only assertion on a machine with no Docker until QA runs.
+3. **Delete the two, keep the third, and add one that names the new step** — so `pnpm test` still
+   asserts that the workflow *invokes* the lane, while the lane itself asserts the regeneration.
+   AC-9's coverage row then reads: CI contract in `pnpm test`, behaviour in `pnpm test:db`.
+
+**This does not block IN_PROGRESS** — the gate is `typecheck` and `lint`, both 0 — and it **does**
+block the QA gate's *"`pnpm test` exits 0"* clause, exactly as `self-signup.test.ts` did on the first
+run. Same shape, one stage earlier in the noticing.
