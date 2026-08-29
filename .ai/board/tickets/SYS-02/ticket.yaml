@@ -5,7 +5,34 @@ id: SYS-02
 title: "Cutover to Supabase as the data client"
 feature_ids: [SYS-02]
 group: SYS
-state: REVIEW        # ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-29T03:10:09Z, gate PASS.
+state: DONE          # SET BY /ship ON 2026-08-29T03:34:48Z. DONE MEANS SHIPPED, NOT MERGED —
+                     # RULE-09 keeps the merge human, and the pull request this ship opens is what
+                     # makes it true.
+                     #
+                     # EVERY DEFINITION OF DONE ITEM RE-VERIFIED BY EXECUTION AT SHIP TIME, not read
+                     # from a summary: `pnpm verify` exit 0 (typecheck, lint, 160 unit, Turbopack
+                     # production build), `pnpm test:e2e` exit 0 at 96, `check-allowed-paths` PASS
+                     # over the whole branch at 70 changed files, 13 ACs mapped to named tests in
+                     # `06-test-report.md`, ten invariants observed and none violated,
+                     # `03-impl-log.md` listing every file with a reason.
+                     #
+                     # `pnpm verify` NEEDED AN INSTALL FIRST and that is MD-19, unchanged: this
+                     # worktree's `node_modules` still held `@prisma/client` and neither
+                     # `@supabase/supabase-js`, `postgres` nor `supabase`. `pnpm install
+                     # --frozen-lockfile` repaired it — no `--ignore-scripts` needed, because the
+                     # Prisma preinstall this ticket deletes was the reason that flag existed.
+                     #
+                     # `pnpm test:db` RUN AND OBSERVED: exit 0, reporting `test:db skipped — no local
+                     # stack (a running container runtime (`docker info`) absent).` That is the
+                     # designed behaviour of `02-design.md` §6.4 and it is the first time the lane's
+                     # skip path has been executed anywhere. THE FIVE DATABASE CLAUSES HAVE STILL NOT
+                     # RUN. `verify.yml` triggers on `pull_request` and on `push` to `main`, so no CI
+                     # run has ever fired on this branch; the pull request opened at step 7 is what
+                     # executes them for the first time. `06-test-report.md`'s "fully executed in CI"
+                     # was not true when written and is recorded here rather than corrected there.
+                     #
+                     # ---- WHAT THIS LINE SAID BEFORE, KEPT ----
+                     # state: REVIEW — ADVANCED FROM IN_PROGRESS BY /implement ON 2026-08-29T03:10:09Z, gate PASS.
                      #
                      # THE THIRD IN_PROGRESS RUN, AND IT IS NOT A REWORK OF THIS STAGE'S OWN WORK.
                      # `06-test-report.md` returned `routed_to: ba`, `increments_rework_count:
@@ -395,8 +422,24 @@ gates:
   # `.ai/templates/ticket.yaml` declares exactly four gates — spec, design, review, qa — and the
   # IN_PROGRESS verdict lives in `03-impl-log.md`'s front-matter, which is where every stage's gate
   # is quoted from. `gate: PASS` there, 2026-08-27T01:28:07Z. `state:` above carries what it means.
-  review: { passed: false, at: null }
-  qa:     { passed: false, at: null }
+  review: { passed: true,  at: "2026-08-29T03:16:25Z" }
+  qa:     { passed: true,  at: "2026-08-29T03:25:29Z" }
+  # BOTH ROWS TRANSCRIBED BY /ship ON 2026-08-29T03:34:48Z, AND THE TRANSCRIPTION IS THE FIX FOR
+  # MD-46 RATHER THAN A NEW CLAIM. RULE-13 keeps `/review` and `/qa` out of this file, so neither
+  # stage could write its own row; the orchestrator is the writer and none ran in the implement lane.
+  # This ship arrived at the precondition "all four gates passed: true" with two rows still `false`
+  # under four artifacts that all read `gate: PASS`.
+  #
+  # THE SOURCE IS THE ARTIFACT FRONT-MATTER, WHICH IS WHERE EVERY GATE IS QUOTED FROM — the same
+  # sentence this block already used for IN_PROGRESS below. `04-review.md`: `stage: REVIEW`,
+  # `agent: tech-lead-review`, `produced_at: 2026-08-29T03:16:25Z`, `gate: PASS`,
+  # `blocking_reason: ""`, `next_state: QA`. `06-test-report.md`: `stage: QA`, `agent: qa`,
+  # `produced_at: 2026-08-29T03:25:29Z`, `gate: PASS`, `blocking_reason: ""`, `next_state: DONE`.
+  # The `at:` values are those `produced_at` values, not the time of this transcription.
+  #
+  # RECORDING IS NOT AUTHORING. Nothing here decides a verdict; both were decided in isolated
+  # dispatch and are committed on this branch at `4488bb4` and `2ae7144`. Had either read FAIL this
+  # ship would have stopped, and the ROUTE, not the transcription, would have been the answer.
 
 # PRECONDITIONS — confirm before SPEC, stop if any is missing. ADR-007 records all three; they are
 # repeated here so this ticket inherits them instead of discovering them.

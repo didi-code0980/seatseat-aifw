@@ -39,9 +39,8 @@ later state is in flight and appears here because this file has no in-flight sec
 
 | # | Ticket | Title | State | Blocked on |
 |---|--------|-------|-------|------------|
-| 1 | SYS-02 | Cutover to Supabase as the data client | BACKLOG | three preconditions in its `ticket.yaml` — credentials on the machine, two Supabase projects, `SUPABASE_SERVICE_ROLE_KEY` in `.env.example` |
-| 2 | GRP-02 | Member assignment to groups | BACKLOG | nothing — `depends_on: [GRP-01]` is satisfied, GRP-01 merged as PR #42 |
-| 3 | REG-01 | User self-release and seat request workflow | BACKLOG | 🟡 in its registry row — is self-release one feature with the request workflow, or two? Nobody has said |
+| 1 | GRP-02 | Member assignment to groups | BACKLOG | nothing — `depends_on: [GRP-01]` is satisfied, GRP-01 merged as PR #42 |
+| 2 | REG-01 | User self-release and seat request workflow | BACKLOG | 🟡 in its registry row — is self-release one feature with the request workflow, or two? Nobody has said |
 
 **Refilled 2026-08-26. This table was empty while three seeded tickets sat at `BACKLOG`**, which made
 them invisible to the one file whose job is to order them. The gap opened because `/ship` is this
@@ -121,6 +120,7 @@ record (RULE-10).
 
 | Ticket | Done at | PR | Rework cycles |
 |--------|---------|----|---------------|
+| SYS-02 | 2026-08-29T03:34:48Z | *pending — opened at ship; recorded in a follow-up commit* | 0 |
 | GRP-02 | 2026-08-26T07:18:01Z | *see the note below* | 0 |
 | GRP-01 | 2026-08-26T02:06:22Z | *see the note below* | 0 |
 | SYS-01 | 2026-08-25T03:14:52Z | *pending — opened at ship; see the note below* | 0 |
