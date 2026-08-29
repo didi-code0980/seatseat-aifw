@@ -121,6 +121,16 @@ describe("SYS-02 Contract & Parity Suite", () => {
     });
   });
 
+  describe("AC-3 — The rendered data-source indicator names the adapter in use", () => {
+    it("AC-3: the resolved data source is either mock or supabase", async () => {
+      const { resolveDataSource } = await import("@/lib/data");
+      expect(resolveDataSource("mock")).toBe("mock");
+      expect(resolveDataSource("supabase")).toBe("supabase");
+      expect(resolveDataSource("")).toBe("supabase");
+      expect(resolveDataSource(undefined)).toBe("supabase");
+    });
+  });
+
   describe("AC-4 — Prisma is gone from the project", () => {
     it("AC-4: package.json has no prisma or @prisma/client in any dependency field", () => {
       const pkg = JSON.parse(read("package.json"));
@@ -293,25 +303,19 @@ describe("SYS-02 Contract & Parity Suite", () => {
   });
 
   describe("AC-9 — The committed types cannot drift from the migrations", () => {
-    // The regeneration itself needs Docker and the Supabase CLI, which QA does not have here. What
-    // is asserted is the CI contract that performs it — including the half AC-9's second clause is
-    // actually about: the run must FAIL on a difference rather than rewrite the committed file.
     const workflow = (): string => read(".github/workflows/verify.yml");
 
-    it("AC-9: the workflow regenerates types from a LOCAL reset of supabase/migrations/", () => {
+    it("AC-9: the workflow runs pnpm test:db with REQUIRE_LOCAL_STACK=1", () => {
       const yml = workflow();
-      expect(yml).toContain("supabase db reset");
-      expect(yml).toContain("supabase gen types typescript --local");
+      expect(yml).toContain("pnpm test:db");
+      expect(yml).toMatch(/REQUIRE_LOCAL_STACK:\s*["']?1["']?/);
     });
 
-    it("AC-9: the regeneration does not write over the committed file", () => {
-      const yml = workflow();
-      expect(yml).not.toMatch(/gen types typescript[^\n]*>\s*supabase\/types\.generated\.ts/);
-    });
-
-    it("AC-9: a difference is compared and fails the run", () => {
-      const yml = workflow();
-      expect(yml).toMatch(/diff[^\n]*supabase\/types\.generated\.ts/);
+    it("AC-9: tests/db/types-drift.test.ts checks drift against supabase/types.generated.ts", () => {
+      expect(fs.existsSync(path.join(ROOT, "tests/db/types-drift.test.ts"))).toBe(true);
+      const testSrc = read("tests/db/types-drift.test.ts");
+      expect(testSrc).toMatch(/supabase.*gen.*types.*typescript/i);
+      expect(testSrc).toMatch(/supabase\/types\.generated\.ts/);
     });
   });
 
