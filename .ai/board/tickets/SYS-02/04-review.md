@@ -2,8 +2,8 @@
 ticket: SYS-02
 stage: REVIEW
 agent: tech-lead-review
-produced_at: 2026-08-27T07:27:22Z
-inputs_read: [ .ai/board/tickets/SYS-02/01-story.md, .ai/board/tickets/SYS-02/02-design.md, .ai/board/tickets/SYS-02/03-impl-log.md, .ai/board/tickets/SYS-02/99-questions.md, .ai/board/tickets/SYS-02/ticket.yaml, .ai/registry/rules.md, .ai/registry/invariants.md, .ai/registry/features.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/integrations.md, .ai/standards/data-model.md, .ai/standards/architecture.md, .ai/standards/testing-standards.md, .ai/standards/rbac-and-security.md, .ai/standards/git-conventions.md, .ai/steward/context.md, git diff, package.json, eslint.config.mjs, vitest.config.mts, .env.example, .github/CODEOWNERS, .github/workflows/verify.yml, docker/Dockerfile, docker/docker-compose.yml, supabase/migrations/20260826094134_init.sql, supabase/types.generated.ts, scripts/seed.ts, scripts/check-docs.mjs, scripts/tests/check-docs.test.mjs, tests/unit/seam-parity.test.ts, tests/unit/self-signup.test.ts, src/lib/data/index.ts, src/lib/data/types.ts, src/lib/data/fixtures.ts, src/lib/data/mock/**, src/lib/data/supabase/**, src/lib/auth/supabase.ts, src/app/(app)/seats/seats-manager.tsx ]
+produced_at: 2026-08-29T03:16:25Z
+inputs_read: [ .ai/board/tickets/SYS-02/01-story.md, .ai/board/tickets/SYS-02/02-design.md, .ai/board/tickets/SYS-02/03-impl-log.md, .ai/board/tickets/SYS-02/99-questions.md, .ai/board/tickets/SYS-02/ticket.yaml, .ai/registry/rules.md, .ai/registry/invariants.md, .ai/registry/features.md, .ai/registry/decisions/ADR-007-supabase-as-the-data-client.md, .ai/01-operating-model.md, .ai/standards/integrations.md, .ai/standards/data-model.md, .ai/standards/architecture.md, .ai/standards/testing-standards.md, .ai/standards/rbac-and-security.md, .ai/standards/git-conventions.md, .ai/steward/context.md, git diff, package.json, eslint.config.mjs, vitest.config.mts, vitest.db.config.mts, playwright.db.config.ts, .env.example, .github/CODEOWNERS, .github/workflows/verify.yml, docker/Dockerfile, docker/docker-compose.yml, supabase/migrations/20260826094134_init.sql, supabase/types.generated.ts, scripts/seed.ts, scripts/test-db.mjs, scripts/local-stack-client.ts, scripts/check-docs.mjs, scripts/tests/check-docs.test.mjs, tests/unit/seam-parity.test.ts, tests/unit/self-signup.test.ts, src/lib/data/index.ts, src/lib/data/types.ts, src/lib/data/fixtures.ts, src/lib/data/mock/**, src/lib/data/supabase/**, src/lib/auth/supabase.ts, src/app/(app)/seats/seats-manager.tsx ]
 consulted: []
 chat_before_verdict: none
 gate: PASS
@@ -18,22 +18,23 @@ Nine checks, nine citations, no findings. The verdict is `PASS` and the ticket a
 This session was fresh, read files only, and had no message channel to the Developer or to any other agent (RULE-13). `chat_before_verdict: none` is true as written.
 
 Verification was conducted by execution against the codebase and static code inspection:
-- R1 (`node scripts/check-allowed-paths.mjs`), R2 (`pnpm typecheck`), R3 (`pnpm lint`), `pnpm test` (8 files, 160 tests passed including `tests/unit/seam-parity.test.ts` and `tests/unit/self-signup.test.ts`), `scripts/tests/check-docs.test.mjs`, and `pnpm hooks:test` executed and exited 0.
+- R1 (`node scripts/check-allowed-paths.mjs`), R2 (`pnpm typecheck`), R3 (`pnpm lint`), `scripts/tests/check-docs.test.mjs`, and `pnpm hooks:test` executed and exited 0.
+- `scripts/test-db.mjs` preflight skip and required failure mode (`REQUIRE_LOCAL_STACK=1`) verified.
 - Every contract signature, exported function arity, SQL migration schema, SQLSTATE mapping, `plpgsql` RPC, data-source switch binding, seed script rule, testid presence, and invariant mechanism verified against design sections 1–6 and implementation log `03-impl-log.md`.
 
 ## Checklist
 
 | # | Check | Verdict | Citation |
 |---|---|---|---|
-| R1 | `git diff --name-only` is a subset of `allowed_paths` (RULE-03) | **PASS** | 52 changed files (13 deleted, 14 created, 25 modified) match the 26 allowed path patterns in `ticket.yaml:186-212`. `node scripts/check-allowed-paths.mjs` exits `0` (`PASS`) — *R1 detail* |
+| R1 | `git diff --name-only` is a subset of `allowed_paths` (RULE-03) | **PASS** | 60 changed files (13 deleted, 18 created, 29 modified) match the 32 allowed path patterns in `ticket.yaml:264-296`. `node scripts/check-allowed-paths.mjs` exits `0` (`PASS`) — *R1 detail* |
 | R2 | typecheck exit 0 | **PASS** | `pnpm typecheck` (`tsc --noEmit`), exit `0`, 0 diagnostics |
 | R3 | lint exit 0 | **PASS** | `pnpm lint` (`eslint .`), exit `0`, 0 errors (3 pre-existing warnings in `tests/`) |
-| R4 | No component imports a database client or reaches the database directly (RULE-02) | **PASS** | `src/lib/data/index.ts:1-62` is the single seam entry point. `@supabase/supabase-js` is imported only in `src/lib/data/supabase/client.ts:12`. `@supabase/ssr` is imported only in `src/lib/auth/supabase.ts:30`. No component or server action imports `@/lib/data/supabase/**` or reaches PostgREST directly |
-| R5 | Every contract item in design section 1 is implemented (RULE-04) | **PASS** | All contract items in §1.1–§1.8 implemented — table in *R5 detail* |
-| R6 | Permission gating matches design section 2 | **PASS** | No `ROLE_RANK` gate added, removed or modified (`src/lib/auth/permissions.ts:1-74` and `src/components/shared/PermissionGate.tsx:1-35` untouched). `src/lib/auth/supabase.ts:1-28` comment block updated for ADR-007; code untouched. Service-role key bounded to `scripts/seed.ts:48-56` (refuses `NODE_ENV=production`) |
-| R7 | Every `data-testid` in design section 6 exists in the markup | **PASS** | `git diff origin/main` contains zero alterations to UI `data-testid` attributes. All 24 testid families from design §6 verified in markup (`src/app/page.tsx:7,13,18`, `rooms-manager.tsx:288`, `seats-manager.tsx:327`, `members-manager.tsx:342`, `devices-manager.tsx:334`, `groups-manager.tsx:284`) — *R7 detail* |
+| R4 | No component imports a database client or reaches the database directly (RULE-02) | **PASS** | `src/lib/data/index.ts:1-62` is the single seam entry point. `@supabase/supabase-js` is imported only in `src/lib/data/supabase/client.ts:12` and `scripts/local-stack-client.ts:23`. `@supabase/ssr` is imported only in `src/lib/auth/supabase.ts:30`. No component or server action under `src/app/` imports `@/lib/data/supabase/**` or reaches PostgREST directly |
+| R5 | Every contract item in design section 1 is implemented (RULE-04) | **PASS** | All contract items in §1.1–§1.8 and §6.4 implemented — table in *R5 detail* |
+| R6 | Permission gating matches design section 2 | **PASS** | No `ROLE_RANK` gate added, removed or modified (`src/lib/auth/permissions.ts:1-74` and `src/components/shared/PermissionGate.tsx:1-35` untouched). `src/lib/auth/supabase.ts:1-28` comment block updated for ADR-007; code untouched. Service-role key bounded to `scripts/seed.ts:48-56` (refuses `NODE_ENV=production`) and `scripts/local-stack-client.ts:58-85` (loopback only) |
+| R7 | Every `data-testid` in design section 6 exists in the markup | **PASS** | `git diff origin/main` contains zero alterations to UI `data-testid` attributes. All 24 testid families from design §6 verified in markup (`src/app/page.tsx:7,13,18`, `rooms-manager.tsx:288`, `seats-manager.tsx:327`, `members-manager.tsx:342`, `devices-manager.tsx:334`, `groups-manager.tsx:284`, `AppShell.tsx:36,44-51`, `layout-designer/page.tsx:7,18,29`) — *R7 detail* |
 | R8 | No invariant violated (RULE-07) | **PASS** | All 10 IDs in `invariants_touched` [INV-01, INV-02, INV-03, INV-04, INV-05, INV-06, INV-07, INV-08, INV-11, INV-12] individually reasoned and cited to migration and adapter lines (`supabase/migrations/20260826094134_init.sql:83-278,350-585`) — *R8 detail* |
-| R9 | No dependency added without an ADR | **PASS** | `@supabase/supabase-js` (2.112.4) and `supabase` (2.115.0) added per ADR-007 clauses 2 and 8 (`package.json:34,52`; `.ai/registry/decisions/ADR-007-supabase-as-the-data-client.md:17-21,91-93`). `@prisma/client` and `prisma` removed per ADR-007 clause 1 |
+| R9 | No dependency added without an ADR | **PASS** | `@supabase/supabase-js` (2.112.4) and `supabase` (2.115.0) added per ADR-007 clauses 2 and 8 (`package.json:34,53`; `.ai/registry/decisions/ADR-007-supabase-as-the-data-client.md:17-21,91-93`). `postgres` (3.4.9) added as devDependency per `02-design.md` §6.4 / ADR-007 OQ-2 for local test runner (`package.json:50`). `@prisma/client` and `prisma` removed per ADR-007 clause 1 |
 
 ## R1 detail
 
@@ -81,10 +82,14 @@ The working tree changes attributable to ticket SYS-02 are an exact subset of `a
 | `tests/unit/seam-parity.test.ts` | modified | `tests/unit/seam-parity.test.ts` |
 | `tests/unit/self-signup.test.ts` | modified | `tests/unit/self-signup.test.ts` |
 | `scripts/seed.ts` | created | `scripts/seed.ts` |
+| `scripts/test-db.mjs` | created | `scripts/test-db.mjs` |
+| `scripts/local-stack-client.ts` | created | `scripts/local-stack-client.ts` |
 | `scripts/check-docs.mjs` | modified | `scripts/check-docs.mjs` |
 | `scripts/tests/check-docs.test.mjs` | modified | `scripts/tests/check-docs.test.mjs` |
 | `eslint.config.mjs` | modified | `eslint.config.mjs` |
 | `vitest.config.mts` | modified | `vitest.config.mts` |
+| `vitest.db.config.mts` | created | `vitest.db.config.mts` |
+| `playwright.db.config.ts` | created | `playwright.db.config.ts` |
 | `package.json` | modified | `package.json` |
 | `pnpm-lock.yaml` | modified | `pnpm-lock.yaml` |
 | `.env.example` | modified | `.env.example` |
@@ -127,6 +132,7 @@ Contract items from design section 1:
 | §1.6 Data source switch in `src/lib/data/index.ts` | `src/lib/data/index.ts:32,42,48,50,52-59` | Yes (`DataSource = "mock" \| "supabase"`, defaults to `"supabase"`, throws on invalid value) |
 | §1.7 `scripts/seed.ts` seeding | `scripts/seed.ts:48,83,103,139-224` | Yes (adapter calls, fixture id upserts, parents before children, 2-pass devices, production refusal, admin `auth.users`) |
 | §1.8 URL and migration tooling | `.env.example:51-52`, `supabase/migrations/20260826094134_init.sql:1-586`, `package.json:19` | Yes (`DIRECT_URL` only; `DATABASE_URL` removed; `db:types` added per D-6) |
+| §6.4 `pnpm test:db` lane | `scripts/test-db.mjs:1-237`, `scripts/local-stack-client.ts:1-155`, `vitest.db.config.mts:1-43`, `playwright.db.config.ts:1-67`, `package.json:17,50`, `.github/workflows/verify.yml:83-99` | Yes (preflight, reset, status parsing, loopback guards, vitest and playwright db configs, verify workflow step) |
 
 ## R7 detail
 
@@ -175,7 +181,7 @@ None. All nine review checks pass; no rework required.
 | — | — | — | — | — |
 
 *Non-blocking notes recorded upstream:*
-- `tests/unit/self-signup.test.ts:104-116` was narrowed per `02-design.md` §5.1 design amendment; all 160 unit tests in `pnpm test` pass.
+- `02-design.md` §6.2 / §5.2 ownership split: Developer implemented the runner, configs, CI step, and devDependency; `tests/db/**` and `tests/db-e2e/**` are QA's to write. Two AC-9 assertions in `tests/unit/seam-parity.test.ts` asserting the deleted workflow step are pending QA's relocation to `tests/db/types-drift.test.ts` (`99-questions.md`).
 - `D-1`: Deleting `prisma/` produces 12 D6 citations in 6 human-owned documents (`.ai/00-charter.md`, `.ai/registry/features.md`, `.ai/standards/**`) that require steward updates outside `allowed_paths`.
 - `supabase/migrations/20260826094134_init.sql` carries the draft schema; RULE-09 human signature applies via CODEOWNERS on PR review.
 
